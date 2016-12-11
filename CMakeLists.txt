@@ -19,10 +19,6 @@ file(GLOB TEST_FILES
 list(REMOVE_ITEM SOURCE_FILES ${MAIN_FILES})
 list(REMOVE_ITEM SOURCE_FILES ${TEST_FILES})
 
-message(Sources: ${SOURCE_FILES})
-message(Mains: ${MAIN_FILES})
-message(Tests: ${TEST_FILES})
-
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
@@ -55,6 +51,7 @@ add_custom_target(run
 
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
+
 
 add_executable(build_tests main_tests.cpp ${SOURCE_FILES})
 target_link_libraries(build_tests ${PYTHON_LIBRARY} ${Boost_LIBRARIES})

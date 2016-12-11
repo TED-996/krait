@@ -7,7 +7,7 @@ using namespace boost::filesystem;
 using namespace std;
 
 #include <boost/static_assert.hpp>
-BOOST_STATIC_ASSERT(BOOST_VERSION >= 106200)
+BOOST_STATIC_ASSERT(BOOST_VERSION >= 106200);
 
 
 BOOST_AUTO_TEST_SUITE(mod_Path)
