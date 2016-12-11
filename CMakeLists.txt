@@ -12,11 +12,16 @@ file(GLOB SOURCE_FILES
 file(GLOB MAIN_FILES
     "main*.cpp"
 )
+file(GLOB TEST_FILES
+    "*tests.cpp"
+)
 
-list(REMOVE_ITEM SOURCE_FILES MAIN_FILES)
+list(REMOVE_ITEM SOURCE_FILES ${MAIN_FILES})
+list(REMOVE_ITEM SOURCE_FILES ${TEST_FILES})
 
 message(Sources: ${SOURCE_FILES})
 message(Mains: ${MAIN_FILES})
+message(Tests: ${TEST_FILES})
 
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
