@@ -1,0 +1,20 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "0.1.0",
+    "command": "cmake",
+    "isShellCommand": true,
+    "tasks": [
+        {
+            "taskName": "build",
+            "args": ["--build", "${workspaceRoot}", "--target", "build"],
+            "suppressTaskName": true
+        },
+        {
+            "taskName": "run",
+            "args": ["--build", "${workspaceRoot}", "--target", "run"],
+            "suppressTaskName": true
+        }
+    ],
+    "showOutput": "always"
+}
