@@ -2,4 +2,4 @@
 
 #include <boost/filesystem.hpp>
 
-path getExecRoot();
+boost::filesystem::path getExecRoot();

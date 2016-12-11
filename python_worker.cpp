@@ -1,7 +1,8 @@
 #include<python2.7/Python.h>
 #include<boost/python.hpp>
-#include"python_worker.h"
 #include<string>
+#include"python_worker.h"
+#include"path.h"
 
 using namespace boost::python;
 using namespace boost::filesystem;
