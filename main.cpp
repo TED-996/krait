@@ -2,7 +2,6 @@
 
 #include "network.h"
 
-
 int main(int argc, char* argv[]){
     printf("Waiting on port 8080: ");
 

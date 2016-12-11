@@ -32,6 +32,8 @@ target_link_libraries(build ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
 set_target_properties(build PROPERTIES OUTPUT_NAME ${BUILD_DIR}/${CMAKE_PROJECT_NAME})
 add_custom_command(TARGET build PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR})
+add_custom_command(TARGET build POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${BUILD_DIR}/py)
 
 
 add_custom_target(run

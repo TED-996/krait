@@ -8,7 +8,8 @@
         {
             "taskName": "build",
             "args": ["--build", "${workspaceRoot}", "--target", "build"],
-            "suppressTaskName": true
+            "suppressTaskName": true,
+            "isBuildCommand": true
         },
         {
             "taskName": "run",
