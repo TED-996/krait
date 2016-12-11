@@ -13,6 +13,8 @@ BOOST_STATIC_ASSERT(BOOST_VERSION >= 106200);
 BOOST_AUTO_TEST_SUITE(mod_Path)
 
 BOOST_AUTO_TEST_CASE(func_getExecRoot){
+    cout << "\nTesting getExecRoot:\n";
+
     cout << getExecRoot() << endl;
     cout << getExecRoot() / "py" << endl;
 

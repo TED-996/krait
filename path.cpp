@@ -1,4 +1,6 @@
 #include<unistd.h>
+#include<errno.h>
+
 #include"utils.h"
 #include"path.h"
 #include"except.h"
@@ -11,7 +13,7 @@ path getExecRoot(){
     ssize_t length = readlink("/proc/self/exe", exePath, sizeof(exePath));
 
     if (length == -1){
-        throw syscall_error() << string_info("readlink") << errcode_info(10);
+        throw syscallError() << stringInfo("readlink") << errcodeInfo(errno);
     }
 
     return path(exePath).parent_path();
