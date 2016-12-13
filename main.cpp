@@ -1,4 +1,4 @@
-#include<cstdio>
+#include<stdio.h>
 
 #include "network.h"
 
@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
     
     int client = getNewClient(server);
     
-    printSocket(client);
+    respondRequest404(client);
 
     printf("Done.");
     return 0;

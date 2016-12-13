@@ -43,13 +43,6 @@ add_custom_command(TARGET build PRE_BUILD
 add_custom_command(TARGET build POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${BUILD_DIR}/py)
 
-
-add_custom_target(run
-    COMMAND ./${CMAKE_PROJECT_NAME}
-    DEPENDS build
-    WORKING_DIRECTORY ${BUILD_DIR})
-
-
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 
 
@@ -61,7 +54,3 @@ add_custom_command(TARGET build_tests PRE_BUILD
 add_custom_command(TARGET build_tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${TEST_DIR}/py)
 
-add_custom_target(run_tests
-    COMMAND ./${CMAKE_PROJECT_NAME}_tests
-    DEPENDS build_tests
-    WORKING_DIRECTORY ${TEST_DIR})
