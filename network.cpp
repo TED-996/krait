@@ -106,4 +106,3 @@ const string* Request::getHeader ( const string& name ) {
 	}
 	return &(iterFound->second);
 }
-
