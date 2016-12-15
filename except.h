@@ -12,3 +12,4 @@ struct pythonError: virtual boost::exception, virtual std::exception {};
 struct networkError: virtual boost::exception, virtual std::exception {};
 struct parseError: virtual boost::exception, virtual std::exception {};
 
+struct notImplementedError: virtual boost::exception, virtual std::exception {};

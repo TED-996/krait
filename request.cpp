@@ -1,124 +1,121 @@
-#include<boost/format.hpp>
-
 #include"request.h"
-#include"utils.h"
-#include"except.h"
+#include"fsm.h"
 
 RequestParser::RequestParser() {
 	state = 1;
 	finished = false;
 	memzero(workingStr);
 	workingIdx = 0;
+	bodyLeft = 0;
 }
-
-#define FsmStart(state)\
-	int stNext = (state);\
-	bool retVal = true;\
-	switch(stNext){
-
-#define FsmEnd(state)\
-		default: \
-			throw parseError() << stringInfo((boost::format("Bad state %1%!")% state).str());\
-	}\
-	state = stNext;\
-	return retVal;
-	
-	
-#define StatesBegin(value)\
-		case value:
-
-#define StatesNext(value)\
-			break;\
-		case value:
-
-#define StatesEnd()\
-			break;
-
-			
-#define SaveStart()\
-			memset(workingStr, 0, workingIdx);\
-			workingStr[workingIdx] = chr;\
-			workingIdx = 1;
-
-#define SaveStartSkip()\
-			memset(workingStr, 0, workingIdx);\
-			workingIdx = 0;
-
-#define SaveThis()\
-			if (workingIdx == sizeof(workingStr)){\
-				workingBackBuffer.append(workingIdx, (unsigned int)sizeof(workingStr));\
-				memzero(workingStr);\
-				workingIdx = 0;\
-			}\
-			workingStr[workingIdx++] = chr;
-
-#define SaveStore(dest)\
-			(dest).assign(workingStr, workingIdx);
-
-#define SaveStoreOne(dest)\
-			if (workingIdx != 0){\
-				(dest).assign(workingStr, workingIdx);\
-			}
-
-
-#define TransIf(value, next, consume)\
-			if (chr == value){\
-				stNext = (next);\
-				retVal = (consume);\
-			}
-
-#define TransIfCond(value, cond, next, consume)\
-			if (chr == value && (cond)){\
-				stNext = (next);\
-				retVal = (consume);\
-			}
-
-#define TransElif(value, next, consume)\
-			else if (chr == value){\
-				stNext = (next);\
-				retVal = (consume);\
-			}
-
-#define TransElifCond(value, cond, next, consume)\
-			else if (chr == value && (cond)){\
-				stNext = (next);\
-				retVal = (consume);\
-			}
-
-#define TransElse(next, consume)\
-			else {\
-				stNext = (next);\
-				retVal = (consume);\
-			}
-
-#define TransElseError()\
-			else {\
-				throw parseError() << stringInfo((format("Bad state %1%!" % stNext).str()));\
-			}
 
 
 bool RequestParser::consumeOne ( char chr ) {
-	FsmStart(state)
-		StatesBegin(0)
-			SaveStartSkip()
-			TransIf(' ', 0, true)
+	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
+		StatesBegin(0) //Before any; skipping spaces before HTTP method
+			SaveStart()
+			TransIf(' ', stCurrent, true)
 			TransElse(1, true)
-		StatesNext(1)
-			SaveThis()
+		StatesNext(1) //Reading HTTP Method
 			TransIf(' ', 2, true)
-			TransElse(1, true)
-		StatesNext(2)
+			TransElse(stCurrent, true)
+			SaveThisIfSame()
+		StatesNext(2) //Finished reading HTTP method; skipping spaces before URL
 			SaveStoreOne(methodString)
-			SaveStartSkip()
-			TransIf(' ', 2, true)
+			SaveStart()
+			TransIf(' ', stCurrent, true)
 			TransElse(3, true)
-		StatesNext(3)
-			SaveThis()
+		StatesNext(3) //Reading URL
 			TransIf(' ', 4, true)
-			TransElse(3, true)
-		StatesNext()
-		StatesEnd()
+			TransElse(stCurrent, true)
+			SaveThisIfSame()
+		StatesNext(4) //Finished reading URL; skipping before HTTP version
+			SaveStoreOne(url)
+			SaveStart()
+			TransIf(' ', stCurrent, true)
+			TransElse(5, true)
+		StatesNext(5) //Reading HTTP version
+			TransIf('\r', 6, true)
+			TransElse(stCurrent, true)
+			SaveThisIfSame()
+		StatesNext(6) //After HTTP version
+			SaveStore(httpVersion)
+			TransIf('\n', 7, true)
+			TransElseError()
+		StatesNext(7) //Header start or CRLF; TODO: Some headers start with space!
+			TransIf('\r', 20, true)
+			TransElse(8, false)
+		StatesNext(8) //Starting header name
+			SaveStart()
+			TransAlways(9, true)
+		StatesNext(9) //Consuming header name
+			TransIf(':', 10, true)
+			TransElse(stCurrent, true)
+			SaveThisIfSame()
+		StatesNext(10) //After header name
+			SaveStore(workingHeaderName)
+			TransIf(' ', 11, true)
+			TransElseError()
+		StatesNext(11) //Starting header value
+			SaveStart()
+			TransAlways(12, true)
+		StatesNext(12) //Consuming header value
+			TransIf('\r', 13, true)
+			TransElse(stCurrent, true)
+			SaveThisIfSame()
+		StatesNext(13) //inside CRLF before a header
+			SaveStore(workingHeaderValue);
+			headers[workingHeaderName] = workingHeaderValue;
+			TransIf('\n', 7, true)
+			TransElseError()
+		StatesNext(20) //inside CRLF before body / end:
+			TransIf('\n', 21, true)
+			TransElseError()
 			
-	FsmEnd(state)
+			if (!hasBody()){
+				finished = true;
+			}
+		StatesNext(21) //First character of body
+			if (finished){
+				throw parseError() << stringInfo("Request already finished, but received data!");
+			}
+			SaveStart()
+			TransAlways(22, true)
+			
+			bodyLeft--;
+			if (bodyLeft == 0){
+				finished = true;
+				SaveStore(body)
+				TransAlways(25, true)
+			}
+		StatesNext(22) //Characters of body
+			SaveThis()
+			
+			bodyLeft--;
+			if (bodyLeft == 0){
+				finished = true;
+				SaveStore(body)
+				TransAlways(25, true)
+			}
+		StatesNext(25)
+			throw parseError() << stringInfo("Request already finished, but received data!");
+		StatesEnd()
+	FsmEnd(state, workingIdx)
 }
+
+
+bool RequestParser::hasBody() {
+	throw notImplementedError() << stringInfo("RequestParser::hasBody()"); //TODO
+}
+
+
+void RequestParser::consume ( char* data, int dataLen ) {
+	throw notImplementedError() << stringInfo("RequestParser::consume()"); //TODO
+}
+
+
+Request RequestParser::getRequest() {
+	throw notImplementedError() << stringInfo("RequestParser::getRequest()"); //TODO
+}
+
 

@@ -7,8 +7,13 @@ class RequestParser{
 	int state;
 	std::string workingBackBuffer;
 	char workingStr[65536];
-	int workingIdx;
+	unsigned int workingIdx;
+	
 	bool finished;
+	unsigned long long bodyLeft;
+	
+	std::string workingHeaderName;
+	std::string workingHeaderValue;
 	
 	std::string methodString;
 	std::string url;
@@ -17,6 +22,8 @@ class RequestParser{
 	std::string body;
 	
 	bool consumeOne(char chr);
+	
+	bool hasBody();
 	
 public:
 	RequestParser();
