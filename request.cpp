@@ -1,5 +1,8 @@
 #include"request.h"
 #include"fsm.h"
+#include<string>
+#include<utility>
+#include <boost/algorithm/string/predicate.hpp>
 
 RequestParser::RequestParser() {
 	state = 1;
@@ -65,14 +68,15 @@ bool RequestParser::consumeOne ( char chr ) {
 			SaveThisIfSame()
 		StatesNext(13) //inside CRLF before a header
 			SaveStore(workingHeaderValue);
-			headers[workingHeaderName] = workingHeaderValue;
+			saveHeader(workingHeaderName, workingHeaderValue);
 			TransIf('\n', 7, true)
 			TransElseError()
 		StatesNext(20) //inside CRLF before body / end:
 			TransIf('\n', 21, true)
 			TransElseError()
 			
-			if (!hasBody()){
+			bodyLeft = getBodyLength();
+			if (bodyLeft == 0){
 				finished = true;
 			}
 		StatesNext(21) //First character of body
@@ -104,18 +108,98 @@ bool RequestParser::consumeOne ( char chr ) {
 }
 
 
-bool RequestParser::hasBody() {
-	throw notImplementedError() << stringInfo("RequestParser::hasBody()"); //TODO
+int RequestParser::getBodyLength() {
+	auto foundHeader = headers.find(std::string("Content-Length"));
+	if (foundHeader == headers.end()){
+		return 0;
+	}
+	else{
+		size_t idx = 0;
+		int length = std::stoi(foundHeader->second, &idx, 10);
+		
+		if (idx != foundHeader->second.size()){
+			throw parseError() << stringInfo("Content-Length not int!");
+		}
+		
+		return length;
+	}
+	
+	throw notImplementedError() << stringInfo("RequestParser::getBodyLength()"); //TODO
 }
+
+void RequestParser::saveHeader ( std::string name, std::string value ) {
+	auto foundName = headers.find(name);
+	if (foundName == headers.end()){
+		headers.insert(make_pair(name, value));
+	}
+	else{
+		headers[name] = headers[name] + "," + value;
+	}
+}
+
 
 
 void RequestParser::consume ( char* data, int dataLen ) {
-	throw notImplementedError() << stringInfo("RequestParser::consume()"); //TODO
+	for (int i = 0; i < dataLen; i++){
+		bool consume = consumeOne(data[dataLen]);
+		if (!consume){
+			i--;
+		}
+	}
 }
 
 
+bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
+
 Request RequestParser::getRequest() {
+	std::map<std::string, HttpVerb> stringVerbMapping = {
+		{std::string("GET"), HttpVerb::GET},
+		{std::string("HEAD"), HttpVerb::HEAD},
+		{std::string("POST"), HttpVerb::POST},
+		{std::string("PUT"), HttpVerb::PUT},
+		{std::string("DELETE"), HttpVerb::DELETE},
+		{std::string("CONNECT"), HttpVerb::CONNECT},
+		{std::string("OPTIONS"), HttpVerb::OPTIONS},
+		{std::string("TRACE"), HttpVerb::TRACE}
+	};
+	
+	auto verbIt = stringVerbMapping.find(methodString);
+	if (verbIt == stringVerbMapping.end()){
+		throw parseError() << stringInfo("HTTP method not recognized.");
+	}
+	HttpVerb verb = verbIt->second;
+	
+	int httpMinor = 1;
+	int httpMajor = 1;
+	
+	if (!parseHttpVersion(httpVersion, &httpMajor, &httpMinor)){
+		throw parseError() << stringInfo("HTTP version not recognized.");
+	}
+	
+	
 	throw notImplementedError() << stringInfo("RequestParser::getRequest()"); //TODO
 }
 
-
+bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor){
+	if (!boost::starts_with(httpVersion, "HTTP/")){
+		return false;
+	}
+	
+	std::string versionPart = httpVersion.substr(strlen("HTTP/"));
+	if (versionPart.size() != 3){
+		return false;
+	}
+	
+	size_t idx = 0;
+	*httpMajor = std::stoi(versionPart, &idx, 10);
+	if (idx != 1 || versionPart[idx] != '/'){
+		return false;
+	}
+	idx = 2;
+	*httpMinor = std::stoi(versionPart, &idx, 10);
+	if (idx != 3){
+		return false;
+	}
+	
+	return true;
+}

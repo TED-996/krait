@@ -21,9 +21,11 @@ class RequestParser{
 	std::map<std::string, std::string> headers;
 	std::string body;
 	
+	void saveHeader(std::string name, std::string value);
+	
 	bool consumeOne(char chr);
 	
-	bool hasBody();
+	int getBodyLength();
 	
 public:
 	RequestParser();
