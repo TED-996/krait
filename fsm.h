@@ -5,6 +5,7 @@
 
 #include"utils.h"
 #include"except.h"
+#include"dbg.h"
 
 #define FsmStart(state_t, state, chr_t, chr, workingBuffer, workingSize, workingIndex, backBuffer) \
 	state_t stCurrent = (state);\
@@ -39,7 +40,7 @@
 			
 #define SaveStart()\
 			memset(fsmWorkingBuffer, 0, fsmWorkingIdx);\
-			fsmWorkingBuffer[fsmWorkingIdx] = fsmChr;\
+			fsmWorkingBuffer[0] = fsmChr;\
 			fsmWorkingIdx = 1;\
 			fsmBackBuffer.clear();
 

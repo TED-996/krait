@@ -4,8 +4,10 @@
 #include<utility>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include"dbg.h"
+
 RequestParser::RequestParser() {
-	state = 1;
+	state = 0;
 	finished = false;
 	memzero(workingStr);
 	workingIdx = 0;
@@ -14,6 +16,10 @@ RequestParser::RequestParser() {
 
 
 bool RequestParser::consumeOne ( char chr ) {
+	if (chr == '\0'){
+		BOOST_THROW_EXCEPTION(parseError() << stringInfo("Got null character!"));
+	}
+	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
 		StatesBegin(0) //Before any; skipping spaces before HTTP method
 			SaveStart()
@@ -81,7 +87,7 @@ bool RequestParser::consumeOne ( char chr ) {
 			}
 		StatesNext(21) //First character of body
 			if (finished){
-				throw parseError() << stringInfo("Request already finished, but received data!");
+				BOOST_THROW_EXCEPTION(parseError() << stringInfo("Request already finished, but received data!"));
 			}
 			SaveStart()
 			TransAlways(22, true)
@@ -102,7 +108,7 @@ bool RequestParser::consumeOne ( char chr ) {
 				TransAlways(25, true)
 			}
 		StatesNext(25)
-			throw parseError() << stringInfo("Request already finished, but received data!");
+			BOOST_THROW_EXCEPTION(parseError() << stringInfo("Request already finished, but received data!"));
 		StatesEnd()
 	FsmEnd(state, workingIdx)
 }
@@ -118,13 +124,11 @@ int RequestParser::getBodyLength() {
 		int length = std::stoi(foundHeader->second, &idx, 10);
 		
 		if (idx != foundHeader->second.size()){
-			throw parseError() << stringInfo("Content-Length not int!");
+			BOOST_THROW_EXCEPTION(parseError() << stringInfo("Content-Length not int!"));
 		}
 		
 		return length;
 	}
-	
-	throw notImplementedError() << stringInfo("RequestParser::getBodyLength()"); //TODO
 }
 
 void RequestParser::saveHeader ( std::string name, std::string value ) {
@@ -138,10 +142,11 @@ void RequestParser::saveHeader ( std::string name, std::string value ) {
 }
 
 
-
 void RequestParser::consume ( char* data, int dataLen ) {
+	//DBG_FMT("Consuming string of length %1% (real len %2%)", dataLen, strlen(data));
 	for (int i = 0; i < dataLen; i++){
-		bool consume = consumeOne(data[dataLen]);
+		//DBG_FMT("i = %1%; chr = %2%", i, int(data[i]));
+		bool consume = consumeOne(data[i]);
 		if (!consume){
 			i--;
 		}
@@ -165,7 +170,7 @@ Request RequestParser::getRequest() {
 	
 	auto verbIt = stringVerbMapping.find(methodString);
 	if (verbIt == stringVerbMapping.end()){
-		throw parseError() << stringInfo("HTTP method not recognized.");
+		BOOST_THROW_EXCEPTION(parseError() << stringInfo("HTTP method not recognized."));
 	}
 	HttpVerb verb = verbIt->second;
 	
@@ -173,31 +178,36 @@ Request RequestParser::getRequest() {
 	int httpMajor = 1;
 	
 	if (!parseHttpVersion(httpVersion, &httpMajor, &httpMinor)){
-		throw parseError() << stringInfo("HTTP version not recognized.");
+		BOOST_THROW_EXCEPTION(parseError() << stringInfo("HTTP version not recognized."));
 	}
 	
-	
-	throw notImplementedError() << stringInfo("RequestParser::getRequest()"); //TODO
+	return Request(verb, url, httpMajor, httpMinor, headers, body);
 }
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor){
+	DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")){
+		DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
 		return false;
 	}
 	
 	std::string versionPart = httpVersion.substr(strlen("HTTP/"));
+	DBG_FMT("Version part: %1%", versionPart);
+	
 	if (versionPart.size() != 3){
+		DBG_FMT("Version fail: %1%'s part %2% doesn't have 3 characters", httpVersion, versionPart);
 		return false;
 	}
 	
 	size_t idx = 0;
 	*httpMajor = std::stoi(versionPart, &idx, 10);
-	if (idx != 1 || versionPart[idx] != '/'){
+	if (idx != 1 || versionPart[1] != '.'){
+		DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion, versionPart);
 		return false;
 	}
-	idx = 2;
-	*httpMinor = std::stoi(versionPart, &idx, 10);
-	if (idx != 3){
+	*httpMinor = std::stoi(versionPart.substr(2), &idx, 10);
+	if (idx != 1){
+		DBG_FMT("Version fail: %1%'s part %2% doesn't end with a single digit (idx = %3%)", httpVersion, versionPart, idx);
 		return false;
 	}
 	

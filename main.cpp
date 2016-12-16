@@ -1,6 +1,7 @@
 #include<stdio.h>
 
 #include "network.h"
+#include "request.h"
 
 int main(int argc, char* argv[]){
     printf("Waiting on port 8080: ");
@@ -10,8 +11,13 @@ int main(int argc, char* argv[]){
     printf("Waiting.\n");
     
     int client = getNewClient(server);
+	
+	printf("Request got!\n");
     
-    respondRequest404(client);
+    Request r = getRequestFromSocket(client);
+	
+	respondRequest200(client);
+	closeSocket(client);
 
     printf("Done.");
     return 0;

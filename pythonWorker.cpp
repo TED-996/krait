@@ -1,7 +1,7 @@
 #include<python2.7/Python.h>
 #include<boost/python.hpp>
 #include<string>
-#include"python_worker.h"
+#include"pythonWorker.h"
 #include"path.h"
 #include"except.h"
 
@@ -30,7 +30,7 @@ void initPython(std::string projectDir) {
     catch(error_already_set const *) {
         std::string errorString = std::string("Error in initPython:\n") + pyErrAsString();
         PyErr_Clear();
-        throw pythonError() << stringInfo(errorString);
+        BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
     }
 }
 
@@ -42,7 +42,7 @@ void pythonRun(std::string command) {
     catch(error_already_set const *) {
         std::string errorString = pyErrAsString();
         PyErr_Clear();
-        throw pythonError() << stringInfo(errorString);
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
     }
 }
 
@@ -61,7 +61,7 @@ std::string pyErrAsString() {
         object format_exception_only(moduleTraceback.attr("format_exception_only"));
         formatted_list = format_exception_only(handleException, handleValue);
     }
-    else {
+    else { 
         object format_exception(moduleTraceback.attr("format_exception"));
         formatted_list = format_exception(handleException, handleValue, handleTraceback);
     }
@@ -78,6 +78,6 @@ std::string pythonEval(std::string command) {
     catch(error_already_set const *) {
         std::string errorString = pyErrAsString();
         PyErr_Clear();
-        throw pythonError() << stringInfo(errorString);
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
     }
 }

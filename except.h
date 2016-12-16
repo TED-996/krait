@@ -7,9 +7,16 @@
 typedef boost::error_info<struct tag_string_info, const std::string> stringInfo;
 typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo; 
 
-struct syscallError: virtual boost::exception, virtual std::exception {};
-struct pythonError: virtual boost::exception, virtual std::exception {};
-struct networkError: virtual boost::exception, virtual std::exception {};
-struct parseError: virtual boost::exception, virtual std::exception {};
 
-struct notImplementedError: virtual boost::exception, virtual std::exception {};
+struct rootException : virtual boost::exception, virtual std::exception {
+	const char* what() const noexcept {
+		return boost::diagnostic_information_what(*this);
+	}
+};
+
+struct syscallError: virtual rootException {};
+struct pythonError: virtual rootException {};
+struct networkError: virtual rootException {};
+struct parseError: virtual rootException {};
+
+struct notImplementedError: virtual rootException {};

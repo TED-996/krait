@@ -6,10 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
+#include <errno.h>
 #include <string.h>
 #include "network.h"
 #include "utils.h"
 #include "except.h"
+#include "request.h"
+
+#include "dbg.h"
 
 using namespace std;
 
@@ -24,15 +28,15 @@ int getListenSocket(int port) {
 
     int sd = socket(AF_INET, SOCK_STREAM, 0);
     if (sd == -1) {
-        throw networkError() << stringInfo("getListenSocket: could not create socket!");
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket!"));
     }
 
     if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
-        throw networkError() << stringInfo("getListenSocket: could not bind socket");
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not bind socket") << errcodeInfo(errno));
     }
 
     if (listen(sd, 1024) == -1) {
-        throw networkError() << stringInfo("getListenSocket: could not set socket to listen");
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
     }
 
     return sd;
@@ -47,54 +51,68 @@ int getNewClient(int listenerSocket) {
     int client = accept(listenerSocket, (sockaddr*)&clientSockaddr, &sockaddrLen);
 
     if (client < 0) {
-        throw networkError() << stringInfo("getNewClient: could not accept new client");
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client"));
     }
 
     return client;
+}
+
+void closeSocket(int clientSocket){
+	close(clientSocket);
 }
 
 
 void printSocket(int clientSocket) {
     char data[4096];
     memzero(data);
-    while(read(clientSocket, data, 4095)) {
+	size_t readBytes;
+    while((readBytes = read(clientSocket, data, 4095)) != 0) {
+		DBG_FMT("read %1% bytes", readBytes);
         printf("%s\n", data);
     }
 }
 
+Request getRequestFromSocket (int clientSocket) {
+	RequestParser parser;
+	char buffer[4096];
+	int bytesRead;
+	
+	while(!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0){
+		parser.consume(buffer, bytesRead);
+	}
+	
+	return parser.getRequest();
+}
+
+
 void respondWith(int clientSocket, const char* response);
 
 void respondRequestHttp10(int clientSocket){
-	respondWith(clientSocket, "HTTP/1.0 505 Version Not Supported\nConnection:Close\n\n");	
+	respondWith(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");	
 }
 
 void respondRequest404 (int clientSocket){
-	respondWith(clientSocket, "HTTP/1.0 404 Not Found\nConnection:Close\n\n)");
+	respondWith(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
+}
+
+void respondRequest200(int clientSocket){
+	respondWith(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
 }
 
 void respondWith(int clientSocket, const char* response){
 	int len = strlen(response);
 	
 	if (write(clientSocket, response, len) != len){
-		throw networkError() << stringInfo("respondWith: could not send response.");
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response."));
 	}
 }
 
-Header::Header ( string name, string value ) {
-	this->name = name;
-	this->value = value;
-}
-
-Request::Request (HttpVerb verb, const string& url, int httpMajor, int httpMinor, const vector< Header >& headers, const string& body) {
+Request::Request (HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string> &headers, const string& body) {
 	this->verb = verb;
 	this->url = url;
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
-	this->headers = map<string, string>();
-	
-	for (auto &it : headers){
-		this->headers[it.name] = it.value;
-	}
+	this->headers = map<string, string>(headers);
 	
 	this->body = string(body);
 }
