@@ -6,7 +6,8 @@
 
 #include"dbg.h"
 
-RequestParser::RequestParser() {
+RequestParser::RequestParser()
+{
 	state = 0;
 	finished = false;
 	memzero(workingStr);
@@ -15,7 +16,8 @@ RequestParser::RequestParser() {
 }
 
 
-bool RequestParser::consumeOne(char chr) {
+bool RequestParser::consumeOne ( char chr )
+{
 	if (chr == '\0') {
 		BOOST_THROW_EXCEPTION(parseError() << stringInfo("Got null character!"));
 	}
@@ -114,7 +116,8 @@ bool RequestParser::consumeOne(char chr) {
 }
 
 
-int RequestParser::getBodyLength() {
+int RequestParser::getBodyLength()
+{
 	auto foundHeader = headers.find(std::string("Content-Length"));
 	if (foundHeader == headers.end()) {
 		return 0;
@@ -131,7 +134,8 @@ int RequestParser::getBodyLength() {
 	}
 }
 
-void RequestParser::saveHeader(std::string name, std::string value) {
+void RequestParser::saveHeader ( std::string name, std::string value )
+{
 	auto foundName = headers.find(name);
 	if (foundName == headers.end()) {
 		headers.insert(make_pair(name, value));
@@ -142,7 +146,8 @@ void RequestParser::saveHeader(std::string name, std::string value) {
 }
 
 
-void RequestParser::consume(char* data, int dataLen) {
+void RequestParser::consume ( char* data, int dataLen )
+{
 	//DBG_FMT("Consuming string of length %1% (real len %2%)", dataLen, strlen(data));
 	for (int i = 0; i < dataLen; i++) {
 		//DBG_FMT("i = %1%; chr = %2%", i, int(data[i]));
@@ -156,7 +161,8 @@ void RequestParser::consume(char* data, int dataLen) {
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
 
-Request RequestParser::getRequest() {
+Request RequestParser::getRequest()
+{
 	std::map<std::string, HttpVerb> stringVerbMapping = {
 		{std::string("GET"), HttpVerb::GET},
 		{std::string("HEAD"), HttpVerb::HEAD},
@@ -184,7 +190,8 @@ Request RequestParser::getRequest() {
 	return Request(verb, url, httpMajor, httpMinor, headers, body);
 }
 
-bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
+bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor)
+{
 	DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
 		DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
@@ -202,8 +209,7 @@ bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
 	size_t idx = 0;
 	*httpMajor = std::stoi(versionPart, &idx, 10);
 	if (idx != 1 || versionPart[1] != '.') {
-		DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
-		        versionPart);
+		DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion, versionPart);
 		return false;
 	}
 	*httpMinor = std::stoi(versionPart.substr(2), &idx, 10);

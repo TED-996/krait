@@ -14,7 +14,8 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(mod_Python)
 
-BOOST_AUTO_TEST_CASE(funcs_python) {
+BOOST_AUTO_TEST_CASE(funcs_python)
+{
 	try {
 		cout << "\nTesting python:" << endl;
 
@@ -27,13 +28,13 @@ BOOST_AUTO_TEST_CASE(funcs_python) {
 
 		cout << pythonEval(string("abc")) << '\n';
 	}
-	catch (pythonError& err) {
+	catch(pythonError& err) {
 		cout << "caught error!" << endl;
 		if (const string* errS = boost::get_error_info<stringInfo>(err)) {
 			cerr << errS;
 		}
 	}
-	catch (exception& ex) {
+	catch(exception &ex) {
 		cout << ex.what() << '\n';
 	}
 }

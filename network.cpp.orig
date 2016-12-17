@@ -18,7 +18,8 @@
 using namespace std;
 
 
-int getListenSocket(int port) {
+int getListenSocket(int port)
+{
 	sockaddr_in serverSockaddr;
 	memzero(serverSockaddr);
 
@@ -36,15 +37,15 @@ int getListenSocket(int port) {
 	}
 
 	if (listen(sd, 1024) == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
-		                          errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
 	}
 
 	return sd;
 }
 
 
-int getNewClient(int listenerSocket) {
+int getNewClient(int listenerSocket)
+{
 	sockaddr_in clientSockaddr;
 	memzero(clientSockaddr);
 
@@ -58,27 +59,30 @@ int getNewClient(int listenerSocket) {
 	return client;
 }
 
-void closeSocket(int clientSocket) {
+void closeSocket(int clientSocket)
+{
 	close(clientSocket);
 }
 
 
-void printSocket(int clientSocket) {
+void printSocket(int clientSocket)
+{
 	char data[4096];
 	memzero(data);
 	size_t readBytes;
-	while ((readBytes = read(clientSocket, data, 4095)) != 0) {
+	while((readBytes = read(clientSocket, data, 4095)) != 0) {
 		DBG_FMT("read %1% bytes", readBytes);
 		printf("%s\n", data);
 	}
 }
 
-Request getRequestFromSocket(int clientSocket) {
+Request getRequestFromSocket (int clientSocket)
+{
 	RequestParser parser;
 	char buffer[4096];
 	int bytesRead;
 
-	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
+	while(!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
 		parser.consume(buffer, bytesRead);
 	}
 
@@ -88,19 +92,23 @@ Request getRequestFromSocket(int clientSocket) {
 
 void respondWith(int clientSocket, const char* response);
 
-void respondRequestHttp10(int clientSocket) {
+void respondRequestHttp10(int clientSocket)
+{
 	respondWith(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
 }
 
-void respondRequest404(int clientSocket) {
+void respondRequest404 (int clientSocket)
+{
 	respondWith(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
 }
 
-void respondRequest200(int clientSocket) {
+void respondRequest200(int clientSocket)
+{
 	respondWith(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
 }
 
-void respondWith(int clientSocket, const char* response) {
+void respondWith(int clientSocket, const char* response)
+{
 	int len = strlen(response);
 
 	if (write(clientSocket, response, len) != len) {
@@ -108,8 +116,8 @@ void respondWith(int clientSocket, const char* response) {
 	}
 }
 
-Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string>& headers,
-                 const string& body) {
+Request::Request (HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string> &headers, const string& body)
+{
 	this->verb = verb;
 	this->url = url;
 	this->httpMajor = httpMajor;
@@ -119,7 +127,8 @@ Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor,
 	this->body = string(body);
 }
 
-const string* Request::getHeader(const string& name) {
+const string* Request::getHeader ( const string& name )
+{
 	auto iterFound = headers.find(name);
 	if (iterFound == headers.end()) {
 		return NULL;

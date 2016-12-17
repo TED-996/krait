@@ -7,7 +7,8 @@
 
 using namespace boost::filesystem;
 
-path getExecRoot() {
+path getExecRoot()
+{
 	char exePath[4096];
 	memzero(exePath);
 	ssize_t length = readlink("/proc/self/exe", exePath, sizeof(exePath));
