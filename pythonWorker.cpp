@@ -1,5 +1,6 @@
 #include<python2.7/Python.h>
 #include<boost/python.hpp>
+#include<boost/format.hpp>
 #include<string>
 #include"pythonWorker.h"
 #include"path.h"
@@ -8,7 +9,8 @@
 using namespace boost;
 using namespace boost::python;
 
-static object mainGlobal;
+static object mainGlobal; //Globals I know, but it's the best way without exposing python to main and others.
+static object mainModule;
 
 
 std::string pyErrAsString();
@@ -18,17 +20,28 @@ void initPython(std::string projectDir) {
 	Py_Initialize();
 
 	try {
-		object main = import("__main__");
-		mainGlobal = main.attr("__dict__");
+		mainModule = import("__main__");
+		mainGlobal = mainModule.attr("__dict__");
 
-		main.attr("project_dir") = str(projectDir);
-		main.attr("root_dir") = str(getExecRoot().string());
+		pythonSetGlobal("project_dir", projectDir);
+		pythonSetGlobal("root_dir", getExecRoot().string());
 
 		exec_file(str((getExecRoot() / "py" / "python-setup.py").string()), mainGlobal, mainGlobal);
 	}
-
 	catch (error_already_set const*) {
 		std::string errorString = std::string("Error in initPython:\n") + pyErrAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+}
+
+
+void pythonSetGlobal(std::string name, std::string value){
+	try{
+		mainModule.attr(name) = str(value);
+	}
+	catch(error_already_set const*){
+		std::string errorString = format("Error in pythonSetGlobal(%1%, %2%):\n%3%" % name % value % pyErrAsString());
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
@@ -38,6 +51,20 @@ void initPython(std::string projectDir) {
 void pythonRun(std::string command) {
 	try {
 		exec(str(command), mainGlobal, mainGlobal);
+	}
+	catch (error_already_set const*) {
+		std::string errorString = pyErrAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+}
+
+
+std::string pythonEval(std::string command) {
+	try {
+		object result = eval(str(command), mainGlobal, mainGlobal);
+		object resultStr = str(result);
+		return extract<std::string>(resultStr);
 	}
 	catch (error_already_set const*) {
 		std::string errorString = pyErrAsString();
@@ -67,17 +94,4 @@ std::string pyErrAsString() {
 	}
 	object formatted = str("\n").join(formatted_list);
 	return extract<std::string>(formatted);
-}
-
-std::string pythonEval(std::string command) {
-	try {
-		object result = eval(str(command), mainGlobal, mainGlobal);
-		object resultStr = str(result);
-		return extract<std::string>(resultStr);
-	}
-	catch (error_already_set const*) {
-		std::string errorString = pyErrAsString();
-		PyErr_Clear();
-		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
-	}
 }
