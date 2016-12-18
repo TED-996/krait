@@ -26,7 +26,7 @@ void initPython(std::string projectDir) {
 		pythonSetGlobal("project_dir", projectDir);
 		pythonSetGlobal("root_dir", getExecRoot().string());
 
-		exec_file(str((getExecRoot() / "py" / "python-setup.py").string()), mainGlobal, mainGlobal);
+		exec_file(boost::python::str((getExecRoot() / "py" / "python-setup.py").string()), mainGlobal, mainGlobal);
 	}
 	catch (error_already_set const*) {
 		std::string errorString = std::string("Error in initPython:\n") + pyErrAsString();
@@ -36,12 +36,12 @@ void initPython(std::string projectDir) {
 }
 
 
-void pythonSetGlobal(std::string name, std::string value){
-	try{
-		mainModule.attr(name) = str(value);
+void pythonSetGlobal(std::string name, std::string value) {
+	try {
+		mainModule.attr(name.c_str()) = boost::python::str(value);
 	}
-	catch(error_already_set const*){
-		std::string errorString = format("Error in pythonSetGlobal(%1%, %2%):\n%3%" % name % value % pyErrAsString());
+	catch (error_already_set const*) {
+		std::string errorString = (format("Error in pythonSetGlobal(%1%, %2%):\n%3%") % name % value % pyErrAsString()).str();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
@@ -50,7 +50,7 @@ void pythonSetGlobal(std::string name, std::string value){
 
 void pythonRun(std::string command) {
 	try {
-		exec(str(command), mainGlobal, mainGlobal);
+		exec(boost::python::str(command), mainGlobal, mainGlobal);
 	}
 	catch (error_already_set const*) {
 		std::string errorString = pyErrAsString();
@@ -62,8 +62,8 @@ void pythonRun(std::string command) {
 
 std::string pythonEval(std::string command) {
 	try {
-		object result = eval(str(command), mainGlobal, mainGlobal);
-		object resultStr = str(result);
+		object result = eval(boost::python::str(command), mainGlobal, mainGlobal);
+		object resultStr = boost::python::str(result);
 		return extract<std::string>(resultStr);
 	}
 	catch (error_already_set const*) {
@@ -92,6 +92,6 @@ std::string pyErrAsString() {
 		object format_exception(moduleTraceback.attr("format_exception"));
 		formatted_list = format_exception(handleException, handleValue, handleTraceback);
 	}
-	object formatted = str("\n").join(formatted_list);
+	object formatted = boost::python::str("\n").join(formatted_list);
 	return extract<std::string>(formatted);
 }

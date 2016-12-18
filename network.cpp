@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <string>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -11,7 +13,6 @@
 #include "network.h"
 #include "utils.h"
 #include "except.h"
-#include "request.h"
 
 #include "dbg.h"
 
@@ -86,43 +87,38 @@ Request getRequestFromSocket(int clientSocket) {
 }
 
 
-void respondWith(int clientSocket, const char* response);
+void respondWithBuffer(int clientSocket, const char* response);
 
 void respondRequestHttp10(int clientSocket) {
-	respondWith(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
+	respondWithBuffer(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
 }
 
 void respondRequest404(int clientSocket) {
-	respondWith(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
+	respondWithBuffer(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
 }
+
 
 void respondRequest200(int clientSocket) {
-	respondWith(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
+	respondWithBuffer(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
 }
 
-void respondWith(int clientSocket, const char* response) {
-	int len = strlen(response);
 
-	if (write(clientSocket, response, len) != len) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response."));
+void respondWithObject(int clientSocket, Response response) {
+	const char* responseData = response.getResponseData().c_str();
+
+	respondWithBuffer(clientSocket, responseData);
+}
+
+
+void respondWithBuffer(int clientSocket, const char* response) {
+	size_t lenLeft = strlen(response);
+	const size_t maxBlockSize = 65536;
+
+	while (lenLeft > 0) {
+		size_t lenCurrent = min(maxBlockSize, lenLeft);
+		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response."));
+		}
+		lenLeft -= lenCurrent;
 	}
-}
-
-Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string>& headers,
-                 const string& body) {
-	this->verb = verb;
-	this->url = url;
-	this->httpMajor = httpMajor;
-	this->httpMinor = httpMinor;
-	this->headers = map<string, string>(headers);
-
-	this->body = string(body);
-}
-
-const string* Request::getHeader(const string& name) {
-	auto iterFound = headers.find(name);
-	if (iterFound == headers.end()) {
-		return NULL;
-	}
-	return &(iterFound->second);
 }

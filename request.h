@@ -1,38 +1,58 @@
 #pragma once
 #include<string>
-#include"network.h"
+#include<map>
+#include"http.h"
 
 
-class RequestParser{
+class Request {
+private:
+	HttpVerb verb;
+	std::string url;
+	int httpMajor;
+	int httpMinor;
+	std::map<std::string, std::string> headers;
+	std::string body;
+
+public:
+	Request(HttpVerb verb, const std::string& url, int httpMajor, int httpMinor,
+	        const std::map<std::string, std::string>& headers, const std::string& body);
+
+	const std::string* getHeader(const std::string& name);
+};
+
+
+class RequestParser {
 	int state;
 	std::string workingBackBuffer;
 	char workingStr[65536];
 	unsigned int workingIdx;
-	
+
 	bool finished;
 	unsigned long long bodyLeft;
-	
+
 	std::string workingHeaderName;
 	std::string workingHeaderValue;
-	
+
 	std::string methodString;
 	std::string url;
 	std::string httpVersion;
 	std::map<std::string, std::string> headers;
 	std::string body;
-	
+
 	void saveHeader(std::string name, std::string value);
-	
+
 	bool consumeOne(char chr);
-	
+
 	int getBodyLength();
-	
+
 public:
 	RequestParser();
-	
+
 	void consume(char* data, int dataLen);
-	
-	bool isFinished() { return finished; }
-	
+
+	bool isFinished() {
+		return finished;
+	}
+
 	Request getRequest();
 };

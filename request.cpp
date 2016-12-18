@@ -6,6 +6,28 @@
 
 #include"dbg.h"
 
+using namespace std;
+
+
+Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string>& headers,
+                 const string& body) {
+	this->verb = verb;
+	this->url = url;
+	this->httpMajor = httpMajor;
+	this->httpMinor = httpMinor;
+	this->headers = map<string, string>(headers);
+
+	this->body = string(body);
+}
+
+const string* Request::getHeader(const string& name) {
+	auto iterFound = headers.find(name);
+	if (iterFound == headers.end()) {
+		return NULL;
+	}
+	return &(iterFound->second);
+}
+
 RequestParser::RequestParser() {
 	state = 0;
 	finished = false;
@@ -115,13 +137,13 @@ bool RequestParser::consumeOne(char chr) {
 
 
 int RequestParser::getBodyLength() {
-	auto foundHeader = headers.find(std::string("Content-Length"));
+	auto foundHeader = headers.find(string("Content-Length"));
 	if (foundHeader == headers.end()) {
 		return 0;
 	}
 	else {
 		size_t idx = 0;
-		int length = std::stoi(foundHeader->second, &idx, 10);
+		int length = stoi(foundHeader->second, &idx, 10);
 
 		if (idx != foundHeader->second.size()) {
 			BOOST_THROW_EXCEPTION(parseError() << stringInfo("Content-Length not int!"));
@@ -131,7 +153,7 @@ int RequestParser::getBodyLength() {
 	}
 }
 
-void RequestParser::saveHeader(std::string name, std::string value) {
+void RequestParser::saveHeader(string name, string value) {
 	auto foundName = headers.find(name);
 	if (foundName == headers.end()) {
 		headers.insert(make_pair(name, value));
@@ -154,18 +176,18 @@ void RequestParser::consume(char* data, int dataLen) {
 }
 
 
-bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
+bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor);
 
 Request RequestParser::getRequest() {
-	std::map<std::string, HttpVerb> stringVerbMapping = {
-		{std::string("GET"), HttpVerb::GET},
-		{std::string("HEAD"), HttpVerb::HEAD},
-		{std::string("POST"), HttpVerb::POST},
-		{std::string("PUT"), HttpVerb::PUT},
-		{std::string("DELETE"), HttpVerb::DELETE},
-		{std::string("CONNECT"), HttpVerb::CONNECT},
-		{std::string("OPTIONS"), HttpVerb::OPTIONS},
-		{std::string("TRACE"), HttpVerb::TRACE}
+	map<string, HttpVerb> stringVerbMapping = {
+		{string("GET"), HttpVerb::GET},
+		{string("HEAD"), HttpVerb::HEAD},
+		{string("POST"), HttpVerb::POST},
+		{string("PUT"), HttpVerb::PUT},
+		{string("DELETE"), HttpVerb::DELETE},
+		{string("CONNECT"), HttpVerb::CONNECT},
+		{string("OPTIONS"), HttpVerb::OPTIONS},
+		{string("TRACE"), HttpVerb::TRACE}
 	};
 
 	auto verbIt = stringVerbMapping.find(methodString);
@@ -184,14 +206,14 @@ Request RequestParser::getRequest() {
 	return Request(verb, url, httpMajor, httpMinor, headers, body);
 }
 
-bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
+bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
 	DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
 		DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
 		return false;
 	}
 
-	std::string versionPart = httpVersion.substr(strlen("HTTP/"));
+	string versionPart = httpVersion.substr(strlen("HTTP/"));
 	DBG_FMT("Version part: %1%", versionPart);
 
 	if (versionPart.size() != 3) {
@@ -200,13 +222,13 @@ bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
 	}
 
 	size_t idx = 0;
-	*httpMajor = std::stoi(versionPart, &idx, 10);
+	*httpMajor = stoi(versionPart, &idx, 10);
 	if (idx != 1 || versionPart[1] != '.') {
 		DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
 		        versionPart);
 		return false;
 	}
-	*httpMinor = std::stoi(versionPart.substr(2), &idx, 10);
+	*httpMinor = stoi(versionPart.substr(2), &idx, 10);
 	if (idx != 1) {
 		DBG_FMT("Version fail: %1%'s part %2% doesn't end with a single digit (idx = %3%)", httpVersion, versionPart, idx);
 		return false;

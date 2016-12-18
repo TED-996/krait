@@ -4,51 +4,31 @@
 
 #ifndef DBG_DISABLE
 
-	#ifdef DBG_ALL
+#ifdef DBG_ALL
 
-	#define DBG
-	#define DBG_FMT
+#define DBG
+#define DBG_FMT
 
-	#endif
+#endif
 
 
-	#ifdef DBG
+#ifdef DBG
 
-	#include<iostream>
+#include<iostream>
 
-	#undef DBG
-	#define DBG(message) std::cout << message << std::endl
+#undef DBG
+#define DBG(message) std::cout << message << std::endl
 
-	#endif
+#endif
 
-	#ifdef DBG_FMT
+#ifdef DBG_FMT
 
-	#include<iostream>
-	#include<boost/format.hpp>
-	
-	inline static std::string formatStringRecurse(boost::format& message)
-	{
-		return message.str();
-	}
-	
-	template <typename TValue, typename... TArgs>
-	std::string formatStringRecurse(boost::format& message, TValue&& arg, TArgs&&... args)
-	{
-		message % std::forward<TValue>(arg);
-		return formatStringRecurse(message, std::forward<TArgs>(args)...);
-	}
-	
-	template <typename... TArgs>
-	std::string formatString(const char* fmt, TArgs&&... args)
-	{
-		using namespace boost::io;
-		boost::format message(fmt);
-		return formatStringRecurse(message, std::forward<TArgs>(args)...);
-	}
+#include<iostream>
+#include "formatHelper.h"
 
-	#undef DBG_FMT
-	#define DBG_FMT(format, ...) std::cout << formatString(format, __VA_ARGS__) << std::endl
+#undef DBG_FMT
+#define DBG_FMT(format, ...) std::cout << formatString(format, __VA_ARGS__) << std::endl
 
-	#endif
+#endif
 
 #endif

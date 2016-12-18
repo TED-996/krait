@@ -23,7 +23,7 @@ list(REMOVE_ITEM SOURCE_FILES ${TEST_FILES})
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-FIND_PACKAGE(Boost COMPONENTS python unit_test_framework filesystem)
+FIND_PACKAGE(Boost COMPONENTS python unit_test_framework filesystem regex)
 IF(Boost_FOUND)
     INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}")
     SET(Boost_USE_STATIC_LIBS OFF)
