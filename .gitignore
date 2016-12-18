@@ -68,3 +68,4 @@ CTestTestfile.cmake
 ### Custom ###
 build/*
 tests/*
+*.orig
