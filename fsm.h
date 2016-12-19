@@ -20,7 +20,7 @@
 
 #define FsmEnd(state, workingIndex)\
         default: \
-            throw parseError() << stringInfo((boost::format("Bad state %1%!")% state).str());\
+            throw httpParseError() << stringInfo((boost::format("Bad state %1%!")% state).str());\
     }\
     (state) = stNext;\
     (workingIndex) = fsmWorkingIdx;\
@@ -131,5 +131,5 @@
 
 #define TransElseError()\
             else {\
-                throw parseError() << stringInfo((boost::format("Bad state %1%!") % stNext).str());\
+                throw httpParseError() << stringInfo((boost::format("Bad state %1%!") % stNext).str());\
             }

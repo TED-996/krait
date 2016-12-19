@@ -36,6 +36,11 @@
 },
 {
   "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build_tests.dir/server.cpp.o -c /home/ted/proiect/server.cpp",
+  "file": "/home/ted/proiect/server.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/main.cpp.o -c /home/ted/proiect/main.cpp",
   "file": "/home/ted/proiect/main.cpp"
 },
@@ -68,5 +73,10 @@
   "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/routes.cpp.o -c /home/ted/proiect/routes.cpp",
   "file": "/home/ted/proiect/routes.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/server.cpp.o -c /home/ted/proiect/server.cpp",
+  "file": "/home/ted/proiect/server.cpp"
 }
 ]

@@ -16,7 +16,7 @@ static object mainModule;
 std::string pyErrAsString();
 
 
-void initPython(std::string projectDir) {
+void pythonInit (std::string projectDir) {
 	Py_Initialize();
 
 	try {

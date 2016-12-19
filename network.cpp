@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 #include "network.h"
 #include "utils.h"
 #include "except.h"
@@ -19,7 +20,7 @@
 using namespace std;
 
 
-int getListenSocket(int port) {
+int getServerSocket(int port, bool setListen) {
 	sockaddr_in serverSockaddr;
 	memzero(serverSockaddr);
 
@@ -27,7 +28,7 @@ int getListenSocket(int port) {
 	serverSockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverSockaddr.sin_port = htons(port);
 
-	int sd = socket(AF_INET, SOCK_STREAM, 0);
+	int sd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sd == -1) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket!"));
 	}
@@ -36,24 +37,49 @@ int getListenSocket(int port) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not bind socket") << errcodeInfo(errno));
 	}
 
-	if (listen(sd, 1024) == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
-		                          errno));
+	if (setListen){
+		if (listen(sd, 1024) == -1) {
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
+		}
 	}
 
 	return sd;
 }
 
 
-int getNewClient(int listenerSocket) {
+void setSocketListen(int sd){
+	if (listen(sd, 1024) == -1) {
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
+	}
+}
+
+
+int getNewClient(int listenerSocket, int timeout) {
 	sockaddr_in clientSockaddr;
 	memzero(clientSockaddr);
+	
+	pollfd pfd;
+	pfd.fd = listenerSocket;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	
+	int pollResult = poll(&pfd, 1, timeout);
+	if (pollResult == -1){
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getNewClient: poll() failed") << errcodeInfo(errno));
+	}
+	if (pollResult == 0){
+		return -1;
+	}
 
 	socklen_t sockaddrLen = sizeof(clientSockaddr);
 	int client = accept(listenerSocket, (sockaddr*)&clientSockaddr, &sockaddrLen);
 
 	if (client < 0) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client"));
+		if (errno == EAGAIN || errno == EWOULDBLOCK){
+			return -1;
+		}
+		
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client") << errcodeInfo(errno));
 	}
 
 	return client;
@@ -67,8 +93,12 @@ void closeSocket(int clientSocket) {
 void printSocket(int clientSocket) {
 	char data[4096];
 	memzero(data);
-	size_t readBytes;
+	int readBytes;
 	while ((readBytes = read(clientSocket, data, 4095)) != 0) {
+		if (readBytes < 0){
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("printSocket: error at read().") << errcodeInfo(errno));
+		}
+		
 		DBG_FMT("read %1% bytes", readBytes);
 		printf("%s\n", data);
 	}
@@ -80,6 +110,10 @@ Request getRequestFromSocket(int clientSocket) {
 	int bytesRead;
 
 	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
+		if (bytesRead < 0){
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
+		}
+		
 		parser.consume(buffer, bytesRead);
 	}
 
@@ -117,7 +151,7 @@ void respondWithBuffer(int clientSocket, const char* response) {
 	while (lenLeft > 0) {
 		size_t lenCurrent = min(maxBlockSize, lenLeft);
 		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response."));
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfo(errno));
 		}
 		lenLeft -= lenCurrent;
 	}

@@ -18,7 +18,7 @@ public:
 	Route(boost::regex urlRegex, std::map<int, std::string> matchParameters, std::string file);
 	
 	
-	bool isMatch(std::string url, std::map<std::string, std::string>& outParams);
+	bool const isMatch(std::string url, std::map<std::string, std::string>& outParams);
 	
 	static Route getRoute(boost::property_tree::ptree routePtree);
 	static Route getDefaultRoute();
@@ -26,4 +26,4 @@ public:
 
 
 std::vector<Route> getRoutesFromFile(std::string filename);
-Route getRouteMatch(std::vector<Route>, std::map<std::string, std::string>& outParams);
+Route& getRouteMatch(std::vector<Route> routes, std::string url, std::map<std::string, std::string>& outParams);

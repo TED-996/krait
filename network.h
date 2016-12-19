@@ -7,8 +7,9 @@
 #include"response.h"
 
 
-int getListenSocket(int port);
-int getNewClient(int listenerSocket);
+int getServerSocket(int port, bool setListen);
+void setSocketListen(int sd);
+int getNewClient(int listenerSocket, int timeoutMs);
 void closeSocket(int clientSocket);
 
 void printSocket(int clientSocket);

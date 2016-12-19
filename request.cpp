@@ -39,7 +39,7 @@ RequestParser::RequestParser() {
 
 bool RequestParser::consumeOne(char chr) {
 	if (chr == '\0') {
-		BOOST_THROW_EXCEPTION(parseError() << stringInfo("Got null character!"));
+		BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("Got null character!"));
 	}
 
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
@@ -109,7 +109,7 @@ bool RequestParser::consumeOne(char chr) {
 	}
 	StatesNext(21) //First character of body
 	if (finished) {
-		BOOST_THROW_EXCEPTION(parseError() << stringInfo("Request already finished, but received data!"));
+		BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("Request already finished, but received data!"));
 	}
 	SaveStart()
 	TransAlways(22, true)
@@ -130,7 +130,7 @@ bool RequestParser::consumeOne(char chr) {
 		TransAlways(25, true)
 	}
 	StatesNext(25)
-	BOOST_THROW_EXCEPTION(parseError() << stringInfo("Request already finished, but received data!"));
+	BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("Request already finished, but received data!"));
 	StatesEnd()
 	FsmEnd(state, workingIdx)
 }
@@ -146,7 +146,7 @@ int RequestParser::getBodyLength() {
 		int length = stoi(foundHeader->second, &idx, 10);
 
 		if (idx != foundHeader->second.size()) {
-			BOOST_THROW_EXCEPTION(parseError() << stringInfo("Content-Length not int!"));
+			BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("Content-Length not int!"));
 		}
 
 		return length;
@@ -192,7 +192,7 @@ Request RequestParser::getRequest() {
 
 	auto verbIt = stringVerbMapping.find(methodString);
 	if (verbIt == stringVerbMapping.end()) {
-		BOOST_THROW_EXCEPTION(parseError() << stringInfo("HTTP method not recognized."));
+		BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("HTTP method not recognized."));
 	}
 	HttpVerb verb = verbIt->second;
 
@@ -200,7 +200,7 @@ Request RequestParser::getRequest() {
 	int httpMajor = 1;
 
 	if (!parseHttpVersion(httpVersion, &httpMajor, &httpMinor)) {
-		BOOST_THROW_EXCEPTION(parseError() << stringInfo("HTTP version not recognized."));
+		BOOST_THROW_EXCEPTION( httpParseError() << stringInfo("HTTP version not recognized."));
 	}
 
 	return Request(verb, url, httpMajor, httpMinor, headers, body);

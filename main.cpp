@@ -6,11 +6,11 @@
 int main(int argc, char* argv[]) {
 	printf("Waiting on port 8080: ");
 
-	int server = getListenSocket(8080);
+	int server = getServerSocket(8080, true);
 
 	printf("Waiting.\n");
 
-	int client = getNewClient(server);
+	int client = getNewClient(server, -1);
 
 	printf("Request got!\n");
 

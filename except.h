@@ -20,8 +20,10 @@ struct rootException : virtual boost::exception, virtual std::exception {
 struct syscallError: virtual rootException {};
 struct pythonError: virtual rootException {};
 struct networkError: virtual rootException {};
-struct parseError: virtual rootException {};
+struct httpParseError: virtual rootException {};
+struct routeParseError: virtual rootException {};
 struct routeError: virtual rootException {};
+struct serverError: virtual rootException{};
 
 struct notImplementedError: virtual rootException {};
 
