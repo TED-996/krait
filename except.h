@@ -23,7 +23,8 @@ struct networkError: virtual rootException {};
 struct httpParseError: virtual rootException {};
 struct routeParseError: virtual rootException {};
 struct routeError: virtual rootException {};
-struct serverError: virtual rootException{};
+struct notFoundError : virtual rootException {};
+struct serverError: virtual rootException {};
 
 struct notImplementedError: virtual rootException {};
 

@@ -31,6 +31,8 @@ public:
 	void addHeader(std::string name, std::string value);
 	void setHeader(std::string name, std::string value);
 	void removeHeader(std::string name);
+	
+	bool headerExists(std::string name);
 
 	std::string getResponseData();
 };

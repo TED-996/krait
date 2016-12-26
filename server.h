@@ -8,6 +8,7 @@
 #include"routes.h"
 #include"network.h"
 #include"pythonWorker.h"
+#include"response"
 
 class Server {
 	boost::filesystem::path serverRoot;
@@ -19,10 +20,16 @@ class Server {
 	void tryWaitFinishedForks();
 	
 	void serveClientStart(int clientSocket);
+	Response getResponseFromSource(std::string filename);
+	void addDefaultHeaders(Response& response);
+	Response getResponseFromSource(std::string filename, Request& request);
+	
+	std::string getSourceFromTarget(std::string target);
 	
 public:
 	Server(std::string serverRoot, int port);
 	~Server();
 	
 	void runServer();
+	void killChildren();
 };

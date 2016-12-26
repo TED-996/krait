@@ -10,6 +10,8 @@
 #define FsmStart(state_t, state, chr_t, chr, workingBuffer, workingSize, workingIndex, backBuffer) \
     state_t stCurrent = (state);\
     state_t stNext = (state);\
+    state_t* statePtr = (state_t*)&(state);\
+    unsigned int* fsmWorkingIdxPtr = (unsigned int*)&(workingIndex);\
     chr_t fsmChr = chr;\
     bool retVal = true;\
     chr_t* fsmWorkingBuffer = (workingBuffer);\
@@ -18,12 +20,12 @@
     std::string& fsmBackBuffer(backBuffer);\
     switch(stCurrent){
 
-#define FsmEnd(state, workingIndex)\
+#define FsmEnd()\
         default: \
             throw httpParseError() << stringInfo((boost::format("Bad state %1%!")% state).str());\
     }\
-    (state) = stNext;\
-    (workingIndex) = fsmWorkingIdx;\
+    *statePtr = stNext;\
+    *fsmWorkingIdxPtr = fsmWorkingIdx;\
     return retVal;
 
 

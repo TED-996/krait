@@ -17,7 +17,16 @@ public:
 	Request(HttpVerb verb, const std::string& url, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
 
-	const std::string* getHeader(const std::string& name);
+	const std::string* getHeader(const std::string& name) const;
+	
+	const HttpVerb getVerb() const {return verb;};
+	const std::string& getUrl() const {return url;}
+	const int getHttpMajor() const {return httpMajor;}
+	const int getHttpMinor() const {return httpMinor;}
+	const std::map<std::string, std::string>& getHeaders() const {return headers;}
+	const std::string& getBody() const {return body;}
+	
+	void setVerb(HttpVerb verb) {this->verb = verb;}
 };
 
 

@@ -7,20 +7,28 @@ using namespace boost;
 using namespace boost::property_tree;
 
 
-Route::Route(regex urlRegex, map<int, string> matchParameters, string targetFilename){
+Route::Route(HttpVerb verb, regex urlRegex, map<int, string> matchParameters, string targetFilename){
+	this->verb = verb;
 	this->urlRegex = urlRegex;
 	this->matchParameters = matchParameters;
 	this->targetFilename = targetFilename;
 	this->defaultRoute = false;
 }
 
-Route::Route(){
+Route::Route(HttpVerb verb, string targetFilename){
 	this->defaultRoute = true;
+	
+	this->verb = verb;
+	this->targetFilename = targetFilename;
+	this->matchParameters = map<int, string>();
 }
 
-bool const Route::isMatch(string url, map<string, string>& outParams) {
+bool Route::isMatch(HttpVerb verb, string url, map<string, string>& outParams) {
 	outParams.clear();
 	
+	if (this->verb != HttpVerb::ANY && verb != this->verb){
+		return false;
+	}
 	if (defaultRoute){
 		return true;
 	}
@@ -47,6 +55,7 @@ bool const Route::isMatch(string url, map<string, string>& outParams) {
 
 Route Route::getRoute(ptree routePtree){
 	/* 	<route>
+	 * 		<verb>...</verb>
 	 * 		<regex>...</regex>
 	 * 		<captures>
 	 * 			<capture idx="..." identifier="..."/>
@@ -61,10 +70,31 @@ Route Route::getRoute(ptree routePtree){
 	 * 	<route default="true"/>
 	 */
 	
-	optional<string> defaultValue = routePtree.get_optional<string>("<xmlattr>.default");
-	if (defaultValue){
-		if (*defaultValue == "true"){
-			return getDefaultRoute();
+	map<string, HttpVerb> stringVerbMapping = {
+		{string("ANY"), HttpVerb::ANY},
+		{string("GET"), HttpVerb::GET},
+		{string("HEAD"), HttpVerb::HEAD},
+		{string("POST"), HttpVerb::POST},
+		{string("PUT"), HttpVerb::PUT},
+		{string("DELETE"), HttpVerb::DELETE},
+		{string("CONNECT"), HttpVerb::CONNECT},
+		{string("OPTIONS"), HttpVerb::OPTIONS},
+		{string("TRACE"), HttpVerb::TRACE}
+	};
+	
+	string verbStr = routePtree.get<string>("route.verb", "GET");
+	
+	auto verbValIt = stringVerbMapping.find(verbStr);
+	if (verbValIt == stringVerbMapping.end()){
+		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: HTTP verb %1% not recognized.", verbStr));
+	}
+	
+	string target = routePtree.get<string>("route.target", "$default$");
+	
+	string defaultValue = routePtree.get<string>("<xmlattr>.default", "false");
+	if (defaultValue != "false"){
+		if (defaultValue == "true"){
+			return Route(verbValIt->second, target);
 		}
 		else{
 			BOOST_THROW_EXCEPTION(routeParseError() << stringInfo("Error: Found route with attribute 'default', but value is not 'true'."));
@@ -72,7 +102,6 @@ Route Route::getRoute(ptree routePtree){
 	}
 	try{
 		string urlRegex = routePtree.get<string>("route.regex");
-		string target = routePtree.get<string>("l.target");
 		
 		optional<ptree> captures = routePtree.get_child("route.captures");
 		map<int, string> matchParameters;
@@ -88,7 +117,7 @@ Route Route::getRoute(ptree routePtree){
 			}
 		}
 		
-		return Route(regex(urlRegex), matchParameters, target);
+		return Route(verbValIt->second, regex(urlRegex), matchParameters, target);
 	}
 	catch(ptree_bad_path& ex){
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not find route parameter '%1%'.", ex.path<string>()));
@@ -99,9 +128,6 @@ Route Route::getRoute(ptree routePtree){
 	
 }
 
-Route Route::getDefaultRoute(){
-	return Route();
-}
 
 vector<Route> getRoutesFromFile(string filename){
 	/*	<routes>
@@ -137,9 +163,9 @@ vector<Route> getRoutesFromFile(string filename){
 	return results;
 }
 
-Route& getRouteMatch(vector<Route> routes, string url, map<string, string>& outParams){
+Route& getRouteMatch(vector<Route> routes, HttpVerb verb, string url, map<string, string>& outParams){
 	for (Route& route : routes){
-		if (route.isMatch(url, outParams)){
+		if (route.isMatch(verb, url, outParams)){
 			return route;
 		}
 	}
