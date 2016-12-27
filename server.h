@@ -8,13 +8,18 @@
 #include"routes.h"
 #include"network.h"
 #include"pythonWorker.h"
-#include"response"
+#include"response.h"
+#include"logger.h"
+
 
 class Server {
 	boost::filesystem::path serverRoot;
 	std::vector<Route> routes;
 	int serverSocket;
 	std::unordered_set<int> pids;
+	
+	LoggerIn infoLogger;
+	LoggerIn errLogger;
 	
 	void tryAcceptConnection();
 	void tryWaitFinishedForks();
@@ -27,7 +32,7 @@ class Server {
 	std::string getSourceFromTarget(std::string target);
 	
 public:
-	Server(std::string serverRoot, int port);
+	Server(std::string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger);
 	~Server();
 	
 	void runServer();

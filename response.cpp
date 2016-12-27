@@ -84,6 +84,18 @@ string Response::getResponseData() {
 }
 
 
+bool Response::headerExists(string name){
+	auto headerIt = headers.find(name);
+
+	if (headerIt == headers.end()) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+
 string getStatusReason(int statusCode) {
 	auto it = statusReasons.find(statusCode);
 

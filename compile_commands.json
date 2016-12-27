@@ -11,6 +11,11 @@
 },
 {
   "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build_tests.dir/logger.cpp.o -c /home/ted/proiect/logger.cpp",
+  "file": "/home/ted/proiect/logger.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build_tests.dir/network.cpp.o -c /home/ted/proiect/network.cpp",
   "file": "/home/ted/proiect/network.cpp"
 },
@@ -53,6 +58,11 @@
   "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/http.cpp.o -c /home/ted/proiect/http.cpp",
   "file": "/home/ted/proiect/http.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  -DNDEBUG -g -fwrapv -O2 -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/logger.cpp.o -c /home/ted/proiect/logger.cpp",
+  "file": "/home/ted/proiect/logger.cpp"
 },
 {
   "directory": "/home/ted/proiect",
