@@ -2,6 +2,9 @@
 #include"routes.h"
 #include"except.h"
 
+#define DBG_DISABLE
+#include"dbg.h"
+
 using namespace std;
 using namespace boost;
 using namespace boost::property_tree;
@@ -82,16 +85,20 @@ Route Route::getRoute(ptree routePtree){
 		{string("TRACE"), HttpVerb::TRACE}
 	};
 	
-	string verbStr = routePtree.get<string>("route.verb", "GET");
+	string verbStr = routePtree.get<string>("verb", "GET");
+	DBG_FMT("got verb %1%", verbStr);
 	
 	auto verbValIt = stringVerbMapping.find(verbStr);
 	if (verbValIt == stringVerbMapping.end()){
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: HTTP verb %1% not recognized.", verbStr));
 	}
 	
-	string target = routePtree.get<string>("route.target", "$default$");
+	string target = routePtree.get<string>("target", "$default$");
+	DBG_FMT("got target %1%", target);
 	
 	string defaultValue = routePtree.get<string>("<xmlattr>.default", "false");
+	DBG_FMT("got default %1%", defaultValue);
+	
 	if (defaultValue != "false"){
 		if (defaultValue == "true"){
 			return Route(verbValIt->second, target);
@@ -101,10 +108,12 @@ Route Route::getRoute(ptree routePtree){
 		}
 	}
 	try{
-		string urlRegex = routePtree.get<string>("route.regex");
+		string urlRegex = routePtree.get<string>("regex");
+		DBG_FMT("got url %1%", urlRegex);
 		
-		optional<ptree> captures = routePtree.get_child("route.captures");
+		auto captures = routePtree.get_child_optional("captures");
 		map<int, string> matchParameters;
+		DBG_FMT("got captures: %1%", bool(captures));
 		if (captures){
 			for (ptree::value_type const& cap : *captures){
 				if (cap.first != "capture"){
@@ -117,6 +126,8 @@ Route Route::getRoute(ptree routePtree){
 			}
 		}
 		
+		DBG("got route okay");
+		
 		return Route(verbValIt->second, regex(urlRegex), matchParameters, target);
 	}
 	catch(ptree_bad_path& ex){
@@ -125,7 +136,6 @@ Route Route::getRoute(ptree routePtree){
 	catch(ptree_bad_data& ex){
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not convert data '%1%' to the expected type.", ex.data<string>()));
 	}
-	
 }
 
 
@@ -144,12 +154,16 @@ vector<Route> getRoutesFromFile(string filename){
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error parsing routes file '%1%. Additional data:\n%2%", filename, ex.what()));
 	}
 	
-	if (routesRoot.get_value<string>() != "routes"){
-		BOOST_THROW_EXCEPTION(routeParseError() << stringInfo("Error parsing routes: root is not <routes>."));
+	try{
+		routesRoot = routesRoot.get_child("routes");
+	}
+	catch(ptree_error&){
+		BOOST_THROW_EXCEPTION(routeParseError() << stringInfo("Error parsing routes: root is not <routes>"));
 	}
 	
 	vector<Route> results;
 	for (ptree::value_type const& rt : routesRoot){
+		DBG("one route");
 		if (rt.first != "route"){
 			BOOST_THROW_EXCEPTION(routeParseError() << stringInfo("Error parsing routes:: one of <routes>'s children is not <route>."));
 		}

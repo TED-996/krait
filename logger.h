@@ -11,7 +11,7 @@ public:
 	LoggerOut(int pipeIn);
 	LoggerOut(int pipeIn, std::string filename);
 	
-	void tick(int timeoutMs);
+	bool tick(int timeoutMs);
 	
 	void close();
 };

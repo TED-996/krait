@@ -5,6 +5,7 @@
 #include "request.h"
 #include "logger.h"
 #include "server.h"
+#include "dbg.h"
 
 
 int main(int argc, char* argv[]) {
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]) {
 		exit(10);
 	}
 	
-	printf("Forking\n");
+	DBG("Forking");
 	pid_t pid = fork();
 	
 	if (pid == -1){
@@ -55,7 +56,9 @@ int main(int argc, char* argv[]) {
 	close(errPipe[0]);
 	close(infoPipe[0]);
 	
-	Server server(".", 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
+	DBG("Pre server ctor");
+	Server server("testserver", 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
+	DBG("post server ctor");
 	server.runServer();
 	
 	return 0;

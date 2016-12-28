@@ -4,6 +4,7 @@
 #include<utility>
 #include <boost/algorithm/string/predicate.hpp>
 
+#define DBG_DISABLE
 #include"dbg.h"
 
 using namespace std;

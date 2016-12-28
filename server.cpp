@@ -3,9 +3,13 @@
 #include<signal.h>
 #include<algorithm>
 #include<fstream>
+#include<cctype>
+#include<vector>
+#include"utils.h"
 #include"server.h"
 #include"except.h"
 #include"pythonWorker.h"
+#include"dbg.h"
 
 using namespace std;
 using namespace boost;
@@ -15,8 +19,13 @@ using namespace boost::filesystem;
 Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger)
 	: infoLogger(infoLogger), errLogger(errLogger) {
 	this->serverRoot = path(serverRoot);
-	this->routes = getRoutesFromFile((this->serverRoot / "config" / "routes.xml").string());
+	this->routes = getRoutesFromFile((this->serverRoot / ".config" / "routes.xml").string());
+	
+	DBG("routes got");
+	
 	this->serverSocket = getServerSocket(port, false);
+	
+	DBG("server socket got");
 	
 	pythonInit(serverRoot);
 	
@@ -71,6 +80,7 @@ void Server::tryAcceptConnection(){
 		serveClientStart(clientSocket);//TODO: connect stderr?
 		exit(255); //The function above should call exit()!
 	}
+	closeSocket(clientSocket);
 	
 	pids.insert((int)pid);
 }
@@ -113,6 +123,7 @@ void Server::serveClientStart(int clientSocket){
 	
 	try{
 		Request clientRequest = getRequestFromSocket(clientSocket);
+		DBG_FMT("URL is %1%", clientRequest.getUrl());
 		
 		map<string, string> params;
 		Route route = getRouteMatch(routes, clientRequest.getVerb(), clientRequest.getUrl(), params);
@@ -136,6 +147,8 @@ void Server::serveClientStart(int clientSocket){
 		pythonSetGlobal("resp_headers", map<string, string>());
 		
 		resp = getResponseFromSource(sourceFile, clientRequest);
+		
+		DBG_FMT("Response object for client on URL %1% done.", clientRequest.getUrl());
 	}
 	catch(notFoundError&){
 		resp = Response(1, 1, 404, unordered_map<string, string>(), string());
@@ -150,10 +163,11 @@ void Server::serveClientStart(int clientSocket){
 	}
 	
 	respondWithObject(clientSocket, resp);
-	
+
 	closeSocket(clientSocket);
 	
 	//TODO: recycle connection if necessary
+	DBG("AAND sent and socket closed.");
 	
 	exit(0);
 }
@@ -197,12 +211,17 @@ string replaceParams(string target, map<string, string> params) {
 
 
 string getHtmlSource(string filename);
+string getEndTag(string htmlCode, int startIdx);
+string pythonPrepareStr(string pyCode);
+string htmlEscape (string htmlCode);
 
 Response Server::getResponseFromSource(string filename, Request& request){
 	//HTML:	<@ @> => echo
 	//		<! !> => run
+	//		<@! @!> => run, don't escape
 
 	string htmlSource = getHtmlSource(filename);
+	//DBG("Html source got");
 	
 	auto oldIt = htmlSource.begin();
 	auto it = find(oldIt, htmlSource.end(), '<');
@@ -212,20 +231,23 @@ Response Server::getResponseFromSource(string filename, Request& request){
 	while(it != htmlSource.end()){
 		responseData += string(oldIt, it);
 		
-		if (it + 1 != htmlSource.end()){
-			char tagFirstChr = it[1];
-			char startIdx = it - htmlSource.begin();
-			char endTag[3] = "?>";
-			if ( tagFirstChr == '@' || tagFirstChr == '!'){ //TODO: implement if/while? for?
-				endTag[0] = tagFirstChr;
+		if (it != htmlSource.end() && it + 1 != htmlSource.end()){
+			//DBG_FMT("in tag; idx= %1%", it - htmlSource.begin());
+			int startIdx = it - htmlSource.begin();
+			string endTag = getEndTag(htmlSource, startIdx);
+			if ( endTag == "@>" || endTag == "@!>" || endTag == "!>"){ //TODO: implement if/while? for?
 				int endIdx = htmlSource.find(endTag, startIdx);
 				if (endIdx == (int)string::npos){
 					BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Error: python tag started at position %1% doesn't end.", startIdx));
 				}
 				
-				string pythonCode = string(it + 2, htmlSource.begin() + endIdx);
+				string pythonCode = pythonPrepareStr(string(it + endTag.length(), htmlSource.begin() + endIdx));
 				
-				if (tagFirstChr == '@'){
+				if (endTag == "@>"){
+					string evalResult = pythonEval(pythonCode);
+					responseData += htmlEscape (evalResult);
+				}
+				else if (endTag == "@!>"){
 					string evalResult = pythonEval(pythonCode);
 					responseData += evalResult;
 				}
@@ -233,12 +255,12 @@ Response Server::getResponseFromSource(string filename, Request& request){
 					pythonRun(pythonCode);
 				}
 				
-				it = htmlSource.begin() + endIdx + 2;
+				it = htmlSource.begin() + endIdx + endTag.length();
 			}
 		}
 		
 		oldIt = it;
-		it = find(oldIt, htmlSource.end(), '<');
+		it = find(oldIt + 1, htmlSource.end(), '<');
 	}
 	
 	responseData += string(oldIt, it);
@@ -280,3 +302,108 @@ string readFromFile(string filename){
 	
 	return fileData.str();
 }
+
+
+string getEndTag(string htmlCode, int startIdx){
+	int htmlLen = htmlCode.length();
+	if (htmlCode[startIdx] != '<'){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Error: tried to find closing tag, but this doesn't start with a '<', but a '%1%'", htmlCode[startIdx]));
+	}
+
+	int idx = startIdx + 1;
+	while(idx < htmlLen && !isspace(htmlCode[idx]) && htmlCode[idx] != '>' && htmlCode[idx] != '/'){
+		idx++;
+	}
+	
+	string endTag = htmlCode.substr(startIdx + 1, idx - (startIdx + 1)) + '>';
+	//DBG(endTag);
+	return endTag;
+}
+
+
+//Dedent string
+string pythonPrepareStr(string pyCode){
+	string result = pyCode;
+	//First remove first line if whitespace.
+	
+	unsigned int idx;
+	bool foundNewline = false;
+	for (idx = 0; idx < result.length(); idx++){
+		if (foundNewline && result[idx] != '\r' && result[idx] != '\n'){
+			break;
+		}
+		if (!isspace(result[idx])){
+			idx = 0;
+			break;
+		}
+		if ( result[idx] == '\n'){
+			foundNewline = true;
+		}
+	}
+	unsigned int codeStartIdx = idx;
+	
+	if (codeStartIdx == result.length()){
+		return "";
+	}
+	
+	char indentChr = result[codeStartIdx];
+	for (idx = codeStartIdx; idx < result.length(); idx++){
+		if ( result[idx] != indentChr){
+			break;
+		}
+	}
+	int indentRemove = idx - codeStartIdx;
+	if (indentRemove == 0){
+		return pyCode;
+	}
+	//DBG_FMT("Indent is %1%", indentRemove);
+	
+	for (idx = codeStartIdx; idx < result.length(); idx++){
+		int idx2;
+		for (idx2 = 0; idx2 < indentRemove; idx2++){
+			if (result[idx + idx2] == '\r'){
+				continue;
+			}
+			if (result[idx + idx2] == '\n'){
+				//DBG("Premature break in dedent");
+				break;
+			}
+			if ( result[idx + idx2] != indentChr){
+				BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Unexpected character '%c' (\\x%02x) at pos %d in indent before Python code; expected '%c' (\\x%02x)",
+																			result[idx + idx2], (int) result[idx + idx2], idx + idx2, indentChr, (int)indentChr));
+			}
+		}
+		result.erase(idx, idx2);
+		for (; idx < result.length(); idx++){
+			if ( result[idx] == '\n'){
+				break;
+			}
+		}
+	}
+	
+	return result;
+}
+
+
+string htmlEscape (string htmlCode){
+	string result;
+	
+	const char* replacements[256];
+	memzero(replacements);
+	replacements[(int)'&'] = "&amp;";
+	replacements[(int)'<'] = "&lt";
+	replacements[(int)'>'] = "&gt";
+	replacements[(int)'"'] = "&quot;";
+	replacements[(int)'\''] = "&#39";
+	
+	unsigned int oldIdx = 0;
+	for (unsigned int idx = 0; idx < htmlCode.length(); idx++){
+		if (replacements[(int)htmlCode[idx]] != NULL){
+			result += htmlCode.substr(oldIdx, idx - oldIdx) + replacements[(int)htmlCode[idx]];
+			oldIdx = idx + 1;
+		}
+	}
+	
+	return result + htmlCode.substr(oldIdx, htmlCode.length() - oldIdx);
+}
+

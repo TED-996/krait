@@ -2,6 +2,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/assign.hpp>
 #include "response.h"
+#include "dbg.h"
 
 using namespace std;
 using namespace boost;
@@ -68,19 +69,22 @@ void Response::removeHeader(string name) {
 string getStatusReason(int statusCode);
 
 string Response::getResponseData() {
-	string statusLine = (format("HTTP%1%/%2% %3% %4%\r\n") % httpMajor % httpMinor % statusCode % getStatusReason(
+	string statusLine = (format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(
 	                         statusCode)).str();
 	vector<string> headerStrings;
 
-	format headerFormat = format("%1%: %2%\r\n");
+	format headerFormat = format("%1%: %2%");
 	for (auto header : headers) {
 		headerStrings.push_back((format(headerFormat) % header.first % header.second).str());
 	}
-	headerStrings.push_back(string("\r\n"));
+	headerStrings.push_back(string());
 
 	string headersAll = algorithm::join(headerStrings, "\r\n");
 
-	return statusLine + headersAll + body;
+	string result = statusLine + "\r\n" + headersAll + "\r\n" + body;
+	DBG_FMT("HTTP response:\n%1%", result);
+	
+	return result;
 }
 
 

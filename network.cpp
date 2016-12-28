@@ -121,31 +121,37 @@ Request getRequestFromSocket(int clientSocket) {
 }
 
 
-void respondWithBuffer(int clientSocket, const char* response);
+void respondWithCString (int clientSocket, const char* response);
+void respondWithBuffer (int clientSocket, const char* response, size_t size);
 
 void respondRequestHttp10(int clientSocket) {
-	respondWithBuffer(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
+	respondWithCString (clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
 }
 
 void respondRequest404(int clientSocket) {
-	respondWithBuffer(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
+	respondWithCString (clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
 }
 
 
 void respondRequest200(int clientSocket) {
-	respondWithBuffer(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
+	respondWithCString (clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
 }
 
 
 void respondWithObject(int clientSocket, Response response) {
-	const char* responseData = response.getResponseData().c_str();
+	string responseData = response.getResponseData();
 
-	respondWithBuffer(clientSocket, responseData);
+	respondWithBuffer (clientSocket, responseData.c_str(), responseData.length());
 }
 
 
-void respondWithBuffer(int clientSocket, const char* response) {
-	size_t lenLeft = strlen(response);
+void respondWithCString (int clientSocket, const char* response) {
+	respondWithBuffer(clientSocket, response, strlen(response));
+}
+
+
+void respondWithBuffer(int clientSocket, const char* response, size_t size){
+	size_t lenLeft = size;
 	const size_t maxBlockSize = 65536;
 
 	while (lenLeft > 0) {
@@ -153,6 +159,11 @@ void respondWithBuffer(int clientSocket, const char* response) {
 		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfo(errno));
 		}
+		response += lenCurrent;
 		lenLeft -= lenCurrent;
 	}
 }
+
+
+
+

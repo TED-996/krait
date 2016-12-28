@@ -19,7 +19,7 @@ LoggerOut::LoggerOut (int pipeIn, string filename) : outfile(filename) {
 }
 
 
-void LoggerOut::tick(int timeoutMs) {
+bool LoggerOut::tick(int timeoutMs) {
 	auto start = thread_clock::now();
 	thread_clock::duration limit = milliseconds(timeoutMs);
 	
@@ -43,6 +43,9 @@ void LoggerOut::tick(int timeoutMs) {
 				//Error... ignore for now. Other than that, WHY?
 				continue;
 			}
+			if (bytesRead == 0){
+				return false;
+			}
 			if (outfile){
 				outfile.write(buffer, bytesRead);
 				written = true;
@@ -57,6 +60,8 @@ void LoggerOut::tick(int timeoutMs) {
 	if (written && outfile){
 		outfile.flush();
 	}
+	
+	return true;
 }
 
 
@@ -99,8 +104,14 @@ void LoggerIn::close(){
 
 
 void autoLogger(LoggerOut& log1, LoggerOut& log2){
-	while(true){
-		log1.tick(500);
-		log2.tick(500);
+	bool log1Ok = true;
+	bool log2Ok = true;
+	
+	while(log1Ok && log2Ok){
+		log1Ok = log1Ok && log1.tick(500); //smart. short-circuits ftw
+		log2Ok = log2Ok && log2.tick(500);
 	}
+	
+	log1.close();
+	log2.close();
 }
