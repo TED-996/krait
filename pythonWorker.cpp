@@ -120,7 +120,7 @@ string pythonEval(string command) {
 	DBG("in pythonEval()");
 	try {
 		object result = eval(bp::str(command), mainGlobal, mainGlobal);
-		object resultStr = bp::str(result);
+		bp::str resultStr(result);
 		return extract<string>(resultStr);
 	}
 	catch (error_already_set const&) {
@@ -131,6 +131,21 @@ string pythonEval(string command) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
+bool pythonTest(std::string condition){
+	try{
+		object result = eval(bp::str(condition), mainGlobal, mainGlobal);
+		return (bool)result;
+	}
+	catch(error_already_set const&){
+		DBG("Python error in pythonTest()!");
+		
+		string errorString = pyErrAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+}
+
 
 string pyErrAsString() {
 	DBG("in pyErrAsString()");

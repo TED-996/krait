@@ -7,7 +7,7 @@
 // #include"path_tests.cpp"
 // #include"python_tests.cpp"
 
-#include"python_worker.h"
+#include"pythonWorker.h"
 #include"except.h"
 
 using namespace std;
@@ -18,14 +18,15 @@ BOOST_AUTO_TEST_CASE(funcs_python) {
 	try {
 		cout << "\nTesting python:" << endl;
 
-		initPython("/home/ted/proiect/tests/server");
+		pythonInit("/home/ted/proiect/tests/server");
 		cout << "Python inited." << endl;
 
-		pythonRun(string("abc = [1, '2', 3, ('a', 'b'), {'c':'d'}]"));
+		pythonRun("abc = [1, '2', 3, ('a', 'b'), {'c':'d'}]");
 
 		cout << "Run called" << endl;
 
-		cout << pythonEval(string("abc")) << '\n';
+		cout << pythonEval("abc") << '\n';
+		cout << pythonTest("True") << ' ' << pythonTest("'abc'") << ' ' << pythonTest("0") << ' ' << pythonTest("False") << endl;
 	}
 	catch (pythonError& err) {
 		cout << "caught error!" << endl;

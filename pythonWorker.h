@@ -8,6 +8,7 @@ void pythonInit(std::string projectDir);
 void pythonReset(std::string projectDir);
 void pythonRun(std::string command);
 std::string pythonEval(std::string command);
+bool pythonTest(std::string condition);
 
 void pythonSetGlobal(std::string name, std::string value);
 void pythonSetGlobal(std::string name, std::map<std::string, std::string> value);
