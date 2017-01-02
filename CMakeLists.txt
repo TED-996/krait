@@ -43,6 +43,8 @@ add_custom_command(TARGET build PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR})
 add_custom_command(TARGET build POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${BUILD_DIR}/py)
+add_custom_command(TARGET build POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 
@@ -54,4 +56,6 @@ add_custom_command(TARGET build_tests PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_DIR})
 add_custom_command(TARGET build_tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${TEST_DIR}/py)
+add_custom_command(TARGET build POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 

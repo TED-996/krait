@@ -5,11 +5,14 @@
 #include<fstream>
 #include<cctype>
 #include<vector>
+#include<boost/filesystem.hpp>
+#include<boost/algorithm/string.hpp>
 #include"utils.h"
 #include"server.h"
 #include"except.h"
 #include"pythonWorker.h"
 #include"dbg.h"
+#include "path.h"
 
 using namespace std;
 using namespace boost;
@@ -30,6 +33,8 @@ Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLog
 	pythonInit(serverRoot);
 	
 	infoLogger.log("Server initialized.");
+	
+	loadContentTypeList();
 }
 
 
@@ -210,7 +215,6 @@ string replaceParams(string target, map<string, string> params) {
 }
 
 
-string getHtmlSource(string filename);
 string getEndTag(string htmlCode, int startIdx);
 string pythonPrepareStr(string pyCode);
 string htmlEscape (string htmlCode);
@@ -219,78 +223,109 @@ Response Server::getResponseFromSource(string filename, Request& request){
 	//HTML:	<@ @> => echo
 	//		<! !> => run
 	//		<@! @!> => run, don't escape
-
+	filename = expandFilename(filename);
+	
 	string htmlSource = getHtmlSource(filename);
-	//DBG("Html source got");
 	
-	auto oldIt = htmlSource.begin();
-	auto it = find(oldIt, htmlSource.end(), '<');
-	string responseData;
-	responseData.reserve(htmlSource.length());
-	
-	while(it != htmlSource.end()){
-		responseData += string(oldIt, it);
+	if (!boost::algorithm::ends_with(filename, ".html")){
+		Response result(1, 1, 200, unordered_map<string, string>{
+			{"Content-Type", getContentType(filename)}
+		}, htmlSource);
+		addDefaultHeaders(result);
+		return result;
+	}
+	else{
+		//DBG("Html source got");
 		
-		if (it != htmlSource.end() && it + 1 != htmlSource.end()){
-			//DBG_FMT("in tag; idx= %1%", it - htmlSource.begin());
-			int startIdx = it - htmlSource.begin();
-			string endTag = getEndTag(htmlSource, startIdx);
-			if ( endTag == "@>" || endTag == "@!>" || endTag == "!>"){ //TODO: implement if/while? for?
-				int endIdx = htmlSource.find(endTag, startIdx);
-				if (endIdx == (int)string::npos){
-					BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Error: python tag started at position %1% doesn't end.", startIdx));
+		auto oldIt = htmlSource.begin();
+		auto it = find(oldIt, htmlSource.end(), '<');
+		string responseData;
+		responseData.reserve(htmlSource.length());
+		
+		while(it != htmlSource.end()){
+			responseData += string(oldIt, it);
+			
+			if (it != htmlSource.end() && it + 1 != htmlSource.end()){
+				//DBG_FMT("in tag; idx= %1%", it - htmlSource.begin());
+				int startIdx = it - htmlSource.begin();
+				string endTag = getEndTag(htmlSource, startIdx);
+				if ( endTag == "@>" || endTag == "@!>" || endTag == "!>"){ //TODO: implement if/while? for?
+					int endIdx = htmlSource.find(endTag, startIdx);
+					if (endIdx == (int)string::npos){
+						BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Error: python tag started at position %1% doesn't end.", startIdx));
+					}
+					
+					string pythonCode = pythonPrepareStr(string(it + endTag.length(), htmlSource.begin() + endIdx));
+					
+					if (endTag == "@>"){
+						string evalResult = pythonEval(pythonCode);
+						responseData += htmlEscape (evalResult);
+					}
+					else if (endTag == "@!>"){
+						string evalResult = pythonEval(pythonCode);
+						responseData += evalResult;
+					}
+					else{
+						pythonRun(pythonCode);
+					}
+					
+					it = htmlSource.begin() + endIdx + endTag.length();
 				}
-				
-				string pythonCode = pythonPrepareStr(string(it + endTag.length(), htmlSource.begin() + endIdx));
-				
-				if (endTag == "@>"){
-					string evalResult = pythonEval(pythonCode);
-					responseData += htmlEscape (evalResult);
-				}
-				else if (endTag == "@!>"){
-					string evalResult = pythonEval(pythonCode);
-					responseData += evalResult;
-				}
-				else{
-					pythonRun(pythonCode);
-				}
-				
-				it = htmlSource.begin() + endIdx + endTag.length();
 			}
+			
+			oldIt = it;
+			it = find(oldIt + 1, htmlSource.end(), '<');
 		}
 		
-		oldIt = it;
-		it = find(oldIt + 1, htmlSource.end(), '<');
+		responseData += string(oldIt, it);
+		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
+		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
+		Response result(1, 1, 200, headers, responseData);
+		addDefaultHeaders(result);
+		return result;
 	}
-	
-	responseData += string(oldIt, it);
-	map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
-	unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-	Response result(1, 1, 200, headers, responseData);
-	addDefaultHeaders(result);
-	return result;
 }
 
 
-void Server::addDefaultHeaders(Response& response){
-	if (!response.headerExists("Content-Type")){
-		response.setHeader("Content-Type", "text/html; charset=ISO-8859-8");
+string Server::expandFilename(string filename){
+	if (filesystem::is_directory(filename)){
+		DBG("Converting to directory automatically");
+		filename = (filesystem::path(filename) / "index.html").string();
 	}
-	response.setHeader("Connection", "close");
+	if (pathBlocked(filename)){
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
+	}
+	if (!filesystem::exists(filename) && filesystem::exists(filename + ".html")){
+		DBG("Adding .html automatically");
+		filename += ".html";
+	}
+	return filename;
 }
 
 
 string readFromFile(string filename);
 
-string getHtmlSource(string filename){
+string Server::getHtmlSource(string filename){
 	//TODO: some caching maybe?
 	
 	return readFromFile(filename);
 }
 
 
+bool Server::pathBlocked(string filename){
+	boost::filesystem::path filePath(filename);
+	for (auto& part : filePath){
+		if (part.c_str()[0] == '.'){
+			DBG_FMT("BANNED because of part %1%", part.c_str());
+			return true;
+		}
+	}
+	return false;
+}
+
+
 string readFromFile(string filename){
-	ifstream fileIn(filename, ios::in | ios::binary);
+	std::ifstream fileIn(filename, ios::in | ios::binary);
 	
 	if (!fileIn){
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
@@ -407,3 +442,48 @@ string htmlEscape (string htmlCode){
 	return result + htmlCode.substr(oldIdx, htmlCode.length() - oldIdx);
 }
 
+
+void Server::addDefaultHeaders(Response& response){
+	if (!response.headerExists("Content-Type")){
+		response.setHeader("Content-Type", "text/html; charset=ISO-8859-8");
+	}
+	response.setHeader("Connection", "close");
+}
+
+
+string Server::getContentType(string filename){
+	filesystem::path filePath(filename);
+	string extension = filePath.extension().string();
+
+	DBG_FMT("Extension: %1%", extension);
+	
+	auto it = contentTypeByExtension.find(extension);
+	if (it == contentTypeByExtension.end()){
+		return "application/octet-stream";
+	}
+	else{
+		return it->second;
+	}
+	
+}
+
+
+void Server::loadContentTypeList() {
+	filesystem::path contentFilePath = getExecRoot() / "globals" / "mime.types";
+	std::ifstream mimeFile(contentFilePath.string());
+	
+	std::string line;
+	while(getline(mimeFile, line)){
+		vector<string> lineItems;
+		algorithm::split(lineItems, line, is_any_of(" \t\r\n"), token_compress_on);
+		
+		if (lineItems.size() < 2 || lineItems[0][0] == '#'){
+			continue;
+		}
+		
+		string mimeType = lineItems[0];
+		for (unsigned int i = 1; i < lineItems.size(); i++){
+			contentTypeByExtension["." + lineItems[i]] = mimeType;
+		}
+	}
+}
