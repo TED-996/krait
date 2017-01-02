@@ -83,12 +83,12 @@ string Response::getResponseData() {
 
 	string result = statusLine + "\r\n" + headersAll + "\r\n" + body;
 	DBG_FMT("HTTP response:\n%1%", result);
-	
+
 	return result;
 }
 
 
-bool Response::headerExists(string name){
+bool Response::headerExists(string name) {
 	auto headerIt = headers.find(name);
 
 	if (headerIt == headers.end()) {

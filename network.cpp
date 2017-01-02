@@ -37,9 +37,10 @@ int getServerSocket(int port, bool setListen) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not bind socket") << errcodeInfo(errno));
 	}
 
-	if (setListen){
+	if (setListen) {
 		if (listen(sd, 1024) == -1) {
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
+			                          errno));
 		}
 	}
 
@@ -47,9 +48,10 @@ int getServerSocket(int port, bool setListen) {
 }
 
 
-void setSocketListen(int sd){
+void setSocketListen(int sd) {
 	if (listen(sd, 1024) == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
+		                          errno));
 	}
 }
 
@@ -57,17 +59,17 @@ void setSocketListen(int sd){
 int getNewClient(int listenerSocket, int timeout) {
 	sockaddr_in clientSockaddr;
 	memzero(clientSockaddr);
-	
+
 	pollfd pfd;
 	pfd.fd = listenerSocket;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
-	
+
 	int pollResult = poll(&pfd, 1, timeout);
-	if (pollResult == -1){
+	if (pollResult == -1) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getNewClient: poll() failed") << errcodeInfo(errno));
 	}
-	if (pollResult == 0){
+	if (pollResult == 0) {
 		return -1;
 	}
 
@@ -75,10 +77,10 @@ int getNewClient(int listenerSocket, int timeout) {
 	int client = accept(listenerSocket, (sockaddr*)&clientSockaddr, &sockaddrLen);
 
 	if (client < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK){
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
 			return -1;
 		}
-		
+
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client") << errcodeInfo(errno));
 	}
 
@@ -95,10 +97,10 @@ void printSocket(int clientSocket) {
 	memzero(data);
 	int readBytes;
 	while ((readBytes = read(clientSocket, data, 4095)) != 0) {
-		if (readBytes < 0){
+		if (readBytes < 0) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("printSocket: error at read().") << errcodeInfo(errno));
 		}
-		
+
 		DBG_FMT("read %1% bytes", readBytes);
 		printf("%s\n", data);
 	}
@@ -110,10 +112,10 @@ Request getRequestFromSocket(int clientSocket) {
 	int bytesRead;
 
 	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
-		if (bytesRead < 0){
+		if (bytesRead < 0) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
 		}
-		
+
 		parser.consume(buffer, bytesRead);
 	}
 
@@ -121,36 +123,36 @@ Request getRequestFromSocket(int clientSocket) {
 }
 
 
-void respondWithCString (int clientSocket, const char* response);
-void respondWithBuffer (int clientSocket, const char* response, size_t size);
+void respondWithCString(int clientSocket, const char* response);
+void respondWithBuffer(int clientSocket, const char* response, size_t size);
 
 void respondRequestHttp10(int clientSocket) {
-	respondWithCString (clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
+	respondWithCString(clientSocket, "HTTP/1.0 505 Version Not Supported\r\nConnection:Close\r\n\r\n");
 }
 
 void respondRequest404(int clientSocket) {
-	respondWithCString (clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
+	respondWithCString(clientSocket, "HTTP/1.0 404 Not Found\r\nConnection:Close\r\n\r\n");
 }
 
 
 void respondRequest200(int clientSocket) {
-	respondWithCString (clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
+	respondWithCString(clientSocket, "HTTP/1.0 200 OK\r\nConnection:Close\r\n\r\n");
 }
 
 
 void respondWithObject(int clientSocket, Response response) {
 	string responseData = response.getResponseData();
 
-	respondWithBuffer (clientSocket, responseData.c_str(), responseData.length());
+	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
 }
 
 
-void respondWithCString (int clientSocket, const char* response) {
+void respondWithCString(int clientSocket, const char* response) {
 	respondWithBuffer(clientSocket, response, strlen(response));
 }
 
 
-void respondWithBuffer(int clientSocket, const char* response, size_t size){
+void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 	size_t lenLeft = size;
 	const size_t maxBlockSize = 65536;
 

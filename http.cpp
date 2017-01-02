@@ -4,7 +4,7 @@
 
 using namespace std;
 
-string httpVerbToString(HttpVerb value){
+string httpVerbToString(HttpVerb value) {
 	const char* verbStrings[] {
 		"ANY",
 		"GET",
@@ -16,6 +16,6 @@ string httpVerbToString(HttpVerb value){
 		"OPTIONS",
 		"TRACE"
 	};
-	
+
 	return string(verbStrings[(int)value]);
 }

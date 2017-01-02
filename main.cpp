@@ -25,41 +25,41 @@ int main(int argc, char* argv[]) {
 	closeSocket(client);
 
 	printf("Done.");*/
-	
+
 	int errPipe[2];
 	int infoPipe[2];
-	
-	if (pipe(errPipe) != 0 || pipe(infoPipe) != 0){
+
+	if (pipe(errPipe) != 0 || pipe(infoPipe) != 0) {
 		fprintf(stderr, "Error creating logging pipes.\n");
 		exit(10);
 	}
-	
+
 	DBG("Forking");
 	pid_t pid = fork();
-	
-	if (pid == -1){
+
+	if (pid == -1) {
 		fprintf(stderr, "Error fork()ing for the logger\n");
 		exit(10);
 	}
-	
-	if (pid == 0){
+
+	if (pid == 0) {
 		close(errPipe[1]);
 		close(infoPipe[1]);
 
 		LoggerOut iLogger(infoPipe[0], "info.log");
 		LoggerOut eLogger(errPipe[0], "err.log");
-		
+
 		autoLogger(iLogger, eLogger);
 		exit(0);
 	}
-	
+
 	close(errPipe[0]);
 	close(infoPipe[0]);
-	
+
 	DBG("Pre server ctor");
 	Server server("testserver", 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
 	DBG("post server ctor");
 	server.runServer();
-	
+
 	return 0;
 }

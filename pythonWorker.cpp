@@ -24,11 +24,11 @@ static bool alreadySet = false;
 string pyErrAsString();
 
 struct String_map_to_python_obj {
-	static PyObject* convert(map<string, string> const& map){
+	static PyObject* convert(map<string, string> const& map) {
 		DBG("in map<string, string>->PyObject()");
-		
+
 		dict result;
-		for (auto it : map){
+		for (auto it : map) {
 			result[bp::str(it.first)] = bp::str(it.second);
 		}
 		return incref(result.ptr());
@@ -36,23 +36,23 @@ struct String_map_to_python_obj {
 };
 
 struct Request_to_python_obj {
-	static PyObject* convert(Request const& request){
+	static PyObject* convert(Request const& request) {
 		DBG("in Request->PyObject()");
-		
+
 		object result = requestType(
-			bp::str(httpVerbToString(request.getVerb())),
-			bp::str(request.getUrl()),
-			bp::str((format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
-			bp::dict(request.getHeaders()),
-			bp::str(request.getBody())
-		);
-		
+		                    bp::str(httpVerbToString(request.getVerb())),
+		                    bp::str(request.getUrl()),
+		                    bp::str((format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
+		                    bp::dict(request.getHeaders()),
+		                    bp::str(request.getBody())
+		                );
+
 		return incref(result.ptr());
 	}
 };
 
 
-void pythonInit (string projectDir) {
+void pythonInit(string projectDir) {
 	DBG("in pythonInit()");
 
 	Py_Initialize();
@@ -63,30 +63,30 @@ void pythonInit (string projectDir) {
 	try {
 		pythonReset(projectDir);
 	}
-	catch (pythonError &err){
+	catch (pythonError& err) {
 		DBG("Python error in pythonInit()!");
-		if (string const* errorString = get_error_info<stringInfo>(err)){
+		if (string const* errorString = get_error_info<stringInfo>(err)) {
 			BOOST_THROW_EXCEPTION(pythonError() << stringInfo(*errorString));
 		}
 	}
 }
 
 
-void pythonReset(string projectDir){
+void pythonReset(string projectDir) {
 	DBG("in pythonReset()");
 	try {
-		if (alreadySet){
+		if (alreadySet) {
 			mainGlobal.clear();
 		}
-		
+
 		mainModule = import("__main__");
 		mainGlobal = extract<dict>(mainModule.attr("__dict__"));
 
-		pythonSetGlobal ("project_dir", projectDir);
-		pythonSetGlobal ("root_dir", getExecRoot().string());
+		pythonSetGlobal("project_dir", projectDir);
+		pythonSetGlobal("root_dir", getExecRoot().string());
 
 		exec_file(bp::str((getExecRoot() / "py" / "python-setup.py").string()), mainGlobal, mainGlobal);
-		
+
 		requestType = mainGlobal["Request"];
 	}
 	catch (error_already_set const&) {
@@ -96,7 +96,7 @@ void pythonReset(string projectDir){
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
-	
+
 	alreadySet = true;
 }
 
@@ -125,7 +125,7 @@ string pythonEval(string command) {
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in pythonEval()!");
-		
+
 		string errorString = pyErrAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
@@ -134,7 +134,7 @@ string pythonEval(string command) {
 
 string pyErrAsString() {
 	DBG("in pyErrAsString()");
-	try{
+	try {
 		PyObject* exception, *value, *traceback;
 		object formatted_list;
 		PyErr_Fetch(&exception, &value, &traceback);
@@ -146,7 +146,7 @@ string pyErrAsString() {
 		object moduleTraceback(import("traceback"));
 
 		DBG("In pyErrAsString: gathered info");
-		
+
 		if (!traceback) {
 			object format_exception_only(moduleTraceback.attr("format_exception_only"));
 			formatted_list = format_exception_only(handleException, handleValue);
@@ -155,13 +155,13 @@ string pyErrAsString() {
 			object format_exception(moduleTraceback.attr("format_exception"));
 			formatted_list = format_exception(handleException, handleValue, handleTraceback);
 		}
-		
+
 		DBG("In pyErrAsString: gathered list");
-		
+
 		object formatted = bp::str("\n").join(formatted_list);
-		
+
 		DBG("In pyErrAsString: got formatted str");
-		
+
 		return extract<string>(formatted);
 	}
 	catch (error_already_set const&) {
@@ -170,7 +170,7 @@ string pyErrAsString() {
 }
 
 
-void pythonSetGlobal (string name, object value) {
+void pythonSetGlobal(string name, object value) {
 	DBG("in pythonSetGlobal()");
 	try {
 		mainModule.attr(name.c_str()) = value;
@@ -185,7 +185,7 @@ void pythonSetGlobal (string name, object value) {
 }
 
 
-void pythonSetGlobal (string name, string value) {
+void pythonSetGlobal(string name, string value) {
 	pythonSetGlobal(name, bp::str(value));
 }
 
@@ -195,17 +195,18 @@ void pythonSetGlobal(string name, map<string, string> value) {
 }
 
 
-void pythonSetGlobalRequest(string name, Request value){
-	try{
+void pythonSetGlobalRequest(string name, Request value) {
+	try {
 		pythonSetGlobal(name, bp::object(value));
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in pythonSetGlobalRequest(), converting Request to PyObject");
 
-		string errorString = (format("Error in pythonSetGlobalRequest(%1%, python::object):\n%2%") % name % pyErrAsString()).str();
-		
+		string errorString = (format("Error in pythonSetGlobalRequest(%1%, python::object):\n%2%") % name %
+		                      pyErrAsString()).str();
+
 		DBG_FMT("In catch: got errorstring %1%", errorString);
-		
+
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
@@ -213,14 +214,14 @@ void pythonSetGlobalRequest(string name, Request value){
 
 string pythonGetGlobalStr(string name) {
 	DBG("in pythonGetGlobalStr()");
-	try{
+	try {
 		object globalObj = mainModule.attr(name.c_str());
 		bp::str globalStr(globalObj);
 		return extract<string>(globalStr);
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in pythonGetGlobalStr()!");
-		
+
 		string errorString = pyErrAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
@@ -228,16 +229,16 @@ string pythonGetGlobalStr(string name) {
 }
 
 
-map<string, string> pythonGetGlobalMap(string name){
+map<string, string> pythonGetGlobalMap(string name) {
 	DBG("in pythonGetGlobalMap()");
-	try{
+	try {
 		object globalObj = mainModule.attr(name.c_str());
 		dict globalDict = extract<dict>(globalObj);
 		bp::list dictKeys = globalDict.keys();
 		int nrKeys = len(dictKeys);
-		
+
 		map<string, string> result;
-		for (int i = 0; i < nrKeys; i++){
+		for (int i = 0; i < nrKeys; i++) {
 			object key = dictKeys[i];
 			result[extract<string>(bp::str(key))] = extract<string>(bp::str(globalDict[key]));
 		}
@@ -245,7 +246,7 @@ map<string, string> pythonGetGlobalMap(string name){
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in pythonGetGlobalMap()!");
-		
+
 		string errorString = pyErrAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));

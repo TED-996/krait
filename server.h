@@ -18,32 +18,32 @@ class Server {
 	std::vector<Route> routes;
 	int serverSocket;
 	std::unordered_set<int> pids;
-	
+
 	LoggerIn infoLogger;
 	LoggerIn errLogger;
-	
+
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
-	
+
 	void tryAcceptConnection();
 	void tryWaitFinishedForks();
-	
+
 	void serveClientStart(int clientSocket);
 	Response getResponseFromSource(std::string filename);
 	void addDefaultHeaders(Response& response);
 	Response getResponseFromSource(std::string filename, Request& request);
-	
+
 	std::string getSourceFromTarget(std::string target);
 	std::string expandFilename(std::string filename);
 	std::string getHtmlSource(std::string filename);
 	bool pathBlocked(std::string filename);
 	std::string getContentType(std::string filename);
-	
+
 	void loadContentTypeList();
-	
+
 public:
 	Server(std::string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger);
 	~Server();
-	
+
 	void runServer();
 	void killChildren();
 };
