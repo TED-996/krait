@@ -478,6 +478,9 @@ void Server::addDefaultHeaders(Response& response) {
 string Server::getContentType(string filename) {
 	filesystem::path filePath(filename);
 	string extension = filePath.extension().string();
+	if (extension == ".pyml"){
+		extension = filePath.stem().extension().string();
+	}
 
 	DBG_FMT("Extension: %1%", extension);
 
