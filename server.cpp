@@ -17,6 +17,7 @@
 using namespace std;
 using namespace boost;
 using namespace boost::filesystem;
+using namespace boost::algorithm;
 
 
 Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger)
@@ -217,7 +218,7 @@ string replaceParams(string target, map<string, string> params) {
 	return result;
 }
 
-
+bool canContainPython(string filename);
 string getEndTag(string htmlCode, int startIdx);
 string pythonPrepareStr(string pyCode);
 string htmlEscape(string htmlCode);
@@ -230,7 +231,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	string htmlSource = getHtmlSource(filename);
 
-	if (!boost::algorithm::ends_with(filename, ".html")) {
+	if (!canContainPython(filename)) {
 		Response result(1, 1, 200, unordered_map<string, string> {
 			{"Content-Type", getContentType(filename)}
 		}, htmlSource);
@@ -291,6 +292,12 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 }
 
 
+bool canContainPython(std::string filename){
+	return ends_with(filename, ".html") || ends_with(filename, ".htm") ||
+		ends_with(filename, ".pyml");
+}
+
+
 string Server::expandFilename(string filename) {
 	if (filesystem::is_directory(filename)) {
 		DBG("Converting to directory automatically");
@@ -302,6 +309,16 @@ string Server::expandFilename(string filename) {
 	if (!filesystem::exists(filename) && filesystem::exists(filename + ".html")) {
 		DBG("Adding .html automatically");
 		filename += ".html";
+	}
+	if (!filesystem::exists(filename)){
+		if (path(filename).extension() == ".html" && filesystem::exists(filesystem::change_extension(filename, ".htm"))){
+			filename = filesystem::change_extension(filename, "htm").string();
+			DBG("Changing extension to .htm");
+		}
+		if (path(filename).extension() == ".htm" && filesystem::exists(filesystem::change_extension(filename, ".html"))){
+			filename = filesystem::change_extension(filename, "html").string();
+			DBG("Changing extension to .html");
+		}
 	}
 	return filename;
 }
