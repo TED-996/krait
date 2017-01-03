@@ -3,7 +3,7 @@
 #include<vector>
 #include<stack>
 #include<boost/pool/object_pool.hpp>
-#inlcude<boost/variant.hpp>
+#include<boost/variant.hpp>
 
 
 class PymlItem {
@@ -121,34 +121,41 @@ struct PymlItemPool {
 
 struct PymlWorkingItem {
 	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For };
-	PymlWorkingItem::Type type;
-	union {
-		struct {
-			std::string str;
-		} strData;
-		struct {
-			std::vector<PymlWorkingItem*> items;
-		} seqData;
-		struct {
-			std::string code;
-		} pyCodeData;
-		struct {
-			std::string condition;
-			PymlWorkingItem* itemIfTrue;
-			PymlWorkingItem* itemIfFalse;
-		} ifData;
-		struct {
-			std::string initCode;
-			std::string conditionCode;
-			std::string updateCode;
-			PymlWorkingItem* loopItem;
-		} forData;
+	struct NoneData {
+	};
+	struct StrData {
+		std::string str;
+	};
+	struct SeqData {
+		std::vector<PymlWorkingItem*> items;
+	};
+	struct PyCodeData {
+		Type type;
+		std::string code;
+	};
+	struct IfData {
+		std::string condition;
+		PymlWorkingItem* itemIfTrue;
+		PymlWorkingItem* itemIfFalse;
+	};
+	struct ForData {
+		std::string initCode;
+		std::string conditionCode;
+		std::string updateCode;
+		PymlWorkingItem* loopItem;
 	};
 	
+	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData> data;
+	
 	PymlWorkingItem(Type type);
-	~PymlWorkingItem();
+	
+	template<typename T>
+	T* getData(){
+		return boost::get<T>(&data);
+	}
 	
 	const PymlItem* getItem(PymlItemPool& pool) const;
+	
 };
 
 
@@ -162,13 +169,37 @@ class PymlFile {
 	
 	std::stack<PymlWorkingItem> itemStack;
 	PymlItemPool pool;
+	boost::object_pool<PymlWorkingItem> workingItemPool;
+	
+	template<typename T>
+	bool stackTopIsType(){
+		return boost::get<T>(&itemStack.top().data) != nullptr;
+	}
+	
+	template<typename T>
+	T& getStackTop(){
+		return boost::get<T>(itemStack.top().data);
+	}
+	
+	template<typename T>
+	T& popStackTop(){
+		T& result = boost::get<T>(itemStack.top().data);
+		itemStack.pop();
+		return result;
+	}
 	
 	const PymlItem* parseFromSource(const std::string& source);
 	bool consumeOne(char chr);
+	
+	void addPymlWorkingStr(const std::string& str);
+	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
 public:
 	PymlFile(const std::string& pymlSource):
 		rootItem(parseFromSource(pymlSource)){
 	}
+	
+	PymlFile(PymlFile&) = delete;
+	PymlFile(PymlFile const&) = delete;
 	
 	std::string runPyml() const;
 };

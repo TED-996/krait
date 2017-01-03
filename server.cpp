@@ -143,11 +143,11 @@ void Server::serveClientStart(int clientSocket) {
 
 		string sourceFile;
 		if (route.isDefaultTarget()) {
-			sourceFile = getSourceFromTarget(clientRequest.getUrl());
+			sourceFile = getFilenameFromTarget (clientRequest.getUrl());
 		}
 		else {
 			string targetReplaced = replaceParams(route.getTarget(), params);
-			sourceFile = getSourceFromTarget(route.getTarget());
+			sourceFile = getFilenameFromTarget (route.getTarget());
 		}
 
 		pythonSetGlobalRequest("request", clientRequest);
@@ -181,7 +181,7 @@ void Server::serveClientStart(int clientSocket) {
 }
 
 
-std::string Server::getSourceFromTarget(std::string target) {
+std::string Server::getFilenameFromTarget (std::string target) {
 	if (target[0] == '/') {
 		return (serverRoot / target.substr(1)).string();
 	}
@@ -219,73 +219,33 @@ string replaceParams(string target, map<string, string> params) {
 }
 
 bool canContainPython(string filename);
-string getEndTag(string htmlCode, int startIdx);
-string pythonPrepareStr(string pyCode);
-string htmlEscape(string htmlCode);
 
 Response Server::getResponseFromSource(string filename, Request& request) {
+	//TODO: unused request?
 	//HTML: <@ @> => echo
 	//      <! !> => run
 	//      <@! @!> => run, don't escape
 	filename = expandFilename(filename);
-
-	string htmlSource = getHtmlSource(filename);
+	
+	if (!filesystem::exists(filename)){
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
+	}
 
 	if (!canContainPython(filename)) {
 		Response result(1, 1, 200, unordered_map<string, string> {
 			{"Content-Type", getContentType(filename)}
-		}, htmlSource);
+		}, getRawFile(filename));
+		
 		addDefaultHeaders(result);
 		return result;
 	}
 	else {
-		//DBG("Html source got");
+		string pymlResult = getPymlResult (filename);
 
-		auto oldIt = htmlSource.begin();
-		auto it = find(oldIt, htmlSource.end(), '<');
-		string responseData;
-		responseData.reserve(htmlSource.length());
-
-		while (it != htmlSource.end()) {
-			responseData += string(oldIt, it);
-
-			if (it != htmlSource.end() && it + 1 != htmlSource.end()) {
-				//DBG_FMT("in tag; idx= %1%", it - htmlSource.begin());
-				int startIdx = it - htmlSource.begin();
-				string endTag = getEndTag(htmlSource, startIdx);
-				if (endTag == "@>" || endTag == "@!>" || endTag == "!>") { //TODO: implement if/while? for?
-					int endIdx = htmlSource.find(endTag, startIdx);
-					if (endIdx == (int)string::npos) {
-						BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Error: python tag started at position %1% doesn't end.",
-						                      startIdx));
-					}
-
-					string pythonCode = pythonPrepareStr(string(it + endTag.length(), htmlSource.begin() + endIdx));
-
-					if (endTag == "@>") {
-						string evalResult = pythonEval(pythonCode);
-						responseData += htmlEscape(evalResult);
-					}
-					else if (endTag == "@!>") {
-						string evalResult = pythonEval(pythonCode);
-						responseData += evalResult;
-					}
-					else {
-						pythonRun(pythonCode);
-					}
-
-					it = htmlSource.begin() + endIdx + endTag.length();
-				}
-			}
-
-			oldIt = it;
-			it = find(oldIt + 1, htmlSource.end(), '<');
-		}
-
-		responseData += string(oldIt, it);
 		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-		Response result(1, 1, 200, headers, responseData);
+		Response result(1, 1, 200, headers, pymlResult);
+		
 		addDefaultHeaders(result);
 		return result;
 	}
@@ -326,10 +286,54 @@ string Server::expandFilename(string filename) {
 
 string readFromFile(string filename);
 
-string Server::getHtmlSource(string filename) {
-	//TODO: some caching maybe?
+string Server::getPymlResult (string filename) {
+	const auto it = pymlCache.find(filename);
 
-	return readFromFile(filename);
+	if (it == pymlCache.end()){
+		const PymlFile& file = addPymlToCache(filename);
+		return file.runPyml();
+	}
+	if (last_write_time(filename) != it->second.first){
+		pymlPool.destroy(it->second.second);
+		pymlCache.erase(it);
+		const PymlFile& file = addPymlToCache(filename);
+		return file.runPyml();
+	}
+	
+	return it->second.second->runPyml();
+}
+
+
+const PymlFile& Server::addPymlToCache(string filename) {
+	time_t time = last_write_time(filename);
+	PymlFile* pymlFile = pymlPool.construct(readFromFile(filename));
+	pymlCache[filename] = make_pair(time, pymlFile);
+	return *pymlFile;
+}
+
+
+string Server::getRawFile(string filename) {
+	const auto it = rawFileCache.find(filename);
+
+	if (it == rawFileCache.end()){
+		return addRawFileToCache(filename);
+	}
+	if (last_write_time(filename) != it->second.first){
+		rawFileCache.erase(it);
+		return addRawFileToCache(filename);
+	}
+	
+	return it->second.second;
+}
+
+
+string& Server::addRawFileToCache(string filename){
+	time_t time = last_write_time(filename);
+	
+	string result = readFromFile(filename);
+	rawFileCache[filename] = make_pair(time, result);
+	
+	return rawFileCache[filename].second;
 }
 
 
@@ -359,24 +363,6 @@ string readFromFile(string filename) {
 	return fileData.str();
 }
 
-
-string getEndTag(string htmlCode, int startIdx) {
-	int htmlLen = htmlCode.length();
-	if (htmlCode[startIdx] != '<') {
-		BOOST_THROW_EXCEPTION(serverError() <<
-		                      stringInfoFromFormat("Error: tried to find closing tag, but this doesn't start with a '<', but a '%1%'",
-		                              htmlCode[startIdx]));
-	}
-
-	int idx = startIdx + 1;
-	while (idx < htmlLen && !isspace(htmlCode[idx]) && htmlCode[idx] != '>' && htmlCode[idx] != '/') {
-		idx++;
-	}
-
-	string endTag = htmlCode.substr(startIdx + 1, idx - (startIdx + 1)) + '>';
-	//DBG(endTag);
-	return endTag;
-}
 
 void Server::addDefaultHeaders(Response& response) {
 	if (!response.headerExists("Content-Type")) {
