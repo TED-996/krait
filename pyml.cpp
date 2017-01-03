@@ -63,8 +63,13 @@ std::string PymlItemFor::runPyml() const {
 	return result;
 }
 
+PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type){
+	
+}
 
-const PymlItem * PymlWorkingItem::getItem(PymlItemPool& pool) const {
+
+
+const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
 	if (type == None){
 		return pool.itemPool.construct();
 	}
@@ -104,11 +109,11 @@ const PymlItem * PymlWorkingItem::getItem(PymlItemPool& pool) const {
 
 
 std::string PymlFile::runPyml() const {
-	return rootItem.runPyml();
+	return rootItem->runPyml();
 }
 
 
-PymlItem PymlFile::parseFromSource(const std::string& source) {
+const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	state = 0;
 	memzero(workingBackBuffer);
 	workingIdx = 0;
@@ -123,8 +128,9 @@ PymlItem PymlFile::parseFromSource(const std::string& source) {
 	}
 	
 	if (itemStack.size() != 1){
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unexpected end. Tag not closed."))
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unexpected end. Tag not closed."));
 	}
+	return itemStack.top().getItem(pool);
 }
 
 

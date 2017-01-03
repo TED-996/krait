@@ -3,6 +3,7 @@
 #include<vector>
 #include<stack>
 #include<boost/pool/object_pool.hpp>
+#inlcude<boost/variant.hpp>
 
 
 class PymlItem {
@@ -152,7 +153,7 @@ struct PymlWorkingItem {
 
 
 class PymlFile {
-	PymlItem rootItem;
+	const PymlItem* rootItem;
 	
 	int state;
 	std::string workingBackBuffer;
@@ -160,8 +161,9 @@ class PymlFile {
 	unsigned int workingIdx;
 	
 	std::stack<PymlWorkingItem> itemStack;
+	PymlItemPool pool;
 	
-	PymlItem parseFromSource(const std::string& source);
+	const PymlItem* parseFromSource(const std::string& source);
 	bool consumeOne(char chr);
 public:
 	PymlFile(const std::string& pymlSource):
