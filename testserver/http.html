@@ -4,8 +4,9 @@
 
         <p>This is an (approximate) representation of your HTTP request:</p>
         <code>
-            abc def
-            hghd dh
+            <@ "{} {} {}".format(request.http_method, request.url, request.http_version) @> <br>
+            {headers} </br>
+            <@ request.body @>
         </code>
     </body>
 </html>

@@ -194,8 +194,8 @@ class PymlFile {
 	void addPymlWorkingStr(const std::string& str);
 	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
 public:
-	PymlFile(const std::string& pymlSource):
-		rootItem(parseFromSource(pymlSource)){
+	PymlFile(const std::string& pymlSource){
+		rootItem = parseFromSource(pymlSource);
 	}
 	
 	PymlFile(PymlFile&) = delete;

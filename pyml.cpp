@@ -4,6 +4,9 @@
 #include"utils.h"
 #include"fsm.h"
 
+#include"dbg.h"
+
+
 using namespace std;
 
 
@@ -67,13 +70,16 @@ std::string PymlItemFor::runPyml() const {
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
 	: data(NoneData()){
+	DBG_FMT("In PymlWorkingItem constructor; type = %1%", (int)type);
 	if (type == Type::None){
 	}
 	else if (type == Type::Str){
 		data = StrData();
 	}
 	else if (type == Type::Seq){
+		DBG("PreSeqData assign");
 		data = SeqData();
+		DBG("SeqData assigned");
 	}
 	else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec){
 		PyCodeData dataTmp;
@@ -86,7 +92,9 @@ PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
 	else if (type == Type::For){
 		data = ForData();
 	}
-	BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
+	else{
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
+	}
 }
 
 
@@ -153,16 +161,26 @@ std::string PymlFile::runPyml() const {
 
 const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	state = 0;
-	memzero(workingBackBuffer);
+	memzero(workingStr);
 	workingIdx = 0;
+	workingBackBuffer.clear();
 	
 	while(itemStack.size() != 0){ //No clear() method...
+		DBG_FMT("Popping; size is %1%", itemStack.size());
 		itemStack.pop();
+		
 	}
+	DBG_FMT("Pushing; size is %1%", itemStack.size());
 	itemStack.push(PymlWorkingItem(PymlWorkingItem::Type::Seq));
 	
+	DBG("PreConsuming:");
+	
 	for (const char chr : source){
-		consumeOne(chr);
+		DBG("consuming one");
+		while(!consumeOne(chr)){
+			DBG("consuming one, again");
+		}
+		DBG("consume one ok");
 	}
 	
 	if (itemStack.size() != 1){
@@ -183,17 +201,25 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 
 
 bool PymlFile::consumeOne(char chr){
+	DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
 		StatesBegin(0)
+			DBG("state 0");
 			if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+				DBG("except!");
 				BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq in state 0."));
 			}
+			DBG("no except!");
+			//DBG_FMT("some pointers: ")
 			SaveStart()
+			DBG("started save");
 			
 			TransIf('<', 2, true)
 			TransElse(1, true)
+			
+			DBG("trans okay");
 		StatesNext(1)
 			SaveThis()
 			

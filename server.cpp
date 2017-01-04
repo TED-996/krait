@@ -11,8 +11,10 @@
 #include"server.h"
 #include"except.h"
 #include"pythonWorker.h"
-#include"dbg.h"
 #include "path.h"
+
+
+#include"dbg.h"
 
 using namespace std;
 using namespace boost;
@@ -102,19 +104,9 @@ void Server::tryWaitFinishedForks() {
 	pid_t pid;
 	while ((pid = waitpid(-1, &status, WNOHANG) != 0)) {
 		if (WIFEXITED(status) || WIFSIGNALED(status) || WIFSTOPPED(status)) {
+			DBG_FMT("[Parent] Child exited with status %1%", WEXITSTATUS(status));
 			pids.erase((int)pid);
 		}
-		map<HttpVerb, string> verbToStrMapping {
-			{HttpVerb::ANY, "ANY"},
-			{HttpVerb::GET, "GET"},
-			{HttpVerb::HEAD, "HEAD"},
-			{HttpVerb::POST, "POST"},
-			{HttpVerb::PUT, "PUT"},
-			{HttpVerb::DELETE, "DELETE"},
-			{HttpVerb::CONNECT, "CONNECT"},
-			{HttpVerb::OPTIONS, "OPTIONS"},
-			{HttpVerb::TRACE, "TRACE"}
-		};
 	}
 }
 
@@ -131,7 +123,7 @@ void Server::serveClientStart(int clientSocket) {
 
 	try {
 		Request clientRequest = getRequestFromSocket(clientSocket);
-		DBG_FMT("URL is %1%", clientRequest.getUrl());
+		//DBG_FMT("URL is %1%", clientRequest.getUrl());
 
 		map<string, string> params;
 		Route route = getRouteMatch(routes, clientRequest.getVerb(), clientRequest.getUrl(), params);
@@ -225,6 +217,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	//HTML: <@ @> => echo
 	//      <! !> => run
 	//      <@! @!> => run, don't escape
+	//DBG_FMT("Filename is %1%", filename);
 	filename = expandFilename(filename);
 	
 	if (!filesystem::exists(filename)){
@@ -287,6 +280,7 @@ string Server::expandFilename(string filename) {
 string readFromFile(string filename);
 
 string Server::getPymlResult (string filename) {
+	//DBG("Reading pyml cache");
 	const auto it = pymlCache.find(filename);
 
 	if (it == pymlCache.end()){
@@ -304,7 +298,8 @@ string Server::getPymlResult (string filename) {
 }
 
 
-const PymlFile& Server::addPymlToCache(string filename) {
+const PymlFile& Server::addPymlToCache(string filename) { //TODO: caching kind of flawed, necessary in parent process, not child! Send filename through pipe?
+	//DBG("Adding new item to cache");
 	time_t time = last_write_time(filename);
 	PymlFile* pymlFile = pymlPool.construct(readFromFile(filename));
 	pymlCache[filename] = make_pair(time, pymlFile);
@@ -313,6 +308,8 @@ const PymlFile& Server::addPymlToCache(string filename) {
 
 
 string Server::getRawFile(string filename) {
+	//DBG("Reading raw cache");
+
 	const auto it = rawFileCache.find(filename);
 
 	if (it == rawFileCache.end()){

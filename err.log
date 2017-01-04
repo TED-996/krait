@@ -1,0 +1,9 @@
+Error serving client: /home/ted/proiect/pythonWorker.cpp(131): Throw in function std::string pythonEval(std::string)
+Dynamic exception type: boost::exception_detail::clone_impl<pythonError>
+[tag_string_info*] = Traceback (most recent call last):
+
+  File "<string>", line 1, in <module>
+
+AttributeError: Request instance has no attribute 'httpVersion'
+
+
