@@ -254,16 +254,26 @@ bool canContainPython(std::string filename){
 string Server::expandFilename(string filename) {
 	if (filesystem::is_directory(filename)) {
 		DBG("Converting to directory automatically");
-		filename = (filesystem::path(filename) / "index.html").string();
+		filename = (filesystem::path(filename) / "index").string(); //Not index.html; taking care below about it
 	}
 	if (pathBlocked(filename)) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
-	if (!filesystem::exists(filename) && filesystem::exists(filename + ".html")) {
-		DBG("Adding .html automatically");
-		filename += ".html";
-	}
+
 	if (!filesystem::exists(filename)){
+		if (filesystem::exists(filename + ".html")){
+			DBG("Adding .html automatically");
+			filename += ".html";
+		}
+		if (filesystem::exists(filename + ".htm")){
+			DBG("Adding .htm automatically");
+			filename += ".htm";
+		}
+		if (filesystem::exists(filename + ".pyml")){
+			DBG("Adding .pyml automatically");
+			filename += ".pyml";
+		}
+		
 		if (path(filename).extension() == ".html" && filesystem::exists(filesystem::change_extension(filename, ".htm"))){
 			filename = filesystem::change_extension(filename, "htm").string();
 			DBG("Changing extension to .htm");
