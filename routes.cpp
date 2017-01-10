@@ -185,6 +185,10 @@ vector<Route> getRoutesFromFile(string filename) {
 	return results;
 }
 
+vector<Route> getDefaultRoutes(){
+	return vector<Route> {Route(HttpVerb::GET, "$default$")};
+}
+
 Route& getRouteMatch(vector<Route> routes, HttpVerb verb, string url, map<string, string>& outParams) {
 	for (Route & route : routes) {
 		if (route.isMatch(verb, url, outParams)) {

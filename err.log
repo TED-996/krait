@@ -1,9 +1,12 @@
-Error serving client: /home/ted/proiect/pythonWorker.cpp(131): Throw in function std::string pythonEval(std::string)
-Dynamic exception type: boost::exception_detail::clone_impl<pythonError>
-[tag_string_info*] = Traceback (most recent call last):
+Error serving client: /home/ted/proiect/request.cpp(214): Throw in function Request RequestParser::getRequest()
+Dynamic exception type: boost::exception_detail::clone_impl<httpParseError>
+[tag_string_info*] = HTTP method not recognized.
 
-  File "<string>", line 1, in <module>
+Error serving client: /home/ted/proiect/request.cpp(214): Throw in function Request RequestParser::getRequest()
+Dynamic exception type: boost::exception_detail::clone_impl<httpParseError>
+[tag_string_info*] = HTTP method not recognized.
 
-AttributeError: Request instance has no attribute 'httpVersion'
-
+Error serving client: /home/ted/proiect/request.cpp(214): Throw in function Request RequestParser::getRequest()
+Dynamic exception type: boost::exception_detail::clone_impl<httpParseError>
+[tag_string_info*] = HTTP method not recognized.
 

@@ -40,7 +40,11 @@ int main(int argc, char* argv[]) {
 	close(infoPipe[0]);
 
 	DBG("Pre server ctor");
-	Server server("testserver", 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
+	const char* serverRoot = "testserver";
+	if (argc >= 2){
+		serverRoot = argv[1];
+	}
+	Server server(serverRoot, 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
 	DBG("post server ctor");
 	server.runServer();
 

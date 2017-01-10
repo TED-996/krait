@@ -35,5 +35,6 @@ public:
 
 
 std::vector<Route> getRoutesFromFile(std::string filename);
+std::vector<Route> getDefaultRoutes();
 Route& getRouteMatch(std::vector<Route> routes, HttpVerb verb, std::string url,
                      std::map<std::string, std::string>& outParams);

@@ -25,7 +25,16 @@ using namespace boost::algorithm;
 Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger)
 	: infoLogger(infoLogger), errLogger(errLogger) {
 	this->serverRoot = path(serverRoot);
-	this->routes = getRoutesFromFile((this->serverRoot / ".config" / "routes.xml").string());
+	
+	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.xml";
+	if (filesystem::exists(routesFilename)){
+		this->routes = getRoutesFromFile(routesFilename.string());
+	}
+	else{
+		infoLogger.log("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
+		this->routes = getDefaultRoutes();
+	}
+	
 
 	DBG("routes got");
 
