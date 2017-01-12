@@ -1,3 +1,5 @@
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include"pyml.h"
 #include"pythonWorker.h"
 #include"except.h"
@@ -183,6 +185,8 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	absIdx = 0;
 	saveIdx = 0;
 	workingBackBuffer.clear();
+	
+	krItIndex = 0;
 	
 	while(itemStack.size() != 0){ //No clear() method...
 		//DBG_FMT("Popping; size is %1%", itemStack.size());
@@ -417,7 +421,7 @@ bool PymlFile::consumeOne(char chr){
 			pushPymlWorkingIf(pythonPrepareStr(tmp));
 			pushPymlWorkingSeq();
 			
-			TransAlways(0, false);
+			TransAlways(0, false)
 		StatesNext(11) //"</"
 			SaveThis()
 			
@@ -448,7 +452,7 @@ bool PymlFile::consumeOne(char chr){
 			}
 			addPymlStackTop();
 			
-			TransAlways(0, true)
+			TransAlways(0, false)
 		StatesNext(60)
 			SaveThis()
 		
@@ -486,6 +490,7 @@ bool PymlFile::consumeOne(char chr){
 			SaveThis()
 			
 			TransIf(';', 66, true)
+			TransElif('i', 77, true)
 			TransElif('?', 65, true)
 			TransElse(64, true)
 		StatesNext(66) //finished for init
@@ -537,14 +542,13 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(72) //finished for update
 			SavepointRevert()
 			SaveStore(tmp)
-			SaveStart()
 			
 			if (tmp.size() > 0){
 				addCodeToPymlWorkingFor(2, pythonPrepareStr(tmp));
 			}
 			pushPymlWorkingSeq();
 			
-			TransAlways(0, true);
+			TransAlways(0, false)
 		StatesNext(73) //"</f"
 			DBG("closing /f");
 			SaveThis()
@@ -564,8 +568,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(76)
 			SavepointRevert()
 			SaveStore(tmp)
-			SaveStart()
-			DBG("closed for okay");
+			//DBG("closed for okay");
 			
 			if (tmp.size() > 0){
 				addPymlWorkingStr(tmp);
@@ -576,7 +579,39 @@ bool PymlFile::consumeOne(char chr){
 			}
 			addPymlStackTop();
 			
-			TransAlways(0, true)
+			TransAlways(0, false)
+		StatesNext(77) //for ... ?i
+			SaveThis()
+			
+			TransIf('n', 78, true)
+			TransElse(64, true)
+		StatesNext(78) //for ... ?in
+			SavepointRevert()
+			SaveStore(tmpStr) //member string
+			SaveStart()
+		
+			TransIf('?', 80, true)
+			TransElse(79, true)
+		StatesNext(79) //for entry ?in iterator
+			SaveThis()
+			
+			TransIf('?', 80, true)
+			TransElse(79, true)
+		StatesNext(80) //for entry ?in iterator ?
+			SavepointStoreOff(-1)
+			SaveThis()
+			
+			TransIf('>', 81, true)
+			TransElif('?', 80, true)
+			TransElse(79, true)
+		StatesNext(81) //for entry ?in iterator ?>
+			SavepointRevert()
+			SaveStore(tmp)
+			
+			pushPymlWorkingForIn(pythonPrepareStr(tmpStr), pythonPrepareStr(tmp));
+			pushPymlWorkingSeq();
+			
+			TransAlways(0, false)
 		StatesEnd()
 	FsmEnd()
 }
@@ -707,12 +742,35 @@ void PymlFile::addPymlStackTop() {
 	*newItem = itemSrc;
 	itemStack.pop();
 	
+	if (itemStack.empty()){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tried reducing a stack with just one item."));
+	}
+	
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 	
 	data.items.push_back(newItem);
+}
+
+void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
+	DBG_FMT("for in with entries %1% and %2%", entry, collection);
+	
+	string krIterator = (boost::format("_krIt%d") % krItIndex).str();
+	boost::trim(entry);
+	boost::trim(collection);
+	
+	//1: krIterator; 2: collection;;; 3: entry
+	string initCode = (boost::format("%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value") % krIterator % collection % entry).str();
+	string condCode = (boost::format("not %1%.over") % krIterator).str();
+	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value") % krIterator % collection % entry).str();
+	
+	addCodeToPymlWorkingFor(0, initCode);
+	addCodeToPymlWorkingFor(1, condCode);
+	addCodeToPymlWorkingFor(2, updateCode);
+
+	DBG("done!");
 }
 
 

@@ -11,6 +11,23 @@ class Request:
 		self.body = body
 
 
+class IteratorWrapper:
+	def __init__(self, collection):
+		self.iterator = iter(collection)
+		self.over = False
+		self.value = self.next()
+	
+	def next(self):
+		if self.over:
+			return None
+		try:
+			self.value = self.iterator.next()
+			return self.value
+		except StopIteration:
+			self.over = True
+			return None
+
+
 def main_setup():
     global project_dir
     global root_dir

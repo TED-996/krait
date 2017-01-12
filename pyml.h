@@ -173,6 +173,9 @@ class PymlFile {
 	std::stack<PymlWorkingItem> itemStack;
 	PymlItemPool pool;
 	boost::object_pool<PymlWorkingItem> workingItemPool;
+	std::string tmpStr;
+	
+	int krItIndex;
 	
 	template<typename T>
 	bool stackTopIsType(){
@@ -201,6 +204,7 @@ class PymlFile {
 	void pushPymlWorkingFor();
 	void addCodeToPymlWorkingFor(int where, const std::string& code);
 	bool addSeqToPymlWorkingFor();
+	void pushPymlWorkingForIn(std::string entry, std::string collection);
 	void pushPymlWorkingSeq();
 	void addPymlStackTop();
 	
