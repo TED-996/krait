@@ -167,6 +167,8 @@ class PymlFile {
 	std::string workingBackBuffer;
 	char workingStr[65536];
 	unsigned int workingIdx;
+	unsigned int absIdx;
+	unsigned int saveIdx;
 	
 	std::stack<PymlWorkingItem> itemStack;
 	PymlItemPool pool;
@@ -196,7 +198,12 @@ class PymlFile {
 	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
 	void pushPymlWorkingIf(const std::string& condition);
 	bool addSeqToPymlWorkingIf(bool isElse);
+	void pushPymlWorkingFor();
+	void addCodeToPymlWorkingFor(int where, const std::string& code);
+	bool addSeqToPymlWorkingFor();
+	void pushPymlWorkingSeq();
 	void addPymlStackTop();
+	
 public:
 	PymlFile(const std::string& pymlSource){
 		rootItem = parseFromSource(pymlSource);

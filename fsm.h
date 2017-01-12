@@ -2,11 +2,12 @@
 
 #include<boost/format.hpp>
 #include<string>
+#include<cctype>
 
 #include"utils.h"
 #include"except.h"
 
-#define FsmStart(state_t, state, chr_t, chr, workingBuffer, workingSize, workingIndex, backBuffer) \
+#define FsmStart(state_t, state, chr_t, chr, workingBuffer, workingSize, workingIndex, backBuffer, absPtr, savepointPtr) \
     state_t stCurrent = (state);\
     state_t stNext = (state);\
     state_t* statePtr = (state_t*)&(state);\
@@ -17,6 +18,10 @@
     unsigned int fsmWorkingSize = (workingSize);\
     unsigned int fsmWorkingIdx = (unsigned int)(workingIndex);\
     std::string& fsmBackBuffer(backBuffer);\
+    unsigned int* fsmAbsPtr = (absPtr);\
+    unsigned int* fsmSavepointPtr = (savepointPtr);\
+    (void)fsmAbsPtr;\
+    (void)fsmSavepointPtr;\
     switch(stCurrent){
 
 #define FsmEnd()\
@@ -43,12 +48,18 @@
     memset(fsmWorkingBuffer, 0, fsmWorkingIdx);\
     fsmWorkingBuffer[0] = fsmChr;\
     fsmWorkingIdx = 1;\
-    fsmBackBuffer.clear();
+    fsmBackBuffer.clear();\
+    if (fsmAbsPtr != NULL){\
+		*fsmAbsPtr = 0;\
+	}
 
 #define SaveStartSkip()\
     memset(fsmWorkingBuffer, 0, fsmWorkingIdx);\
     fsmWorkingIdx = 0;\
-    fsmBackBuffer.clear();
+    fsmBackBuffer.clear();\
+    if (*absPtr != NULL){\
+		*absPtr = 0;\
+	}
 
 #define SaveThis()\
     if (fsmWorkingIdx == fsmWorkingSize){\
@@ -56,16 +67,14 @@
         memset(fsmWorkingBuffer, 0, fsmWorkingSize);\
         fsmWorkingIdx = 0;\
     }\
-    fsmWorkingBuffer[fsmWorkingIdx++] = fsmChr;
+    fsmWorkingBuffer[fsmWorkingIdx++] = fsmChr;\
+	if (fsmAbsPtr != NULL){\
+		(*fsmAbsPtr)++;\
+	}
 
 #define SaveThisIfSame()\
     if (stCurrent == stNext){\
-        if (fsmWorkingIdx == fsmWorkingSize){\
-            fsmBackBuffer.append(fsmWorkingIdx, fsmWorkingSize);\
-            memset(fsmWorkingBuffer, 0, fsmWorkingSize);\
-            fsmWorkingIdx = 0;\
-            }\
-        fsmWorkingBuffer[fsmWorkingIdx++] = fsmChr;\
+        SaveThis()\
     }
 
 #define SaveStore(dest)\
@@ -73,7 +82,7 @@
 
 #define SaveStoreOne(dest)\
     if (fsmWorkingIdx != 0){\
-        (dest).assign(fsmBackBuffer + std::string(fsmWorkingBuffer, fsmWorkingIdx));\
+        SaveStore(dest)\
     }
 
 #define SaveBackspace(chars){\
@@ -95,6 +104,22 @@
 	}\
 }
 
+#define SavepointStore()\
+	if (fsmSavepointPtr != NULL){\
+		*fsmSavepointPtr = *fsmAbsPtr;\
+	}
+
+#define SavepointStoreOff(offset)\
+	if (fsmSavepointPtr != NULL){\
+		*fsmSavepointPtr = *fsmAbsPtr + (offset);\
+	}
+
+#define SavepointRevert()\
+	if (fsmSavepointPtr != NULL && *fsmSavepointPtr != *fsmAbsPtr){\
+		SaveBackspace(*fsmAbsPtr - *fsmSavepointPtr);\
+		*fsmAbsPtr = *fsmSavepointPtr;\
+	}
+
 #define SaveDiscard()\
     memset(fsmWorkingBuffer, 0, fsmWorkingIdx);\
     fsmWorkingIdx = 0;\
@@ -106,6 +131,12 @@
         stNext = (next);\
         retVal = (consume);\
     }
+
+#define TransIfWs(next, consume)\
+	if (std::isspace(fsmChr)){\
+        stNext = (next);\
+        retVal = (consume);\
+	}
 
 #define TransIfCond(value, cond, next, consume)\
     if (fsmChr == value && (cond)){\
@@ -131,6 +162,12 @@
         retVal = (consume);\
     }
 
+#define TransElifWs(next, consume)\
+	else if (std::isspace(fsmChr)){\
+        stNext = (next);\
+        retVal = (consume);\
+	}
+
 #define TransElifCond(value, cond, next, consume)\
     else if (fsmChr == value && (cond)){\
         stNext = (next);\
@@ -149,5 +186,5 @@
 
 #define TransElseError()\
     else {\
-        throw httpParseError() << stringInfo((boost::format("Bad state %1%!") % stNext).str());\
+        BOOST_THROW_EXCEPTION(serverError() << stringInfo((boost::format("Bad state %1%!") % stNext).str()));\
     }

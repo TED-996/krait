@@ -36,6 +36,16 @@ import random
         <h3 class="text-muted">Project name</h3>
       </div>
 
+      <!
+      randVal = random.randrange(2)
+      print randVal
+      suffixes = {
+        1 : "st",
+        2 : "nd",
+        3 : "rd"
+      }
+      !>
+
       <div class="jumbotron">
         <h1>Hello World from Krait!</h1>
         <p class="lead">Originally it said "Merry Christmas from Krait" but the holidays are over :(</p>
@@ -43,13 +53,16 @@ import random
         <p>It's <@ time.strftime("%x") @> already! </p>
       </div>
 
-      <?if random.randrange(2) == 0 ?>
-      <div class="jumbotron">
-        <h2> YOU'RE SO LUCKY </h2>
-        <p> you won the random lottery </p>
-        <p> the odds were so stacked against you </p>
-        <p> now that you're so lucky, why not click the button above? </p>
-      </div>
+      <?if randVal == 0 ?>
+        <?for idx=1 ?; idx <= 3 ?; idx+=1 ?>
+          <div class="jumbotron">
+            <h2> YOU'RE SO LUCKY </h2>
+            <p> you won the random lottery </p>
+            <p> the odds were so stacked against you </p>
+            <p> now that you're so lucky, why not click the button above? </p>
+            <p> this is your <@ str(idx) + suffixes.get(idx, "th") @> chance! </p>
+          </div>
+        </for>
       </if>
 
       <div class="row marketing">

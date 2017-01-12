@@ -180,6 +180,8 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	state = 0;
 	memzero(workingStr);
 	workingIdx = 0;
+	absIdx = 0;
+	saveIdx = 0;
 	workingBackBuffer.clear();
 	
 	while(itemStack.size() != 0){ //No clear() method...
@@ -199,16 +201,24 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 		//DBG("consume one ok");
 	}
 	
+	consumeOne('\0'); //Required to close all pending states.
+	
 	if (itemStack.size() != 1){
+		DBG_FMT("Error unexpected end! state is %1%", state);
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unexpected end. Tag not closed."));
 	}
 	
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		DBG_FMT("Error top not Seq! State is %1%", state);
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: after consuming file, working item is not PymlWorkingItem::SeqData."));
 	}
 	
 	if (workingBackBuffer.size() + workingIdx != 0){
-		addPymlWorkingStr(workingBackBuffer + string(workingStr, workingIdx));
+		string tmp = workingBackBuffer + string(workingStr, workingIdx);
+		if (tmp[tmp.length() - 1] == '\0'){
+			tmp.erase(tmp.length() - 1);
+		}
+		addPymlWorkingStr(tmp);
 	}
 	
 	const PymlItem* result = itemStack.top().getItem(pool);
@@ -220,7 +230,7 @@ bool PymlFile::consumeOne(char chr){
 	//DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
-	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
+	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, &absIdx, &saveIdx)
 		StatesBegin(0)
 			//DBG("state 0");
 			if (!stackTopIsType<PymlWorkingItem::SeqData>()){
@@ -242,6 +252,7 @@ bool PymlFile::consumeOne(char chr){
 			TransIf('<', 2, true)
 			TransElse(1, true)
 		StatesNext(2)
+			SavepointStoreOff(-1)
 			SaveThis()
 			
 			TransIf('<', 2, true)
@@ -253,29 +264,23 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(3)
 			SaveThis()
 			
-			TransIf(' ', 6, true)
-			TransElif('\n', 6, true)
-			TransElif('\t', 6, true)
-			TransElif('\v', 6, true)
+			TransIfWs(6, true)
 			TransElif('!', 7, true)
 			TransElse(1, true)
 		StatesNext(4)
 			SaveThis()
 			
-			TransIf(' ', 9, true)
-			TransElif('\n', 9, true)
-			TransElif('\t', 9, true)
-			TransElif('\v', 9, true)
+			TransIfWs(9, true)
 			TransElse(1, true)
 		StatesNext(5)
 			//BOOST_THROW_EXCEPTION(notImplementedError() << stringInfo("conditional support in pyml"));
 			SaveThis()
 			
 			TransIf('i', 50, true)
-			TransElif('w', 100, true)
+			TransElif('f', 60, true)
 			TransElse(1, true)
 		StatesNext(6) //Just consumed a space right before Python code for safe eval; python code follows
-			SaveBackspace(3)
+			SavepointRevert()
 			SaveStore(tmp)
 			SaveStart()
 			
@@ -289,13 +294,14 @@ bool PymlFile::consumeOne(char chr){
 			TransIf('@', 21, true)
 			TransElse(20, true)
 		StatesNext(21)
+			SavepointStoreOff(-1)
 			SaveThis()
 			
 			TransIf('>', 22, true)
 			TransElif('@', 21, true)
 			TransElse(20, true)
 		StatesNext(22)
-			SaveBackspace(2)
+			SavepointRevert()
 			SaveStore(tmp)
 			
 			if (tmp.size() > 0){
@@ -303,16 +309,13 @@ bool PymlFile::consumeOne(char chr){
 				addPymlWorkingPyCode(PymlWorkingItem::Type::PyEval, pythonPrepareStr(tmp));
 			}
 			TransAlways(0, false)
-		StatesNext(7)
+ 		StatesNext(7) //eval raw
 			SaveThis()
 			
-			TransIf(' ', 10, true)
-			TransElif('\n', 10, true)
-			TransElif('\t', 10, true)
-			TransElif('\v', 10, true)
+			TransIfWs(10, true)
 			TransElse(1, true)
 		StatesNext(10)
-			SaveBackspace(4)
+			SavepointRevert()
 			SaveStore(tmp)
 			SaveStart()
 			
@@ -326,13 +329,14 @@ bool PymlFile::consumeOne(char chr){
 			TransIf('@', 26, true)
 			TransElse(25, true)
 		StatesNext(26)
+			SavepointStoreOff(-1)
 			SaveThis()
 			
 			TransIf('>', 27, true)
 			TransElif('@', 26, true)
 			TransElse(25, true)
 		StatesNext(27)
-			SaveBackspace(2)
+			SavepointRevert()
 			SaveStore(tmp)
 			
 			if (tmp.size() > 0){
@@ -341,7 +345,7 @@ bool PymlFile::consumeOne(char chr){
 			}
 			TransAlways(0, false)
 		StatesNext(9)
-			SaveBackspace(3)
+			SavepointRevert()
 			SaveStore(tmp)
 			SaveStart()
 			
@@ -355,13 +359,14 @@ bool PymlFile::consumeOne(char chr){
 			TransIf('!', 31, true)
 			TransElse(30, true)
 		StatesNext(31)
+			SavepointStoreOff(-1)
 			SaveThis()
 			
 			TransIf('>', 32, true)
 			TransElif('!', 31, true)
 			TransElse(30, true)
 		StatesNext(32)
-			SaveBackspace(2)
+			SavepointRevert()
 			SaveStore(tmp)
 			
 			if (tmp.size() > 0){
@@ -377,13 +382,10 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(51)
 			SaveThis()
 			
-			TransIf(' ', 52, true)
-			TransElif('\n', 52, true)
-			TransElif('\t', 52, true)
-			TransElif('\v', 52, true)
+			TransIfWs(52, true)
 			TransElse(1, true)
 		StatesNext(52) //just consumed space before if condition
-			SaveBackspace(5) //"<?if "
+			SavepointRevert()
 			SaveStore(tmp)
 			SaveStart()
 			
@@ -398,12 +400,14 @@ bool PymlFile::consumeOne(char chr){
 			TransIf('?', 54, true)
 			TransElse(53, true)
 		StatesNext(54)
+			SavepointStoreOff(-1)
 			SaveThis()
 			
-			TransIf('>', 55, true)
+			TransIf('?', 54, true)
+			TransElif('>', 55, true)
 			TransElse(53, true)
 		StatesNext(55)
-			SaveBackspace(2)
+			SavepointRevert()
 			SaveStore(tmp);
 			
 			if (tmp.size() == 0){
@@ -411,12 +415,14 @@ bool PymlFile::consumeOne(char chr){
 			}
 			DBG_FMT("Added if with condition %1%", tmp);
 			pushPymlWorkingIf(pythonPrepareStr(tmp));
+			pushPymlWorkingSeq();
 			
 			TransAlways(0, false);
 		StatesNext(11) //"</"
 			SaveThis()
 			
 			TransIf('i', 56, true)
+			TransElif('f', 73, true)
 			TransElse(1, true)
 		StatesNext(56) //"</?"
 			SaveThis()
@@ -427,9 +433,10 @@ bool PymlFile::consumeOne(char chr){
 			SaveThis()
 			
 			TransIf('>', 58, true)
+			TransElifWs(57, true)
 			TransElse(1, true)
 		StatesNext(58)
-			SaveBackspace(5) //"</if>"
+			SavepointRevert()
 			SaveStore(tmp)
 			
 			if (tmp.size() > 0){
@@ -438,6 +445,134 @@ bool PymlFile::consumeOne(char chr){
 			
 			if (!addSeqToPymlWorkingIf(false)){
 				BOOST_THROW_EXCEPTION(serverError() << stringInfo("Unexpected </if>"));
+			}
+			addPymlStackTop();
+			
+			TransAlways(0, true)
+		StatesNext(60)
+			SaveThis()
+		
+			TransIf('o', 61, true)
+			TransElse(1, true)
+		StatesNext(61)
+			SaveThis()
+			
+			TransIf('r', 62, true)
+			TransElse(1, true)
+		StatesNext(62)
+			SaveThis()
+			
+			TransIfWs(63, true)
+			TransElse(1, true)
+		StatesNext(63) //first character of for init
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+			
+			if (tmp.size() > 0){
+				addPymlWorkingStr(tmp);
+			}
+			pushPymlWorkingFor();
+			
+			TransIf('?', 65, true)
+			TransElse(64, true)
+		StatesNext(64) //for init
+			SaveThis()
+			
+			TransIf('?', 65, true)
+			TransElse(64, true)
+		StatesNext(65)
+			SavepointStoreOff(-1)
+			SaveThis()
+			
+			TransIf(';', 66, true)
+			TransElif('?', 65, true)
+			TransElse(64, true)
+		StatesNext(66) //finished for init
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+			
+			if (tmp.size() > 0){
+				addCodeToPymlWorkingFor(0, pythonPrepareStr(tmp));
+			}
+			
+			TransIf('?', 68, true)
+			TransElse(67, true)
+		StatesNext(67) //for cond
+			SaveThis()
+			
+			TransIf('?', 68, true)
+			TransElse(67, true)
+		StatesNext(68)
+			SavepointStoreOff(-1)
+			SaveThis()
+			
+			TransIf(';', 69, true) //TODO: '>?'
+			TransElif('?', 68, true)
+			TransElse(67, true)
+		StatesNext(69) //finished for cond
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+			
+			if (tmp.size() > 0){
+				addCodeToPymlWorkingFor(1, pythonPrepareStr(tmp));
+			}
+			
+			TransIf('?', 71, true)
+			TransElse(70, true)
+		StatesNext(70) //for update
+			SaveThis()
+			
+			TransIf('?', 71, true)
+			TransElse(70, true)
+		StatesNext(71)
+			SavepointStoreOff(-1)
+			SaveThis()
+			
+			TransIf('>', 72, true)
+			TransElif('?', 71, true)
+			TransElse(70, true)
+		StatesNext(72) //finished for update
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+			
+			if (tmp.size() > 0){
+				addCodeToPymlWorkingFor(2, pythonPrepareStr(tmp));
+			}
+			pushPymlWorkingSeq();
+			
+			TransAlways(0, true);
+		StatesNext(73) //"</f"
+			DBG("closing /f");
+			SaveThis()
+			
+			TransIf('o', 74, true)
+			TransElse(1, true)
+		StatesNext(74) //"</fo"
+			SaveThis()
+			
+			TransIf('r', 75, true)
+			TransElse(1, true)
+		StatesNext(75)
+			SaveThis()
+			
+			TransIfWs(75, true)
+			TransElif('>', 76, true)
+		StatesNext(76)
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+			DBG("closed for okay");
+			
+			if (tmp.size() > 0){
+				addPymlWorkingStr(tmp);
+			}
+			
+			if (!addSeqToPymlWorkingFor()){
+				BOOST_THROW_EXCEPTION(serverError() << stringInfo("Unexpected </for>"));
 			}
 			addPymlStackTop();
 			
@@ -474,7 +609,13 @@ void PymlFile::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::strin
 void PymlFile::pushPymlWorkingIf(const std::string& condition){
 	itemStack.emplace(PymlWorkingItem::Type::If);
 	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition;
-	
+}
+
+void PymlFile::pushPymlWorkingFor() {
+	itemStack.emplace(PymlWorkingItem::Type::For);
+}
+
+void PymlFile::pushPymlWorkingSeq() {
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
 }
 
@@ -494,7 +635,7 @@ bool PymlFile::addSeqToPymlWorkingIf(bool isElse){
 	
 	PymlWorkingItem::IfData* data = itemStack.top().getData<PymlWorkingItem::IfData>();
 	if (data == NULL){
-		DBG_FMT("Bad item data; expected IfData, got %1%", item->type);
+		DBG_FMT("Bad item data; expected IfData, got %1%", itemStack.top().type);
 		return false;
 	}
 	
@@ -515,6 +656,47 @@ bool PymlFile::addSeqToPymlWorkingIf(bool isElse){
 			data->itemIfTrue = item;
 			return true;
 		}
+	}
+}
+
+bool PymlFile::addSeqToPymlWorkingFor() {
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		return false;
+	}
+	PymlWorkingItem& itemSrc = itemStack.top();
+	PymlWorkingItem* item = workingItemPool.construct(PymlWorkingItem::Type::Seq);
+	*item = itemSrc;
+	itemStack.pop();
+	
+	if (itemStack.empty()){
+		return false;
+	}
+	
+	PymlWorkingItem::ForData* data = itemStack.top().getData<PymlWorkingItem::ForData>();
+	if (data == NULL){
+		DBG_FMT("Bad item data; expected ForData, got %1%", itemStack.top().type);
+		return false;
+	}
+	
+	data->loopItem = item;
+	return true;
+}
+
+void PymlFile::addCodeToPymlWorkingFor(int where, const std::string& code) {
+	if (!stackTopIsType<PymlWorkingItem::ForData>()){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Parser error: tried to add code to <?for ?> without a for being on top"));
+	}
+
+	PymlWorkingItem::ForData& data = getStackTop<PymlWorkingItem::ForData>();
+	
+	if (where == 0){
+		data.initCode = code;
+	}
+	else if (where == 1){
+		data.conditionCode = code;
+	}
+	else if (where == 2){
+		data.updateCode = code;
 	}
 }
 

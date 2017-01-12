@@ -43,7 +43,7 @@ bool RequestParser::consumeOne(char chr) {
 		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Got null character!"));
 	}
 
-	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer)
+	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, NULL, NULL)
 	StatesBegin(0) { //Before any; skipping spaces before HTTP method
 		SaveStart()
 		TransIf(' ', stCurrent, true)
@@ -211,7 +211,7 @@ Request RequestParser::getRequest() {
 
 	auto verbIt = stringVerbMapping.find(methodString);
 	if (verbIt == stringVerbMapping.end()) {
-		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("HTTP method not recognized."));
+		BOOST_THROW_EXCEPTION(httpParseError() << stringInfoFromFormat("HTTP method %1% not recognized.", methodString));
 	}
 	HttpVerb verb = verbIt->second;
 

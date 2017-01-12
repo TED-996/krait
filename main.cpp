@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include "network.h"
-#include "request.h"
 #include "logger.h"
 #include "server.h"
 #include "dbg.h"
