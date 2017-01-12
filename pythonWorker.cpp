@@ -132,6 +132,7 @@ string pythonEval(string command) {
 	}
 }
 
+
 bool pythonTest(std::string condition){
 	try{
 		object result = eval(bp::str(condition), mainGlobal, mainGlobal);
@@ -181,6 +182,20 @@ string pyErrAsString() {
 	}
 	catch (error_already_set const&) {
 		return "We tried to get some Python error info, but we failed.";
+	}
+}
+
+bool pythonVarIsNone(string name){
+	DBG("in pythonVarIsNone()");
+	try {
+		return object(mainModule.attr(name.c_str())).is_none();
+	}
+	catch (error_already_set const&) {
+		DBG("Python error in pythonSetGlobal()!");
+
+		string errorString = (format("Error in pythonSetGlobal(%1%, python::object):\n%2%") % name % pyErrAsString()).str();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
 

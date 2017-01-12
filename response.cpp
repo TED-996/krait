@@ -26,7 +26,14 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<s
 	this->headers = headers;
 
 	setBody(body);
+	this->isFullResponse = false;
 }
+
+Response::Response(string fullResponse){
+	this->fullResponse = fullResponse;
+	this->isFullResponse = true;
+}
+
 
 void Response::setBody(std::string body) {
 	this->body = body;
@@ -69,6 +76,10 @@ void Response::removeHeader(string name) {
 string getStatusReason(int statusCode);
 
 string Response::getResponseData() {
+	if (isFullResponse){
+		return fullResponse;
+	}
+	
 	string statusLine = (format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(
 	                         statusCode)).str();
 	vector<string> headerStrings;

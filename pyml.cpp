@@ -49,6 +49,7 @@ std::string PymlItemPyEvalRaw::runPyml() const {
 
 
 std::string PymlItemPyExec::runPyml() const {
+	DBG_FMT("running pyExec: %1%", code);
 	pythonRun(code);
 	return "";
 }
@@ -231,7 +232,7 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 
 
 bool PymlFile::consumeOne(char chr){
-	//DBG_FMT("In state %1%, consuming chr %2%", state, chr);
+	DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, &absIdx, &saveIdx)
@@ -307,6 +308,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(22)
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			if (tmp.size() > 0){
 				DBG_FMT("added eval code %1%", pythonPrepareStr(tmp));
@@ -342,6 +344,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(27)
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			if (tmp.size() > 0){
 				DBG_FMT("added raw eval code %1%", pythonPrepareStr(tmp));
@@ -372,6 +375,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(32)
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			if (tmp.size() > 0){
 				DBG_FMT("added exec code %1%", pythonPrepareStr(tmp));
@@ -413,6 +417,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(55)
 			SavepointRevert()
 			SaveStore(tmp);
+			SaveDiscard()
 			
 			if (tmp.size() == 0){
 				BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml parsing error: if condition missing!"));
@@ -442,6 +447,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(58)
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			if (tmp.size() > 0){
 				addPymlWorkingStr(tmp);
@@ -542,6 +548,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(72) //finished for update
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			if (tmp.size() > 0){
 				addCodeToPymlWorkingFor(2, pythonPrepareStr(tmp));
@@ -565,9 +572,11 @@ bool PymlFile::consumeOne(char chr){
 			
 			TransIfWs(75, true)
 			TransElif('>', 76, true)
+			TransElse(1, true)
 		StatesNext(76)
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			//DBG("closed for okay");
 			
 			if (tmp.size() > 0){
@@ -607,6 +616,7 @@ bool PymlFile::consumeOne(char chr){
 		StatesNext(81) //for entry ?in iterator ?>
 			SavepointRevert()
 			SaveStore(tmp)
+			SaveDiscard()
 			
 			pushPymlWorkingForIn(pythonPrepareStr(tmpStr), pythonPrepareStr(tmp));
 			pushPymlWorkingSeq();

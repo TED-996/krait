@@ -1,0 +1,13 @@
+By severity:
+
+* Moderate:
+    * HTTP compliance:
+        * Transfer-Encoding:chunked
+        * multipart
+    * Relevant syntax error messages (for EVERY. SINGLE. STATE. IN. THE. FSM.) - these would be based on the final state in the FSM
+    * 
+* Low:
+    * HTTP compliance:
+        * clientside caching (If-Modified-Since)
+    * Python:
+        * standard library maybe?

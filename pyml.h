@@ -5,6 +5,8 @@
 #include<boost/pool/object_pool.hpp>
 #include<boost/variant.hpp>
 
+#include"dbg.h"
+
 
 class PymlItem {
 public:
@@ -22,6 +24,7 @@ public:
 	}
 	
 	std::string runPyml() const override {
+		DBG_FMT("running pyml str: %1%", str);
 		return str;
 	}
 };

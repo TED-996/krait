@@ -12,10 +12,13 @@ class Response {
 	std::unordered_map<std::string, std::string> headers;
 
 	std::string body;
-
+	
+	std::string fullResponse;
+	bool isFullResponse;
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
 	         std::string body);
+	Response(std::string fullResponse);
 
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;

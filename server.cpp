@@ -190,19 +190,23 @@ void Server::serveClientStart(int clientSocket) {
 		pythonSetGlobal("resp_headers", map<string, string>());
 
 		resp = getResponseFromSource(sourceFile, clientRequest);
+		
+		if (!pythonVarIsNone("response")){
+			resp = Response(pythonEval("response"));
+		}
 
 		DBG_FMT("Response object for client on URL %1% done.", clientRequest.getUrl());
 	}
 	catch (notFoundError&) {
-		resp = Response(1, 1, 404, unordered_map<string, string>(), string());
+		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>");
 	}
 	catch (rootException& ex) {
-		resp = Response(1, 1, 500, unordered_map<string, string>(), string());
+		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>");
 		errLogger.log(formatString("Error serving client: %1%", ex.what()));
 	}
 
 	if (isHead) {
-		resp.setBody(string());
+		resp.setBody(string()); //TODO: not really working with python-custom responses... oops.
 	}
 
 	respondWithObject(clientSocket, resp);
