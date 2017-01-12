@@ -82,7 +82,7 @@ string Response::getResponseData() {
 	string headersAll = algorithm::join(headerStrings, "\r\n");
 
 	string result = statusLine + "\r\n" + headersAll + "\r\n" + body;
-	DBG_FMT("HTTP response:\n%1%", result);
+	//DBG_FMT("HTTP response:\n%1%", result);
 
 	return result;
 }

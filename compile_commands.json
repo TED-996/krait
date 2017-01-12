@@ -56,6 +56,11 @@
 },
 {
   "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -Wformat -Werror=format-security -g -fwrapv -Wall -g   -std=gnu++11 -o CMakeFiles/build_tests.dir/stringPiper.cpp.o -c /home/ted/proiect/stringPiper.cpp",
+  "file": "/home/ted/proiect/stringPiper.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -Wformat -Werror=format-security -g -fwrapv -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/main.cpp.o -c /home/ted/proiect/main.cpp",
   "file": "/home/ted/proiect/main.cpp"
 },
@@ -108,5 +113,10 @@
   "directory": "/home/ted/proiect",
   "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -Wformat -Werror=format-security -g -fwrapv -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/server.cpp.o -c /home/ted/proiect/server.cpp",
   "file": "/home/ted/proiect/server.cpp"
+},
+{
+  "directory": "/home/ted/proiect",
+  "command": "/usr/bin/c++    -I/usr/include/python2.7   -fno-strict-aliasing -Wformat -Werror=format-security -g -fwrapv -Wall -g   -std=gnu++11 -o CMakeFiles/build.dir/stringPiper.cpp.o -c /home/ted/proiect/stringPiper.cpp",
+  "file": "/home/ted/proiect/stringPiper.cpp"
 }
 ]

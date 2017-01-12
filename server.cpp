@@ -76,6 +76,7 @@ void Server::runServer() {
 	while (true) {
 		tryAcceptConnection();
 		tryWaitFinishedForks();
+		tryCachePymlFiles();
 	}
 }
 
@@ -95,6 +96,7 @@ void Server::tryAcceptConnection() {
 	}
 	if (pid == 0) {
 		closeSocket(serverSocket);
+		cacheRequestPipe.closeRead();
 		serveClientStart(clientSocket);//TODO: connect stderr?
 		exit(255); //The function above should call exit()!
 	}
@@ -116,6 +118,38 @@ void Server::tryWaitFinishedForks() {
 			DBG_FMT("[Parent] Child exited with status %1%", WEXITSTATUS(status));
 			pids.erase((int)pid);
 		}
+	}
+}
+
+
+void Server::tryCachePymlFiles() {
+	while(cacheRequestPipe.pipeAvailable()){
+		string filename = cacheRequestPipe.pipeRead();
+		DBG("next cache add is in parent");
+		if (canContainPython(filename)){
+			const auto it = pymlCache.find(filename);
+
+			if (it == pymlCache.end()){
+				addPymlToCache(filename);
+			}
+			else if (last_write_time(filename) != it->second.first){
+				pymlPool.destroy(it->second.second);
+				pymlCache.erase(it);
+				addPymlToCache(filename);
+			}
+		}
+		else{
+			const auto it = rawFileCache.find(filename);
+
+			if (it == rawFileCache.end()){
+				addRawFileToCache(filename);
+			}
+			else if (last_write_time(filename) != it->second.first){
+				rawFileCache.erase(it);
+				addRawFileToCache(filename);
+			}
+		}
+		DBG("if cache add, it was in parent");
 	}
 }
 
@@ -219,7 +253,6 @@ string replaceParams(string target, map<string, string> params) {
 	return result;
 }
 
-bool canContainPython(string filename);
 
 Response Server::getResponseFromSource(string filename, Request& request) {
 	//TODO: unused request?
@@ -242,7 +275,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		return result;
 	}
 	else {
-		string pymlResult = getPymlResult (filename);
+		string pymlResult = getPymlResult(filename);
 
 		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
@@ -254,7 +287,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 }
 
 
-bool canContainPython(std::string filename){
+bool Server::canContainPython(std::string filename){
 	return ends_with(filename, ".html") || ends_with(filename, ".htm") ||
 		ends_with(filename, ".pyml");
 }
@@ -298,18 +331,18 @@ string Server::expandFilename(string filename) {
 
 string readFromFile(string filename);
 
-string Server::getPymlResult (string filename) {
+string Server::getPymlResult(string filename) {
 	//DBG("Reading pyml cache");
 	const auto it = pymlCache.find(filename);
 
 	if (it == pymlCache.end()){
-		const PymlFile& file = addPymlToCache(filename);
+		const PymlFile& file = getPymlRequestCache(filename);
 		return file.runPyml();
 	}
 	if (last_write_time(filename) != it->second.first){
 		pymlPool.destroy(it->second.second);
 		pymlCache.erase(it);
-		const PymlFile& file = addPymlToCache(filename);
+		const PymlFile& file = getPymlRequestCache(filename);
 		return file.runPyml();
 	}
 	
@@ -317,11 +350,14 @@ string Server::getPymlResult (string filename) {
 }
 
 
+
 const PymlFile& Server::addPymlToCache(string filename) { //TODO: caching kind of flawed, necessary in parent process, not child! Send filename through pipe?
 	//DBG("Adding new item to cache");
 	time_t time = last_write_time(filename);
 	PymlFile* pymlFile = pymlPool.construct(readFromFile(filename));
 	pymlCache[filename] = make_pair(time, pymlFile);
+	
+	DBG("\tAdded pyml to cache!");
 	return *pymlFile;
 }
 
@@ -332,11 +368,11 @@ string Server::getRawFile(string filename) {
 	const auto it = rawFileCache.find(filename);
 
 	if (it == rawFileCache.end()){
-		return addRawFileToCache(filename);
+		return getRawFileRequestCache(filename);
 	}
 	if (last_write_time(filename) != it->second.first){
 		rawFileCache.erase(it);
-		return addRawFileToCache(filename);
+		return getRawFileRequestCache(filename);
 	}
 	
 	return it->second.second;
@@ -349,8 +385,23 @@ string& Server::addRawFileToCache(string filename){
 	string result = readFromFile(filename);
 	rawFileCache[filename] = make_pair(time, result);
 	
+	DBG("\tAdded raw to cache!");
 	return rawFileCache[filename].second;
 }
+
+
+std::string& Server::getRawFileRequestCache(std::string filename){
+	cacheRequestPipe.pipeWrite(filename);
+	
+	return addRawFileToCache(filename);
+}
+
+const PymlFile& Server::getPymlRequestCache(std::string filename){
+	cacheRequestPipe.pipeWrite(filename);
+	
+	return addPymlToCache(filename);
+}
+
 
 
 bool Server::pathBlocked(string filename) {

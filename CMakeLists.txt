@@ -20,6 +20,8 @@ file(GLOB TEST_FILES
 list(REMOVE_ITEM SOURCE_FILES ${MAIN_FILES})
 list(REMOVE_ITEM SOURCE_FILES ${TEST_FILES})
 
+message("Source files:")
+message(${SOURCE_FILES} ${MAIN_FILES})
 
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})

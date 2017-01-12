@@ -147,6 +147,7 @@ struct PymlWorkingItem {
 	
 	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData> data;
 	
+	Type type; //TODO: set
 	PymlWorkingItem(Type type);
 	
 	template<typename T>
@@ -173,7 +174,7 @@ class PymlFile {
 	
 	template<typename T>
 	bool stackTopIsType(){
-		return boost::get<T>(&itemStack.top().data) != nullptr;
+		return !itemStack.empty() && boost::get<T>(&itemStack.top().data) != nullptr;
 	}
 	
 	template<typename T>
@@ -193,6 +194,9 @@ class PymlFile {
 	
 	void addPymlWorkingStr(const std::string& str);
 	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
+	void pushPymlWorkingIf(const std::string& condition);
+	bool addSeqToPymlWorkingIf(bool isElse);
+	void addPymlStackTop();
 public:
 	PymlFile(const std::string& pymlSource){
 		rootItem = parseFromSource(pymlSource);
