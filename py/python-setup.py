@@ -17,9 +17,9 @@ class Request:
         for field in fields:
             items = field.split('=')
             if len(items) == 1:
-                result[urllib.unquote(items[0])] = ""
+                result[urllib.unquote_plus(items[0])] = ""
             else:
-                result[urllib.unquote(items[0])] = urllib.unquote(items[1])
+                result[urllib.unquote_plus(items[0])] = urllib.unquote_plus(items[1])
         return result
 
 

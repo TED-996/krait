@@ -767,7 +767,7 @@ void PymlFile::addPymlStackTop() {
 void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 	DBG_FMT("for in with entries %1% and %2%", entry, collection);
 	
-	string krIterator = (boost::format("_krIt%d") % krItIndex).str();
+	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
 	boost::trim(collection);
 	
