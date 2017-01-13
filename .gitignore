@@ -69,3 +69,4 @@ CTestTestfile.cmake
 build/*
 tests/*
 *.orig
+docs/*
