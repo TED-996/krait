@@ -24,6 +24,14 @@ string PymlItemSeq::runPyml() const {
 	return result;
 }
 
+bool PymlItemSeq::isDynamic() const {
+	for (auto it: items){
+		if (it->isDynamic()){
+			return true;
+		}
+	}
+	return false;
+}
 
 const PymlItem* PymlItemSeq::tryCollapse() const {
 	if (items.size() == 0){
@@ -176,6 +184,13 @@ std::string PymlFile::runPyml() const {
 		return "";
 	}
 	return rootItem->runPyml();
+}
+
+bool PymlFile::isDynamic() const {
+	if (rootItem == NULL){
+		return true;
+	}
+	return rootItem->isDynamic();
 }
 
 
@@ -860,10 +875,10 @@ string htmlEscape(string htmlCode) {
 	const char* replacements[256];
 	memzero(replacements);
 	replacements[(int)'&'] = "&amp;";
-	replacements[(int)'<'] = "&lt";
-	replacements[(int)'>'] = "&gt";
+	replacements[(int)'<'] = "&lt;";
+	replacements[(int)'>'] = "&gt;";
 	replacements[(int)'"'] = "&quot;";
-	replacements[(int)'\''] = "&#39";
+	replacements[(int)'\''] = "&#39;";
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {

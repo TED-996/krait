@@ -13,6 +13,10 @@ public:
 	virtual std::string runPyml() const {
 		return "";
 	}
+	
+	virtual bool isDynamic() const {
+		return false;
+	}
 };
 
 
@@ -27,6 +31,10 @@ public:
 		DBG_FMT("running pyml str: %1%", str);
 		return str;
 	}
+	
+	bool isDynamic() const override {
+		return false;
+	}
 };
 
 
@@ -38,6 +46,7 @@ public:
 	}
 	
 	std::string runPyml() const override;
+	bool isDynamic() const override;
 	
 	const PymlItem* tryCollapse() const;
 };
@@ -50,6 +59,10 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
+	
+	bool isDynamic() const override {
+		return true;
+	}
 };
 
 
@@ -60,6 +73,10 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
+	
+	bool isDynamic() const override {
+		return true;
+	}
 };
 
 
@@ -70,6 +87,10 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
+	
+	bool isDynamic() const override {
+		return true;
+	}
 };
 
 
@@ -86,6 +107,10 @@ public:
 	}
 	
 	std::string runPyml() const override;
+	
+	bool isDynamic() const override {
+		return true;
+	}
 };
 
 
@@ -104,9 +129,11 @@ public:
 		this->loopItem = loopItem;
 	}
 	
-	
-	
 	std::string runPyml() const override;
+	
+	bool isDynamic() const override {
+		return true;
+	}
 };
 
 
@@ -219,5 +246,6 @@ public:
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;
 	
+	bool isDynamic() const;
 	std::string runPyml() const;
 };

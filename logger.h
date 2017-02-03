@@ -1,6 +1,7 @@
 #pragma once
 #include<fstream>
 #include<string>
+#include<boost/format.hpp>
 
 
 class LoggerOut {
@@ -25,10 +26,11 @@ public:
 
 	void log(const char* buffer, size_t size);
 	void log(const char* str);
-	void log(std::string str);
+	void log(const std::string str);
+	void log(const boost::format fmt);
 
 	void close();
 };
 
 
-void autoLogger(LoggerOut& log1, LoggerOut& log2);
+void loopTick2Loggers(LoggerOut& log1, LoggerOut& log2);

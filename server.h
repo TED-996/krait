@@ -39,6 +39,7 @@ class Server {
 	void tryCachePymlFiles();
 
 	void serveClientStart(int clientSocket);
+	void serveRequest(int clientSocket, Request& request);
 	Response getResponseFromSource(std::string filename);
 	void addDefaultHeaders(Response& response);
 	Response getResponseFromSource(std::string filename, Request& request);

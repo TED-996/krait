@@ -21,7 +21,7 @@
 using namespace std;
 
 
-int getServerSocket(int port, bool setListen) {
+int getServerSocket(int port, bool setListen, bool reuseAddr) {
 	sockaddr_in serverSockaddr;
 	memzero(serverSockaddr);
 
@@ -31,7 +31,12 @@ int getServerSocket(int port, bool setListen) {
 
 	int sd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sd == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket!"));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket.") << errcodeInfo(errno));
+	}
+	
+	int enable = (int)reuseAddr;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: coult not set reuseAddr.") << errcodeInfo(errno));
 	}
 
 	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
@@ -40,8 +45,7 @@ int getServerSocket(int port, bool setListen) {
 
 	if (setListen) {
 		if (listen(sd, 1024) == -1) {
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
-			                          errno));
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
 		}
 	}
 
@@ -107,7 +111,7 @@ void printSocket(int clientSocket) {
 	}
 }
 
-Request getRequestFromSocket(int clientSocket) {
+boost::optional<Request> getRequestFromSocket(int clientSocket) {
 	RequestParser parser;
 	char buffer[4096];
 	int bytesRead;
@@ -115,6 +119,9 @@ Request getRequestFromSocket(int clientSocket) {
 	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
 		if (bytesRead < 0) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
+		}
+		if (bytesRead == 0){
+			return boost::none;
 		}
 
 		parser.consume(buffer, bytesRead);

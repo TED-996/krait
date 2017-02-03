@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 		LoggerOut iLogger(infoPipe[0], "info.log");
 		LoggerOut eLogger(errPipe[0], "err.log");
 
-		autoLogger(iLogger, eLogger);
+		loopTick2Loggers(iLogger, eLogger);
 		exit(0);
 	}
 

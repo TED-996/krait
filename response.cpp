@@ -1,7 +1,10 @@
 #include<boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/assign.hpp>
 #include "response.h"
+#include "except.h"
+
 #include "dbg.h"
 
 using namespace std;
@@ -19,35 +22,63 @@ static unordered_map<int, string> statusReasons {
 };
 
 
-Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<string, string> headers, string body) {
+Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<string, string> headers, string body, bool connClose) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->statusCode = statusCode;
-	this->headers = headers;
+	this->fromFullResponse = false;
+	this->connClose = connClose;
+	
+	for (auto it : headers){
+		this->headers[to_lower_copy(it.first)] = it.second;
+	}
 
-	setBody(body);
-	this->isFullResponse = false;
+	setBody(body, true);
 }
 
 Response::Response(string fullResponse){
-	this->fullResponse = fullResponse;
-	this->isFullResponse = true;
+	this->fromFullResponse = true;
+	parseFullResponse(fullResponse);
+}
+
+void Response::parseFullResponse(string response){
+	size_t statusEnd = response.find("\r\n");
+	statusLine = response.substr(0, statusEnd);
+	
+	size_t headersEnd = response.find("\r\n\r\n");
+	string newBody = response.substr(headersEnd + 4, string::npos);
+	string headersStr = response.substr(statusEnd + 2, headersEnd - (statusEnd + 2));
+	
+	size_t idx = 0;
+	while (idx != string::npos){
+		size_t nextIdx = headersStr.find("\r\n", idx + 2);
+		size_t colonIdx = headersStr.find(": ", idx);
+		
+		headers[trim_copy(to_lower_copy(headersStr.substr(idx, colonIdx - idx)))] = trim_copy(headersStr.substr(colonIdx + 2, nextIdx - (colonIdx + 2)));
+		
+		idx = nextIdx;
+	}
+	
+	setBody(newBody, true);
 }
 
 
-void Response::setBody(std::string body) {
+void Response::setBody(std::string body, bool updateLength) {
 	this->body = body;
 
-	if (body.length() == 0) {
-		removeHeader("Content-Length");
-	}
-	else {
-		setHeader("Content-Length", std::to_string(body.length()));
+	if (updateLength){
+		if (body.length() == 0) {
+			removeHeader("Content-Length");
+		}
+		else {
+			setHeader("Content-Length", std::to_string(body.length()));
+		}
 	}
 }
 
 
 void Response::addHeader(string name, string value) {
+	to_lower(name);
 	auto headerIt = headers.find(name);
 
 	if (headerIt == headers.end()) {
@@ -60,11 +91,13 @@ void Response::addHeader(string name, string value) {
 
 
 void Response::setHeader(string name, string value) {
+	to_lower(name);
 	headers[name] = value;
 }
 
 
 void Response::removeHeader(string name) {
+	to_lower(name);
 	auto headerIt = headers.find(name);
 
 	if (headerIt != headers.end()) {
@@ -72,16 +105,24 @@ void Response::removeHeader(string name) {
 	}
 }
 
+void Response::setConnClose(bool connClose) {
+	this->connClose = connClose;
+	
+	setHeader("Connection", connClose ? "close" : "Keep-Alive");
+}
 
 string getStatusReason(int statusCode);
 
 string Response::getResponseData() {
-	if (isFullResponse){
-		return fullResponse;
-	}
+	setHeader("Connection", connClose ? "close" : "Keep-Alive");
 	
-	string statusLine = (format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(
-	                         statusCode)).str();
+	string statusLine;
+	if (fromFullResponse){
+		statusLine = this->statusLine;
+	}
+	else{
+		statusLine = (format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(statusCode)).str();
+	}
 	vector<string> headerStrings;
 
 	format headerFormat = format("%1%: %2%");

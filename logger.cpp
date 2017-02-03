@@ -80,7 +80,7 @@ LoggerIn::LoggerIn(int pipeOut) {
 
 void LoggerIn::log(const char* buffer, size_t size) {
 	if (write(pipeOut, buffer, size) != (int)size || write(pipeOut, "\n", 1) != 1) {
-		printf("Error in LoggerIn-write; errno %d\n", errno);
+		printf("Error in LoggerIn.write; errno %d\n", errno);
 	}
 
 	fwrite(buffer, size, 1, stdout);
@@ -93,8 +93,12 @@ void LoggerIn::log(const char* str) {
 }
 
 
-void LoggerIn::log(std::string str) {
+void LoggerIn::log(const std::string str) {
 	log(str.c_str(), str.length());
+}
+
+void LoggerIn::log(const boost::format fmt) {
+	log(fmt.str());
 }
 
 
@@ -103,7 +107,7 @@ void LoggerIn::close() {
 }
 
 
-void autoLogger(LoggerOut& log1, LoggerOut& log2) {
+void loopTick2Loggers(LoggerOut& log1, LoggerOut& log2) {
 	bool log1Ok = true;
 	bool log2Ok = true;
 

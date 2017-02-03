@@ -1,6 +1,7 @@
 #include<string>
 #include<utility>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include"request.h"
 #include"fsm.h"
 
@@ -255,3 +256,21 @@ bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
 
 	return true;
 }
+
+const bool Request::isKeepAlive() const {
+	auto it = headers.find("Connection");
+	
+	if (httpMajor < 1 || (httpMajor == 1 && httpMinor < 1)){
+		if (it == headers.end()){
+			return false;
+		}
+		return boost::algorithm::to_lower_copy(it->second) == "keep-alive";
+	}
+	else{
+		if (it == headers.end()){
+			return true;
+		}
+		return boost::algorithm::to_lower_copy(it->second) != "close";
+	}
+}
+

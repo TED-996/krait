@@ -37,6 +37,7 @@ public:
 	const std::string& getBody() const {
 		return body;
 	}
+	const bool isKeepAlive() const;
 
 	void setVerb(HttpVerb verb) {
 		this->verb = verb;

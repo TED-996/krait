@@ -45,9 +45,9 @@ void StringPiper::pipeWrite(string data) {
 		fprintf(stderr, "[WARN] StringPiper: tried to write more than PIPE_BUF at a time; not atomic so weird errors may occur!");
 	}
 	size_t len = data.length();
-	write(writeHead, &len, sizeof(size_t));
+	string writeData = string((char*)&len, sizeof(len)) + data;
 	
-	write(writeHead, data.c_str(), len);
+	write(writeHead, writeData.c_str(), writeData.length());
 }
 
 string StringPiper::pipeRead() {
@@ -60,12 +60,12 @@ string StringPiper::pipeRead() {
 	data[length] = '\0';
 	
 	if (read(readHead, data, length) != (int)length){
-		delete data;
+		delete[] data;
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("StringPiper::pipeRead: bulk read() failed") << errcodeInfo(errno));
 	}
 	
 	string result = string(data, length);
-	delete data;
+	delete[] data;
 	
 	return result;
 }

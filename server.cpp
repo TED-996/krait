@@ -35,10 +35,9 @@ Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLog
 		this->routes = getDefaultRoutes();
 	}
 	
-
 	DBG("routes got");
 
-	this->serverSocket = getServerSocket(port, false);
+	this->serverSocket = getServerSocket(port, false, true);
 
 	DBG("server socket got");
 
@@ -160,64 +159,106 @@ void Server::serveClientStart(int clientSocket) {
 	infoLogger.log("Serving a new client");
 	//TODO: handle SIGTERM in some way...
 	//TODO: handle execptions (return 5xx + log)
-	Response resp(1, 1, 500, unordered_map<string, string>(), string());
+	bool isHead = false;
+	
+	try{
+		while(true){
+			optional<Request> requestOpt = getRequestFromSocket(clientSocket);
+			if (!requestOpt){
+				break;
+			}
+			Request& request = *requestOpt;
+			
+			infoLogger.log(formatString("Request URL is %1%", request.getUrl()));
+			if (request.getVerb() == HttpVerb::HEAD) {
+				isHead = true;
+			}
+			
+			pid_t childPid = fork();
+			if (childPid == 0){
+				serveRequest(clientSocket, request);
+				
+				close(clientSocket);
+				exit(0);
+			}
+			else{
+				if (waitpid(childPid, NULL, 0) != childPid){
+					BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server::serveClientStart: waitpid failed") << errcodeInfo(errno));
+				}
+			}
+			
+			if (!request.isKeepAlive()){
+				break;
+			}
+		}
+	}
+	catch (rootException& ex) {
+		if (isHead){
+			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "", true));
+		}
+		else{
+			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+		}
+		errLogger.log(formatString("Error serving client: %1%", ex.what()));
+	}
+	
+	
+	close(clientSocket);
+
+	exit(0);
+}
+
+void Server::serveRequest(int clientSocket, Request& request) {
+	Response resp(1, 1, 500, unordered_map<string, string>(), string(), true);
 
 	bool isHead = false;
 
 	try {
-		Request clientRequest = getRequestFromSocket(clientSocket);
-		//DBG_FMT("URL is %1%", clientRequest.getUrl());
-
 		map<string, string> params;
-		Route route = getRouteMatch(routes, clientRequest.getVerb(), clientRequest.getUrl(), params);
+		Route route = getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
 
-		if (clientRequest.getVerb() == HttpVerb::HEAD) {
+		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
-			clientRequest.setVerb(HttpVerb::GET);
+			request.setVerb(HttpVerb::GET);
 		}
 
 		string sourceFile;
 		if (route.isDefaultTarget()) {
-			sourceFile = getFilenameFromTarget (clientRequest.getUrl());
+			sourceFile = getFilenameFromTarget (request.getUrl());
 		}
 		else {
 			string targetReplaced = replaceParams(route.getTarget(), params);
 			sourceFile = getFilenameFromTarget (route.getTarget());
 		}
 
-		pythonSetGlobalRequest("request", clientRequest);
+		pythonSetGlobalRequest("request", request);
 		pythonSetGlobal("url_params", params);
 		pythonSetGlobal("resp_headers", map<string, string>());
 
-		resp = getResponseFromSource(sourceFile, clientRequest);
+		resp = getResponseFromSource(sourceFile, request);
 		
 		if (!pythonVarIsNone("response")){
 			resp = Response(pythonEval("response"));
 		}
 
-		DBG_FMT("Response object for client on URL %1% done.", clientRequest.getUrl());
+		DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
 	catch (notFoundError&) {
-		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>");
+		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
 	catch (rootException& ex) {
-		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>");
+		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
 		errLogger.log(formatString("Error serving client: %1%", ex.what()));
 	}
 
 	if (isHead) {
-		resp.setBody(string()); //TODO: not really working with python-custom responses... oops.
+		resp.setBody(string(), false);
 	}
+	resp.setConnClose(!request.isKeepAlive());
 
 	respondWithObject(clientSocket, resp);
-
-	closeSocket(clientSocket);
-
-	//TODO: recycle connection if necessary
-	DBG("AAND sent and socket closed.");
-
-	exit(0);
 }
+
 
 
 std::string Server::getFilenameFromTarget (std::string target) {
@@ -273,7 +314,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	if (!canContainPython(filename)) {
 		Response result(1, 1, 200, unordered_map<string, string> {
 			{"Content-Type", getContentType(filename)}
-		}, getRawFile(filename));
+		}, getRawFile(filename), false);
 		
 		addDefaultHeaders(result);
 		return result;
@@ -283,7 +324,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-		Response result(1, 1, 200, headers, pymlResult);
+		Response result(1, 1, 200, headers, pymlResult, false);
 		
 		addDefaultHeaders(result);
 		return result;
@@ -355,7 +396,7 @@ string Server::getPymlResult(string filename) {
 
 
 
-const PymlFile& Server::addPymlToCache(string filename) { //TODO: caching kind of flawed, necessary in parent process, not child! Send filename through pipe?
+const PymlFile& Server::addPymlToCache(string filename) {
 	//DBG("Adding new item to cache");
 	time_t time = last_write_time(filename);
 	PymlFile* pymlFile = pymlPool.construct(readFromFile(filename));
@@ -439,7 +480,6 @@ void Server::addDefaultHeaders(Response& response) {
 	if (!response.headerExists("Content-Type")) {
 		response.setHeader("Content-Type", "text/html; charset=ISO-8859-8");
 	}
-	response.setHeader("Connection", "close");
 }
 
 
