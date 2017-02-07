@@ -1,0 +1,8 @@
+Error serving client: /home/ted/proiect/request.cpp(215): Throw in function Request RequestParser::getRequest()
+Dynamic exception type: boost::exception_detail::clone_impl<httpParseError>
+[tag_string_info*] = HTTP method  not recognized.
+
+Error serving client: /home/ted/proiect/request.cpp(215): Throw in function Request RequestParser::getRequest()
+Dynamic exception type: boost::exception_detail::clone_impl<httpParseError>
+[tag_string_info*] = HTTP method  not recognized.
+

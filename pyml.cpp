@@ -1,3 +1,6 @@
+#define DBG_DISABLE
+#include"dbg.h"
+
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include"pyml.h"
@@ -5,9 +8,6 @@
 #include"except.h"
 #include"utils.h"
 #include"fsm.h"
-
-//#define DBG_DISABLE
-#include"dbg.h"
 
 
 using namespace std;
@@ -247,7 +247,7 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 
 
 bool PymlFile::consumeOne(char chr){
-	DBG_FMT("In state %1%, consuming chr %2%", state, chr);
+	//DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, &absIdx, &saveIdx)

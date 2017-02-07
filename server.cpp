@@ -164,7 +164,9 @@ void Server::serveClientStart(int clientSocket) {
 	try{
 		while(true){
 			optional<Request> requestOpt = getRequestFromSocket(clientSocket);
+			infoLogger.log(formatString("request got"));
 			if (!requestOpt){
+				infoLogger.log(formatString("Requests finished."));
 				break;
 			}
 			Request& request = *requestOpt;
@@ -178,6 +180,7 @@ void Server::serveClientStart(int clientSocket) {
 			if (childPid == 0){
 				serveRequest(clientSocket, request);
 				
+				infoLogger.log("Serving a request finished.");
 				close(clientSocket);
 				exit(0);
 			}
@@ -185,6 +188,7 @@ void Server::serveClientStart(int clientSocket) {
 				if (waitpid(childPid, NULL, 0) != childPid){
 					BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server::serveClientStart: waitpid failed") << errcodeInfo(errno));
 				}
+				infoLogger.log("Rejoined with forked subfork.");
 			}
 			
 			if (!request.isKeepAlive()){
@@ -255,8 +259,11 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		resp.setBody(string(), false);
 	}
 	resp.setConnClose(!request.isKeepAlive());
+	DBG("pre respondWithObject");
 
 	respondWithObject(clientSocket, resp);
+	
+	DBG("responded!");
 }
 
 
@@ -301,10 +308,6 @@ string replaceParams(string target, map<string, string> params) {
 
 Response Server::getResponseFromSource(string filename, Request& request) {
 	//TODO: unused request?
-	//HTML: <@ @> => echo
-	//      <! !> => run
-	//      <@! @!> => run, don't escape
-	//DBG_FMT("Filename is %1%", filename);
 	filename = expandFilename(filename);
 	
 	if (!filesystem::exists(filename)){
@@ -312,11 +315,9 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	}
 
 	if (!canContainPython(filename)) {
-		Response result(1, 1, 200, unordered_map<string, string> {
-			{"Content-Type", getContentType(filename)}
-		}, getRawFile(filename), false);
+		Response result(1, 1, 200, unordered_map<string, string>(), getRawFile(filename), false);
 		
-		addDefaultHeaders(result);
+		addDefaultHeaders(result, filename, request);
 		return result;
 	}
 	else {
@@ -324,9 +325,9 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-		Response result(1, 1, 200, headers, pymlResult, false);
+		Response result(1, 1, 200, headers, pymlResult, false); //TODO: o solutie ca sa pot folosi content-type si pentru pyml?
 		
-		addDefaultHeaders(result);
+		addDefaultHeaders(result, filename, request);
 		return result;
 	}
 }
@@ -476,9 +477,9 @@ string readFromFile(string filename) {
 }
 
 
-void Server::addDefaultHeaders(Response& response) {
+void Server::addDefaultHeaders(Response& response, string filename, Request& request) {
 	if (!response.headerExists("Content-Type")) {
-		response.setHeader("Content-Type", "text/html; charset=ISO-8859-8");
+		response.setHeader("Content-Type", getContentType(filename));
 	}
 }
 

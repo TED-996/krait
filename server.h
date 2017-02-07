@@ -41,7 +41,7 @@ class Server {
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
 	Response getResponseFromSource(std::string filename);
-	void addDefaultHeaders(Response& response);
+	void addDefaultHeaders(Response& response, std::string filename, Request& request);
 	Response getResponseFromSource(std::string filename, Request& request);
 
 	std::string getFilenameFromTarget(std::string target);

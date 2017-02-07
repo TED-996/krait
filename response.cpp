@@ -108,13 +108,14 @@ void Response::removeHeader(string name) {
 void Response::setConnClose(bool connClose) {
 	this->connClose = connClose;
 	
-	setHeader("Connection", connClose ? "close" : "Keep-Alive");
+	setHeader("Connection", connClose ? "close" : "keep-alive");
 }
 
 string getStatusReason(int statusCode);
+string formatTitleCase(string str);
 
 string Response::getResponseData() {
-	setHeader("Connection", connClose ? "close" : "Keep-Alive");
+	setHeader("Connection", connClose ? "close" : "keep-alive");
 	
 	string statusLine;
 	if (fromFullResponse){
@@ -127,7 +128,7 @@ string Response::getResponseData() {
 
 	format headerFormat = format("%1%: %2%");
 	for (auto header : headers) {
-		headerStrings.push_back((format(headerFormat) % header.first % header.second).str());
+		headerStrings.push_back((format(headerFormat) % formatTitleCase(header.first) % header.second).str());
 	}
 	headerStrings.push_back(string());
 
@@ -141,6 +142,7 @@ string Response::getResponseData() {
 
 
 bool Response::headerExists(string name) {
+	to_lower(name);
 	auto headerIt = headers.find(name);
 
 	if (headerIt == headers.end()) {
@@ -161,5 +163,17 @@ string getStatusReason(int statusCode) {
 	else {
 		return it->second;
 	}
+}
+
+
+string formatTitleCase(string str) {
+	size_t idx = str.find('-');
+	while (idx != string::npos){
+		if (idx != str.length() - 1){
+			str[idx + 1] = toupper(str[idx + 1]);
+		}
+		idx = str.find('-', idx + 1);
+	}
+	return str;
 }
 

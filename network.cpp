@@ -117,14 +117,27 @@ boost::optional<Request> getRequestFromSocket(int clientSocket) {
 	int bytesRead;
 
 	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
-		if (bytesRead < 0) {
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
-		}
 		if (bytesRead == 0){
 			return boost::none;
 		}
+		if (bytesRead < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK){
+				bytesRead = 0;
+			}
+			else{
+				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
+			}
+		}
 
-		parser.consume(buffer, bytesRead);
+		if (bytesRead != 0){
+			try{
+				parser.consume(buffer, bytesRead);
+			}
+			catch(httpParseError err){
+				printf("Error parsing http request: %s", err.what());
+				return boost::none;
+			}
+		}
 	}
 
 	return parser.getRequest();
@@ -167,7 +180,12 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 	while (lenLeft > 0) {
 		size_t lenCurrent = min(maxBlockSize, lenLeft);
 		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfo(errno));
+			if (errno == EAGAIN || errno == EWOULDBLOCK){
+				lenCurrent = 0;
+			}
+			else{
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfo(errno));
+			}
 		}
 		response += lenCurrent;
 		lenLeft -= lenCurrent;
