@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <string>
 
 #include "network.h"
 #include "logger.h"
 #include "server.h"
 #include "dbg.h"
 
+using namespace std;
 
 int main(int argc, char* argv[]) {
 	int errPipe[2];
@@ -16,7 +18,7 @@ int main(int argc, char* argv[]) {
 		exit(10);
 	}
 
-	DBG("Forking");
+	//DBG("Forking");
 	pid_t pid = fork();
 
 	if (pid == -1) {
@@ -40,10 +42,22 @@ int main(int argc, char* argv[]) {
 
 	DBG("Pre server ctor");
 	const char* serverRoot = "testserver";
+	int port = 8080;
 	if (argc >= 2){
 		serverRoot = argv[1];
 	}
-	Server server(serverRoot, 8080, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
+	if (argc >= 3){
+		size_t end = 0;
+		port = stoi(string(argv[2]), &end);
+		if (end != string(argv[2]).length()){
+			BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server port is not an integer."));
+		}
+	}
+	if (argc >= 4){
+		printf("Too many arguments.\nUsage:\nkrait root_directory [port]\n");
+		exit(10);
+	}
+	Server server(serverRoot, port, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
 	DBG("post server ctor");
 	server.runServer();
 
