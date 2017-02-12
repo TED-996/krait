@@ -13,7 +13,7 @@ path getExecRoot() {
 	ssize_t length = readlink("/proc/self/exe", exePath, sizeof(exePath));
 
 	if (length == -1) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("readlink") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("readlink(): getting exec root") << errcodeInfoDef());
 	}
 
 	return path(exePath).parent_path();

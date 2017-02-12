@@ -3,13 +3,17 @@
 #include <boost/exception/all.hpp>
 #include<boost/format.hpp>
 #include <string>
+#include<errno>
 #include "formatHelper.h"
 
 
 typedef boost::error_info<struct tag_string_info, const std::string> stringInfo;
-typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo;
+typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo; //TODO: make default
 
 stringInfo stringInfoFromFormat(std::string format, ...);
+errcodeInfo errcodeInfoDef(){
+	return errcodeInfo(errno);
+}
 
 struct rootException : virtual boost::exception, virtual std::exception {
 	const char* what() const noexcept {

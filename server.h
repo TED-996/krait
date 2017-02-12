@@ -8,6 +8,7 @@
 #include<memory>
 #include<boost/filesystem/path.hpp>
 #include<boost/pool/object_pool.hpp>
+#include<signal.h>
 #include"except.h"
 #include"routes.h"
 #include"network.h"
@@ -34,9 +35,15 @@ class Server {
 
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
+	int socketToClose;
+	bool clientWaitingResponse;
+	struct sigaction termAction;
+	struct sigaction intAction;
+
 	void tryAcceptConnection();
 	void tryWaitFinishedForks();
 	void tryCachePymlFiles();
+	void tryCheckStdinClosed();
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
@@ -62,6 +69,10 @@ class Server {
 	void loadContentTypeList();
 	
 	static bool canContainPython(std::string filename);
+
+	void initSignals();
+	void signalStopRequested(int sig);
+	void signalKillRequested(int sig);
 
 public:
 	Server(std::string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger);

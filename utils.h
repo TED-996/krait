@@ -6,3 +6,5 @@ struct PipePair {
 	int readHead;
 	int writeHead;
 };
+
+bool fdClosed(int fd);

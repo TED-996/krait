@@ -31,21 +31,21 @@ int getServerSocket(int port, bool setListen, bool reuseAddr) {
 
 	int sd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sd == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket.") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket.") << errcodeInfoDef());
 	}
 	
 	int enable = (int)reuseAddr;
 	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: coult not set reuseAddr.") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: coult not set reuseAddr.") << errcodeInfoDef());
 	}
 
 	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not bind socket") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not bind socket") << errcodeInfoDef());
 	}
 
 	if (setListen) {
 		if (listen(sd, 1024) == -1) {
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(errno));
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfoDef());
 		}
 	}
 
@@ -72,7 +72,7 @@ int getNewClient(int listenerSocket, int timeout) {
 
 	int pollResult = poll(&pfd, 1, timeout);
 	if (pollResult == -1) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getNewClient: poll() failed") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): getting new client.") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return -1;
@@ -86,7 +86,7 @@ int getNewClient(int listenerSocket, int timeout) {
 			return -1;
 		}
 
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getNewClient: could not accept new client") << errcodeInfoDef());
 	}
 
 	return client;
@@ -103,7 +103,7 @@ void printSocket(int clientSocket) {
 	int readBytes;
 	while ((readBytes = read(clientSocket, data, 4095)) != 0) {
 		if (readBytes < 0) {
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("printSocket: error at read().") << errcodeInfo(errno));
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): printing socket") << errcodeInfoDef());
 		}
 
 		DBG_FMT("read %1% bytes", readBytes);
@@ -125,7 +125,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket) {
 				bytesRead = 0;
 			}
 			else{
-				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("getRequestFromSocket: error at read().") << errcodeInfo(errno));
+				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
 			}
 		}
 
@@ -161,7 +161,7 @@ void respondRequest200(int clientSocket) {
 }
 
 
-void respondWithObject(int clientSocket, Response response) {
+void respondWithObject(int clientSocket, Response& response) {
 	string responseData = response.getResponseData();
 
 	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
@@ -184,7 +184,7 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 				lenCurrent = 0;
 			}
 			else{
-				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfo(errno));
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfoDef());
 			}
 		}
 		response += lenCurrent;

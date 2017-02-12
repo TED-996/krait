@@ -19,5 +19,5 @@ boost::optional<Request> getRequestFromSocket(int clientSocket);
 void respondRequestHttp10(int clientSocket);
 void respondRequest404(int clientSocket);
 void respondRequest200(int clientSocket);
-void respondWithObject(int clientSocket, Response response);
+void respondWithObject(int clientSocket, Response& response);
 

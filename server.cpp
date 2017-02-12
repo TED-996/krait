@@ -25,6 +25,8 @@ using namespace boost::algorithm;
 Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger)
 	: infoLogger(infoLogger), errLogger(errLogger) {
 	this->serverRoot = path(serverRoot);
+	socketToClose = -1;
+	clientWaitingResponse = false;
 	
 	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.xml";
 	if (filesystem::exists(routesFilename)){
@@ -38,20 +40,81 @@ Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLog
 	DBG("routes got");
 
 	this->serverSocket = getServerSocket(port, false, true);
+	socketToClose = this->serverSocket;
 
 	DBG("server socket got");
 
 	pythonInit(serverRoot);
 
-	infoLogger.log("Server initialized.");
-
 	loadContentTypeList();
+
+	initSignals();
+
+	infoLogger.log("Server initialized.");	
+}
+
+void Server::initSignals(){
+	memzero(termAction);
+	memzero(intAction);
+
+	termAction.sa_handler = &signalKillRequested;
+	intAction.sa_handler = &signalStopRequested;
+
+	sigaction(SIGINT, &intAction, NULL);
+	sigaction(SIGUSR1, &intAction, NULL);
+	sigaction(SIGTERM, &termAction, NULL);
+}
+
+
+void Server::signalStopRequested(int sig){
+	infoLogger.log(formatString("Stop requested for process %1%", getpid()));
+	if (clientWaitingResponse && socketToClose != -1){
+		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		respondWithObject(socketToClose, resp);
+	}
+	if (socketToClose != -1){
+		close(socketToClose);
+		socketToClose = -1;
+	}
+
+	for (int pid : pids){
+		kill((pid_t)pid, SIGUSR1);
+	}
+
+	while (pids.size() != 0) {
+		tryWaitFinishedForks();
+		sleep(1);
+	}
+	exit(0);
+}
+
+
+void Server::signalKillRequested(int sig){
+	infoLogger.log(formatString("Kill requested for process %1%", getpid()));
+	//hard close
+
+	if (socketToClose != -1){
+		close(socketToClose);
+		socketToClose = -1;
+	}
+
+	for (int pid : pids){
+		kill((pid_t)pid, SIGTERM);
+	}
+
+	exit();
 }
 
 
 Server::~Server() {
-	//TODO: some signaling?
-	close(serverSocket);
+	if (socketToClose != -1){
+		close(socketToClose);
+	}
+	//Try soft close
+	for (int pid : pids){
+		kill((pid_t)pid, SIGUSR1);
+	}
+
 	while (pids.size() != 0) {
 		tryWaitFinishedForks();
 		sleep(1);
@@ -61,6 +124,11 @@ Server::~Server() {
 
 
 void Server::killChildren() {
+	//First try to get them to shut down graciously.
+	for (int pid : pids){
+		kill((pid_t)pid, SIGUSR1);
+	}
+	sleep(1);
 	for (int pid : pids) {
 		kill((pid_t)pid, SIGTERM);
 	}
@@ -76,6 +144,7 @@ void Server::runServer() {
 		tryAcceptConnection();
 		tryWaitFinishedForks();
 		tryCachePymlFiles();
+		tryCheckStdinClosed();
 	}
 }
 
@@ -90,8 +159,8 @@ void Server::tryAcceptConnection() {
 
 	pid_t pid = fork();
 	if (pid == -1) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error: could not fork()! Is the system out of resources?") <<
-		                      errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): creating process to serve socket. Is the system out of resources?") <<
+		                      errcodeInfoDef());
 	}
 	if (pid == 0) {
 		closeSocket(serverSocket);
@@ -152,18 +221,24 @@ void Server::tryCachePymlFiles() {
 	}
 }
 
+void Server::tryCheckStdinClosed(){
+	if (fdClosed(0)){
+		kill(getpid(), SIGUSR1);
+	}
+}
 
 string replaceParams(string target, map<string, string> params);
 
 void Server::serveClientStart(int clientSocket) {
 	infoLogger.log("Serving a new client");
-	//TODO: handle SIGTERM in some way...
-	//TODO: handle execptions (return 5xx + log)
+	socketToClose = clientSocket;
+	pids.clear();
 	bool isHead = false;
 	
 	try{
 		while(true){
 			optional<Request> requestOpt = getRequestFromSocket(clientSocket);
+			clientWaitingResponse = truek;
 			infoLogger.log(formatString("request got"));
 			if (!requestOpt){
 				infoLogger.log(formatString("Requests finished."));
@@ -179,15 +254,19 @@ void Server::serveClientStart(int clientSocket) {
 			pid_t childPid = fork();
 			if (childPid == 0){
 				serveRequest(clientSocket, request);
+				clientWaitingResponse = false;
 				
 				infoLogger.log("Serving a request finished.");
 				close(clientSocket);
 				exit(0);
 			}
 			else{
+				clientWaitingResponse = false;
+				pids.insert((int)childPid);
 				if (waitpid(childPid, NULL, 0) != childPid){
-					BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server::serveClientStart: waitpid failed") << errcodeInfo(errno));
+					BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
 				}
+				pids.erase((int)childPid);
 				infoLogger.log("Rejoined with forked subfork.");
 			}
 			

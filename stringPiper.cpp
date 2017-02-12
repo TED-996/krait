@@ -10,7 +10,7 @@ using namespace std;
 StringPiper::StringPiper(){
 	int pipes[2];
 	if (pipe(pipes) == -1){
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("Erorr creating pipe for StringPiper") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("pipe(): creating pipe for StringPiper") << errcodeInfoDef());
 	}
 	readHead = pipes[0];
 	writeHead = pipes[1];
@@ -53,7 +53,7 @@ void StringPiper::pipeWrite(string data) {
 string StringPiper::pipeRead() {
 	size_t length;
 	if (read(readHead, &length, sizeof(length)) != sizeof(length)){
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("StringPiper::pipeRead: length read() failed") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading length in StringPiper::pipeRead") << errcodeInfoDef());
 	}
 	
 	char* data = new char[length + 1];
@@ -61,7 +61,7 @@ string StringPiper::pipeRead() {
 	
 	if (read(readHead, data, length) != (int)length){
 		delete[] data;
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("StringPiper::pipeRead: bulk read() failed") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading bulk in StringPiper::pipeRead") << errcodeInfoDef());
 	}
 	
 	string result = string(data, length);
@@ -79,7 +79,7 @@ bool StringPiper::pipeAvailable() {
 	
 	int pollResult = poll(&pfd, 1, 0);
 	if (pollResult == -1) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("StringPiper::pipeAvailable: poll() failed") << errcodeInfo(errno));
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): getting StringPiper::pipeAvailable") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return false;
