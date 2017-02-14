@@ -1,4 +1,5 @@
 #include<poll.h>
+#include<errno.h>
 #include"utils.h"
 #include"except.h"
 
@@ -10,7 +11,7 @@ bool fdClosed(int fd){
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 
-	int pollResult = 1;
+	int pollResult = poll(&pfd, 1, 0);
 	while(pollResult != 0){
 		if(pollResult == -1){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("poll(): on fd %1% (to check if closed)", fd) << errcodeInfoDef());
@@ -19,10 +20,15 @@ bool fdClosed(int fd){
 		if (readResult == -1){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("read(): on fd %1% (to check if closed)", fd) << errcodeInfoDef());
 		}
-		if (readResult = 0){
+		if (readResult == 0){
 			return true;
 		}
+		pollResult = poll(&pfd, 1, 0);
 	}
 
 	return false;
+}
+
+errcodeInfo errcodeInfoDef(){
+	return errcodeInfo(errno);
 }

@@ -8,6 +8,9 @@
 using namespace std;
 using namespace boost::chrono;
 
+LoggerOut::LoggerOut(){
+	this->pipeIn = -1;
+}
 
 LoggerOut::LoggerOut(int pipeIn) : outfile() {
 	this->pipeIn = pipeIn;
@@ -66,7 +69,10 @@ bool LoggerOut::tick(int timeoutMs) {
 
 
 void LoggerOut::close() {
-	::close(pipeIn);
+	if (pipeIn != -1){
+		::close(pipeIn);
+		pipeIn = -1;
+	}
 	if (outfile) {
 		outfile.close();
 	}
@@ -103,7 +109,10 @@ void LoggerIn::log(const boost::format fmt) {
 
 
 void LoggerIn::close() {
-	::close(pipeOut);
+	if (pipeOut != -1){
+		::close(pipeOut);
+		pipeOut = -1;	
+	}
 }
 
 

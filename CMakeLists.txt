@@ -39,7 +39,7 @@ ENDIF()
 
 set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
-add_executable(cmdr main_cmdr.cpp commander.cpp)
+add_executable(cmdr main_cmdr.cpp commander.cpp utils.cpp)
 target_link_libraries(cmdr ${Boost_LIBRARIES})
 set_target_properties(cmdr PROPERTIES OUTPUT_NAME ${BUILD_DIR}/krait-cmdr)
 

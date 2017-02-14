@@ -1,6 +1,7 @@
 #pragma once
 #include<fstream>
 #include<string>
+#include<unistd.h>
 #include<boost/format.hpp>
 
 
@@ -9,8 +10,12 @@ class LoggerOut {
 	std::ofstream outfile;
 
 public:
+	LoggerOut();
 	LoggerOut(int pipeIn);
 	LoggerOut(int pipeIn, std::string filename);
+	~LoggerOut(){
+		close();
+	}
 
 	bool tick(int timeoutMs);
 
@@ -22,7 +27,14 @@ class LoggerIn {
 	int pipeOut;
 
 public:
+	LoggerIn() : pipeOut(dup(0)){
+	}
 	LoggerIn(int pipeOut);
+	LoggerIn(LoggerIn& other) : pipeOut(dup(pipeOut)){
+	}
+	~LoggerIn(){
+		close();
+	}
 
 	void log(const char* buffer, size_t size);
 	void log(const char* str);

@@ -23,10 +23,7 @@ class Server {
 	boost::filesystem::path serverRoot;
 	std::vector<Route> routes;
 	int serverSocket;
-	std::unordered_set<int> pids;
 
-	LoggerIn infoLogger;
-	LoggerIn errLogger;
 	StringPiper cacheRequestPipe;
 	
 	boost::object_pool<PymlFile> pymlPool;
@@ -35,13 +32,8 @@ class Server {
 
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
-	int socketToClose;
-	bool clientWaitingResponse;
-	struct sigaction termAction;
-	struct sigaction intAction;
-
 	void tryAcceptConnection();
-	void tryWaitFinishedForks();
+	static void tryWaitFinishedForks();
 	void tryCachePymlFiles();
 	void tryCheckStdinClosed();
 
@@ -70,14 +62,23 @@ class Server {
 	
 	static bool canContainPython(std::string filename);
 
-	void initSignals();
-	void signalStopRequested(int sig);
-	void signalKillRequested(int sig);
+	static void initSignals();
+
+	static int socketToClose;
+	static bool clientWaitingResponse;
+	static void signalStopRequested(int sig);
+	static void signalKillRequested(int sig);
+	static std::unordered_set<int> pids;
+
+	static LoggerIn infoLogger;
+	static LoggerIn errLogger;
 
 public:
-	Server(std::string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger);
+	Server(std::string serverRoot, int port);
 	~Server();
 
 	void runServer();
 	void killChildren();
+	
+	static void setLoggers(int infoPipe, int errPipe);	
 };

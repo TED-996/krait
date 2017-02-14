@@ -5,7 +5,6 @@
 #include<fstream>
 #include<cctype>
 #include<vector>
-#include<functional>
 #include<boost/filesystem.hpp>
 #include<boost/algorithm/string.hpp>
 #include"utils.h"
@@ -23,8 +22,7 @@ using namespace boost::filesystem;
 using namespace boost::algorithm;
 
 
-Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLogger)
-	: infoLogger(infoLogger), errLogger(errLogger) {
+Server::Server(string serverRoot, int port) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
@@ -55,11 +53,14 @@ Server::Server(string serverRoot, int port, LoggerIn infoLogger, LoggerIn errLog
 }
 
 void Server::initSignals(){
+	struct sigaction termAction;
+	struct sigaction intAction;
+
 	memzero(termAction);
 	memzero(intAction);
 
-	termAction.sa_handler = std::bind(&Server::signalKillRequested, this, std::placeholders::_1);
-	intAction.sa_handler = std::bind(&Server::signalStopRequested, this, std::placeholders::_1);
+	termAction.sa_handler = &Server::signalKillRequested;
+	intAction.sa_handler = &Server::signalStopRequested;
 
 	sigaction(SIGINT, &intAction, NULL);
 	sigaction(SIGUSR1, &intAction, NULL);
@@ -70,7 +71,7 @@ void Server::initSignals(){
 void Server::signalStopRequested(int sig){
 	infoLogger.log(formatString("Stop requested for process %1%", getpid()));
 	if (clientWaitingResponse && socketToClose != -1){
-		respondWithObject(socketToClose,  Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true););
+		respondWithObject(socketToClose,  Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 	}
 	if (socketToClose != -1){
 		close(socketToClose);
@@ -277,10 +278,10 @@ void Server::serveClientStart(int clientSocket) {
 	}
 	catch (rootException& ex) {
 		if (isHead){
-			respondWithObjectVal(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "", true));
+			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "", true));
 		}
 		else{
-			respondWithObjectVal(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
 		errLogger.log(formatString("Error serving client: %1%", ex.what()));
 	}
@@ -340,7 +341,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	resp.setConnClose(!request.isKeepAlive());
 	DBG("pre respondWithObject");
 
-	respondWithObject(clientSocket, resp);
+	respondWithObjectRef(clientSocket, resp);
 	
 	DBG("responded!");
 }
@@ -601,4 +602,9 @@ void Server::loadContentTypeList() {
 			contentTypeByExtension["." + lineItems[i]] = mimeType;
 		}
 	}
+}
+
+void Server::setLoggers(int infoPipe, int errPipe){
+	infoLogger = LoggerIn(infoPipe);
+	errLogger = LoggerIn(errPipe);
 }

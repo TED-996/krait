@@ -43,6 +43,11 @@ int main(int argc, char* argv[]) {
 	close(errPipe[0]);
 	close(infoPipe[0]);
 
+	Server::setLoggers(infoPipe[1], errPipe[1]);
+	
+	close(infoPipe[1]);
+	close(errPipe[1]);
+
 	DBG("Pre server ctor");
 	const char* serverRoot = "testserver";
 	int port = 8080;
@@ -60,7 +65,7 @@ int main(int argc, char* argv[]) {
 		printf("Too many arguments.\nUsage:\nkrait root_directory [port]\n");
 		exit(10);
 	}
-	Server server(serverRoot, port, LoggerIn(infoPipe[1]), LoggerIn(errPipe[1]));
+	Server server(serverRoot, port);
 	DBG("post server ctor");
 	server.runServer();
 
