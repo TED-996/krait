@@ -28,5 +28,5 @@ int main(int argc, char* argv[]){
 }
 
 void printUsage(){
-	printf("Usage:\nkrait-cmdr stop: gracefully stops krait.")
+	printf("Usage:\nkrait-cmdr stop: gracefully stops krait.");
 }

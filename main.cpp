@@ -5,6 +5,7 @@
 #include "network.h"
 #include "logger.h"
 #include "server.h"
+#include "commander.h"
 #include "dbg.h"
 
 using namespace std;
@@ -17,6 +18,8 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Error creating logging pipes.\n");
 		exit(10);
 	}
+
+	startCommanderProcess();
 
 	//DBG("Forking");
 	pid_t pid = fork();

@@ -161,10 +161,14 @@ void respondRequest200(int clientSocket) {
 }
 
 
-void respondWithObject(int clientSocket, Response& response) {
+void respondWithObjectRef(int clientSocket, Response& response) {
 	string responseData = response.getResponseData();
 
 	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
+}
+
+void respondWithObject(int clientSocket, Response response){
+	respondWithObjectRef(clientSocket, response);
 }
 
 

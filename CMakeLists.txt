@@ -41,10 +41,11 @@ set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
 add_executable(cmdr main_cmdr.cpp commander.cpp)
 target_link_libraries(cmdr ${Boost_LIBRARIES})
-set_target_properties(build_tests PROPERTIES OUTPUT_NAME ${BUILD_DIR}/krait-cmdr)
+set_target_properties(cmdr PROPERTIES OUTPUT_NAME ${BUILD_DIR}/krait-cmdr)
 
 
-add_executable(build main.cpp ${SOURCE_FILES} DEPENDS cmdr)
+add_executable(build main.cpp ${SOURCE_FILES})
+add_dependencies(build cmdr)
 target_link_libraries(build ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
 set_target_properties(build PROPERTIES OUTPUT_NAME ${BUILD_DIR}/${CMAKE_PROJECT_NAME})
 add_custom_command(TARGET build PRE_BUILD

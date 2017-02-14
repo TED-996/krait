@@ -3,7 +3,7 @@
 #include <boost/exception/all.hpp>
 #include<boost/format.hpp>
 #include <string>
-#include<errno>
+#include<errno.h>
 #include "formatHelper.h"
 
 
