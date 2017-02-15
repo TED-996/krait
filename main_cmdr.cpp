@@ -15,6 +15,9 @@ int main(int argc, char* argv[]){
 		if (string(argv[1]) == "stop"){
 			sendCommandClose();
 		}
+		else if (string(argv[1]) == "kill"){
+			sendCommandKill();
+		}
 		else {
 			printUsage();
 			return 1;
@@ -28,5 +31,5 @@ int main(int argc, char* argv[]){
 }
 
 void printUsage(){
-	printf("Usage:\nkrait-cmdr stop: gracefully stops krait.");
+	printf("Usage:\nkrait-cmdr stop: sends graceful close signal to krait.\nkrait-cmdr kill: sends force close signal to krait.\n");
 }

@@ -36,13 +36,14 @@ void startCommanderProcess(){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): starting commander process.") << errcodeInfoDef());
 	}
 	if (childPid == 0){
-		while(getppid() != mainPid){
+		while(getppid() == mainPid){
 			int fifoFd = openFifo(O_RDONLY, true);
 			if (fifoFd != -1){
 				commanderStart(mainPid, fifoFd);
 			}
 			sleep(1);
 		}
+		printf("Commander process shutting down.\n");
 		exit(0);
 	}
 	else{
@@ -76,10 +77,18 @@ int openFifo(int flags, bool create){
 	}
 	//TODO: IMPORTANT: maybe parent exits while we try to open this... maybe do this on a timeout? maybe open nonblocking?
 	int fifoFd = open(fifoName.c_str(), flags | O_NONBLOCK);
-	fcntl(fifoFd, F_SETFD, flags);
 	if (fifoFd < 0){
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("open(): opening command file (%1%)", fifoName) << errcodeInfoDef());		
+		if (errno == ENXIO){
+			BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("There is no running server listening on command file."));
+		}
+		else{
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("open(): opening command file (%1%)", fifoName) << errcodeInfoDef());
+		}
 	}
+	if (fcntl(fifoFd, F_SETFD, flags) < 0){
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("fcntl(): opening command file (%1%)", fifoName) << errcodeInfoDef());
+	}
+	
 
 	return fifoFd;
 }
@@ -130,18 +139,35 @@ bool processCommand(pid_t mainPid, const char* cmd, int cmdLen){
 	}
 	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'X'){
 		kill(mainPid, SIGINT);
-		//this is a shutdown request, no other commands to process
-		exit(0);
+		processCommand(mainPid, cmd + 2, cmdLen - 2);
+	}
+	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'K'){
+		kill(mainPid, SIGTERM);
+		processCommand(mainPid, cmd + 2, cmdLen - 2);
 	}
 	return false;
 }
 
-void sendCommandClose(){
+void sendCommand(const char* command, int cmdLen);
+
+void sendCommand(const char* command){
+	sendCommand(command, strlen(command));
+}
+
+void sendCommand(const char* command, int cmdLen){
 	int fifoFd = openFifo(O_WRONLY, true);
 	if (fifoFd == -1){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Coult not open named pipe to request server shutdown."));
 	}
-	if (write(fifoFd, "^X", 2) != 2){
+	if (write(fifoFd, command, cmdLen) != cmdLen){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write: writing shutdown command to named pipe") << errcodeInfoDef());
 	}
+}
+
+void sendCommandClose(){
+	sendCommand("^X");
+}
+
+void sendCommandKill(){
+	sendCommand("^K");
 }

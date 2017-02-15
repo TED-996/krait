@@ -23,6 +23,11 @@ LoggerOut::LoggerOut(int pipeIn, string filename) : outfile(filename) {
 
 
 bool LoggerOut::tick(int timeoutMs) {
+	if (pipeIn == -1){
+		fprintf(stderr, "LoggerOut::tick(): Error, invalid FD\n");
+		return false;
+	}
+
 	auto start = thread_clock::now();
 	thread_clock::duration limit = milliseconds(timeoutMs);
 
@@ -80,11 +85,16 @@ void LoggerOut::close() {
 
 
 LoggerIn::LoggerIn(int pipeOut) {
-	this->pipeOut = pipeOut;
+	this->pipeOut = dup(pipeOut);
 }
 
 
 void LoggerIn::log(const char* buffer, size_t size) {
+	if (pipeOut == -1){
+		fprintf(stderr, "LoggerIn::log: Cannot log; invalid FD attached.\n");
+		return;
+	}
+
 	if (write(pipeOut, buffer, size) != (int)size || write(pipeOut, "\n", 1) != 1) {
 		printf("Error in LoggerIn.write; errno %d\n", errno);
 	}

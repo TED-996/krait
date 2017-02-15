@@ -22,6 +22,13 @@ using namespace boost::filesystem;
 using namespace boost::algorithm;
 
 
+unordered_set<int> Server::pids;
+int Server::socketToClose;
+bool Server::clientWaitingResponse;
+LoggerIn Server::infoLogger;
+LoggerIn Server::errLogger;
+
+
 Server::Server(string serverRoot, int port) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
@@ -85,6 +92,7 @@ void Server::signalStopRequested(int sig){
 	while (pids.size() != 0) {
 		tryWaitFinishedForks();
 		sleep(1);
+		DBG("not closed...");
 	}
 	exit(0);
 }
@@ -254,6 +262,7 @@ void Server::serveClientStart(int clientSocket) {
 			
 			pid_t childPid = fork();
 			if (childPid == 0){
+				pids.clear();
 				serveRequest(clientSocket, request);
 				clientWaitingResponse = false;
 				
@@ -605,6 +614,8 @@ void Server::loadContentTypeList() {
 }
 
 void Server::setLoggers(int infoPipe, int errPipe){
-	infoLogger = LoggerIn(infoPipe);
-	errLogger = LoggerIn(errPipe);
+	infoLogger.~LoggerIn();
+	errLogger.~LoggerIn();
+	new(&infoLogger)LoggerIn(infoPipe);
+	new(&errLogger)LoggerIn(errPipe);
 }

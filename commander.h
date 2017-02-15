@@ -2,3 +2,4 @@
 
 void startCommanderProcess();
 void sendCommandClose();
+void sendCommandKill();
