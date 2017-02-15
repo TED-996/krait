@@ -77,6 +77,7 @@ void Server::initSignals(){
 
 void Server::signalStopRequested(int sig){
 	infoLogger.log(formatString("Stop requested for process %1%", getpid()));
+	clientWaitingResponse = false;
 	if (clientWaitingResponse && socketToClose != -1){
 		respondWithObject(socketToClose,  Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 	}
@@ -172,8 +173,12 @@ void Server::tryAcceptConnection() {
 		                      errcodeInfoDef());
 	}
 	if (pid == 0) {
+		pids.clear();
+		socketToClose = clientSocket;
+		
 		closeSocket(serverSocket);
 		cacheRequestPipe.closeRead();
+
 		serveClientStart(clientSocket);//TODO: connect stderr?
 		exit(255); //The function above should call exit()!
 	}
@@ -187,13 +192,18 @@ void Server::tryWaitFinishedForks() {
 	if (pids.size() == 0) {
 		return;
 	}
+	DBG_FMT("there are %1% pids", pids.size());
 
 	int status;
 	pid_t pid;
-	while ((pid = waitpid(-1, &status, WNOHANG) != 0)) {
-		if (WIFEXITED(status) || WIFSIGNALED(status) || WIFSTOPPED(status)) {
-			DBG_FMT("[Parent] Child exited with status %1%", WEXITSTATUS(status));
-			pids.erase((int)pid);
+	while ((pid = waitpid(-1, &status, WNOHANG)) != 0) {
+		if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
+			
+			auto it = pids.find((int)pid);
+			if (it != pids.end()){
+				pids.erase(it);
+			}
 		}
 	}
 }
@@ -240,12 +250,10 @@ string replaceParams(string target, map<string, string> params);
 
 void Server::serveClientStart(int clientSocket) {
 	infoLogger.log("Serving a new client");
-	socketToClose = clientSocket;
-	pids.clear();
 	bool isHead = false;
 	
 	try{
-		while(true){
+		while(true){ //TODO: timeout on getRequestFromSocket? also return keep-alive headers.
 			optional<Request> requestOpt = getRequestFromSocket(clientSocket);
 			clientWaitingResponse = true;
 			infoLogger.log(formatString("request got"));
@@ -262,7 +270,8 @@ void Server::serveClientStart(int clientSocket) {
 			
 			pid_t childPid = fork();
 			if (childPid == 0){
-				pids.clear();
+				pids.clear(); 
+
 				serveRequest(clientSocket, request);
 				clientWaitingResponse = false;
 				

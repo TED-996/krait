@@ -139,11 +139,11 @@ bool processCommand(pid_t mainPid, const char* cmd, int cmdLen){
 	}
 	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'X'){
 		kill(mainPid, SIGINT);
-		processCommand(mainPid, cmd + 2, cmdLen - 2);
+		return processCommand(mainPid, cmd + 2, cmdLen - 2);
 	}
 	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'K'){
 		kill(mainPid, SIGTERM);
-		processCommand(mainPid, cmd + 2, cmdLen - 2);
+		return processCommand(mainPid, cmd + 2, cmdLen - 2);
 	}
 	return false;
 }
