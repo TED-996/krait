@@ -21,15 +21,7 @@ int openFifo(int flags, bool create);
 void startCommanderProcess(){
 	pid_t mainPid = getpid();
 
-	filesystem::path fifoNameBase = filesystem::path(getenv("HOME")) / ".krait";
-
-	if (!filesystem::exists(fifoNameBase)){
-		if (!filesystem::create_directory(fifoNameBase)){
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating .krait directory (%1%). Check that you have appropriate rights.",
-				fifoNameBase.string())
-				<< errcodeInfoDef());
-		}
-	}
+	getCreateDotKrait();
 
 	pid_t childPid = fork();
 	if (childPid == -1){
@@ -51,12 +43,8 @@ void startCommanderProcess(){
 	}
 }
 
-
-int openFifo(int flags, bool create){
+string getCreateDotKrait(){
 	filesystem::path fifoNameBase = filesystem::path(getenv("HOME")) / ".krait";
-	const char* fifoEnd = "krait_cmdr";
-	string fifoName = (fifoNameBase / fifoEnd).string();
-
 	if (!filesystem::exists(fifoNameBase)){
 		if (!filesystem::create_directory(fifoNameBase)){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating .krait directory (%1%). Check that you have appropriate rights.",
@@ -64,6 +52,15 @@ int openFifo(int flags, bool create){
 				<< errcodeInfoDef());
 		}
 	}
+
+	return fifoNameBase.string();
+}
+
+
+int openFifo(int flags, bool create){
+	filesystem::path fifoNameBase = filesystem::path(getCreateDotKrait());
+	const char* fifoEnd = "krait_cmdr";
+	string fifoName = (fifoNameBase / fifoEnd).string();
 
 	if (!filesystem::exists(fifoName)){
 		if (create){
@@ -79,7 +76,7 @@ int openFifo(int flags, bool create){
 	int fifoFd = open(fifoName.c_str(), flags | O_NONBLOCK);
 	if (fifoFd < 0){
 		if (errno == ENXIO){
-			BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("There is no running server listening on command file."));
+			BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("There is no running server listening on command file."));
 		}
 		else{
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("open(): opening command file (%1%)", fifoName) << errcodeInfoDef());
@@ -126,7 +123,7 @@ void commanderStart(pid_t mainPid, int fifoFd){
 			}
 			else {
 				if (!processCommand(mainPid, cmdBuffer, bytesRead)){
-					BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Execution of command %1% failed.", string(cmdBuffer, bytesRead)));
+					BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("Execution of command %1% failed.", string(cmdBuffer, bytesRead)));
 				}
 			}
 		}
@@ -157,7 +154,7 @@ void sendCommand(const char* command){
 void sendCommand(const char* command, int cmdLen){
 	int fifoFd = openFifo(O_WRONLY, true);
 	if (fifoFd == -1){
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Coult not open named pipe to request server shutdown."));
+		BOOST_THROW_EXCEPTION(cmdrError() << stringInfo("Coult not open named pipe to request server shutdown."));
 	}
 	if (write(fifoFd, command, cmdLen) != cmdLen){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write: writing shutdown command to named pipe") << errcodeInfoDef());

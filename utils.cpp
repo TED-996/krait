@@ -18,6 +18,9 @@ bool fdClosed(int fd){
 		}
 		int readResult = read(fd, buffer, 1024);
 		if (readResult == -1){
+			if (errno == EBADF){
+				return true;
+			}
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("read(): on fd %1% (to check if closed)", fd) << errcodeInfoDef());
 		}
 		if (readResult == 0){

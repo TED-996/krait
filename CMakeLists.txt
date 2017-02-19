@@ -39,7 +39,7 @@ ENDIF()
 
 set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
-add_executable(cmdr main_cmdr.cpp commander.cpp utils.cpp)
+add_executable(cmdr main_cmdr.cpp commander.cpp utils.cpp path.cpp)
 target_link_libraries(cmdr ${Boost_LIBRARIES})
 set_target_properties(cmdr PROPERTIES OUTPUT_NAME ${BUILD_DIR}/krait-cmdr)
 
@@ -68,3 +68,4 @@ add_custom_command(TARGET build_tests POST_BUILD
 add_custom_command(TARGET build POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 
+install(TARGETS build cmdr RUNTIME DESTINATION bin)

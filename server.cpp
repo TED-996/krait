@@ -56,7 +56,9 @@ Server::Server(string serverRoot, int port) {
 
 	initSignals();
 
-	infoLogger.log("Server initialized.");	
+	infoLogger.log("Server initialized.");
+
+	stdinDisconnected = fdClosed(0);
 }
 
 void Server::initSignals(){
@@ -192,7 +194,7 @@ void Server::tryWaitFinishedForks() {
 	if (pids.size() == 0) {
 		return;
 	}
-	DBG_FMT("there are %1% pids", pids.size());
+	//DBG_FMT("there are %1% pids", pids.size());
 
 	int status;
 	pid_t pid;
@@ -241,7 +243,7 @@ void Server::tryCachePymlFiles() {
 }
 
 void Server::tryCheckStdinClosed(){
-	if (fdClosed(0)){
+	if (!stdinDisconnected && fdClosed(0)){
 		kill(getpid(), SIGUSR1);
 	}
 }

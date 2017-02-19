@@ -73,6 +73,8 @@ class Server {
 	static LoggerIn infoLogger;
 	static LoggerIn errLogger;
 
+	bool stdinDisconnected;
+
 public:
 	Server(std::string serverRoot, int port);
 	~Server();
