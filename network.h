@@ -14,7 +14,7 @@ int getNewClient(int listenerSocket, int timeoutMs);
 void closeSocket(int clientSocket);
 
 void printSocket(int clientSocket);
-boost::optional<Request> getRequestFromSocket(int clientSocket);
+boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs);
 
 void respondRequestHttp10(int clientSocket);
 void respondRequest404(int clientSocket);

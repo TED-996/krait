@@ -2,6 +2,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/assign.hpp>
+
 #include "response.h"
 #include "except.h"
 
@@ -110,6 +111,11 @@ void Response::setConnClose(bool connClose) {
 	
 	setHeader("Connection", connClose ? "close" : "keep-alive");
 }
+
+void Response::setKeepAliveTimeout(int timeout){
+	setHeader("Keep-Alive", formatString("timeout=%1%", timeout));
+}
+
 
 string getStatusReason(int statusCode);
 string formatTitleCase(string str);

@@ -253,10 +253,11 @@ string replaceParams(string target, map<string, string> params);
 void Server::serveClientStart(int clientSocket) {
 	infoLogger.log("Serving a new client");
 	bool isHead = false;
-	
+	keepAliveTimeoutSec = maxKeepAliveSec;
+
 	try{
 		while(true){ //TODO: timeout on getRequestFromSocket? also return keep-alive headers.
-			optional<Request> requestOpt = getRequestFromSocket(clientSocket);
+			optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
 			infoLogger.log(formatString("request got"));
 			if (!requestOpt){
@@ -291,7 +292,7 @@ void Server::serveClientStart(int clientSocket) {
 				infoLogger.log("Rejoined with forked subfork.");
 			}
 			
-			if (!request.isKeepAlive()){
+			if (!request.isKeepAlive() || request.getKeepAliveTimeout() == 0){
 				break;
 			}
 		}
@@ -358,7 +359,16 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	if (isHead) {
 		resp.setBody(string(), false);
 	}
-	resp.setConnClose(!request.isKeepAlive());
+
+	keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
+	
+	if (request.isKeepAlive() && keepAliveTimeoutSec != 0){
+		resp.setConnClose(false);
+		resp.setKeepAliveTimeout(keepAliveTimeoutSec);
+	}
+	else{
+		resp.setConnClose(true);
+	}
 	DBG("pre respondWithObject");
 
 	respondWithObjectRef(clientSocket, resp);

@@ -2,6 +2,7 @@
 #include<utility>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/lexical_cast.hpp>
 #include"request.h"
 #include"fsm.h"
 
@@ -9,6 +10,8 @@
 #include"dbg.h"
 
 using namespace std;
+using namespace boost::algorithm;
+using namespace boost;
 
 
 Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string>& headers,
@@ -17,13 +20,16 @@ Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor,
 	this->url = url;
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
-	this->headers = map<string, string>(headers);
+	this->headers = map<string, string>();
+	for (auto p : headers){
+		this->headers[to_lower_copy(p.first)] = p.second;
+	}
 
 	this->body = string(body);
 }
 
 const string* Request::getHeader(const string& name) const {
-	auto iterFound = headers.find(name);
+	auto iterFound = headers.find(to_lower_copy(name));
 	if (iterFound == headers.end()) {
 		return NULL;
 	}
@@ -157,7 +163,7 @@ bool RequestParser::consumeOne(char chr) {
 
 
 int RequestParser::getBodyLength() {
-	auto foundHeader = headers.find(string("Content-Length"));
+	auto foundHeader = headers.find("content-length");
 	if (foundHeader == headers.end()) {
 		return 0;
 	}
@@ -174,6 +180,7 @@ int RequestParser::getBodyLength() {
 }
 
 void RequestParser::saveHeader(string name, string value) {
+	to_lower(name);
 	auto foundName = headers.find(name);
 	if (foundName == headers.end()) {
 		headers.insert(make_pair(name, value));
@@ -257,8 +264,8 @@ bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
 	return true;
 }
 
-const bool Request::isKeepAlive() const {
-	auto it = headers.find("Connection");
+bool Request::isKeepAlive() const {
+	auto it = headers.find("connection");
 	
 	if (httpMajor < 1 || (httpMajor == 1 && httpMinor < 1)){
 		if (it == headers.end()){
@@ -274,3 +281,26 @@ const bool Request::isKeepAlive() const {
 	}
 }
 
+int Request::getKeepAliveTimeout() const {
+	if (!this->isKeepAlive()){
+		return 0;
+	}
+	auto it = headers.find("keep-alive");
+	if (it == headers.end()){
+		return 0; //This is actually illegal per the HTTP spec, but whatever.
+	}
+
+	string value = it->second;
+	if(!boost::starts_with(value, "timeout=")){
+		return 0; //other unsupported timeout types, ignore.
+	}
+
+	string secondsStr = value.substr(string("timeout=").length());
+	try{
+		return boost::lexical_cast<int>(secondsStr);
+	}
+	catch(const bad_lexical_cast&){
+		fprintf(stderr, "Received non-integer as timeout seconds...\n");
+		return 0; //should we throw?
+	}
+}

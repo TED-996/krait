@@ -18,3 +18,7 @@ path getExecRoot() {
 
 	return path(exePath).parent_path();
 }
+
+path getCreateDataRoot(){
+	return getExecRoot();
+}

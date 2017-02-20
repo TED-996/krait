@@ -24,6 +24,9 @@ class Server {
 	std::vector<Route> routes;
 	int serverSocket;
 
+	const int maxKeepAliveSec = 60;
+	int keepAliveTimeoutSec;
+
 	StringPiper cacheRequestPipe;
 	
 	boost::object_pool<PymlFile> pymlPool;

@@ -111,12 +111,22 @@ void printSocket(int clientSocket) {
 	}
 }
 
-boost::optional<Request> getRequestFromSocket(int clientSocket) {
+boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 	RequestParser parser;
 	char buffer[4096];
 	int bytesRead;
+	int pollResult;
 
-	while (!parser.isFinished() && (bytesRead = read(clientSocket, buffer, sizeof(buffer))) > 0) {
+	pollfd pfd;
+	pfd.fd = clientSocket;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
+		if (pollResult < 0){
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): waiting for request from socket."));
+		}
+		bytesRead = read(clientSocket, buffer, sizeof(buffer));
 		if (bytesRead == 0){
 			return boost::none;
 		}
@@ -134,10 +144,14 @@ boost::optional<Request> getRequestFromSocket(int clientSocket) {
 				parser.consume(buffer, bytesRead);
 			}
 			catch(httpParseError err){
-				printf("Error parsing http request: %s", err.what());
+				printf("Error parsing http request: %s\n", err.what());
 				return boost::none;
 			}
 		}
+	}
+
+	if (!parser.isFinished()){
+		return boost::none;
 	}
 
 	return parser.getRequest();
