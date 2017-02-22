@@ -3,6 +3,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/lexical_cast.hpp>
+#include<climits>
 #include"request.h"
 #include"fsm.h"
 
@@ -34,6 +35,48 @@ const string* Request::getHeader(const string& name) const {
 		return NULL;
 	}
 	return &(iterFound->second);
+}
+
+
+bool Request::isKeepAlive() const {
+	auto it = headers.find("connection");
+	
+	if (httpMajor < 1 || (httpMajor == 1 && httpMinor < 1)){
+		if (it == headers.end()){
+			return false;
+		}
+		return boost::algorithm::to_lower_copy(it->second) == "keep-alive";
+	}
+	else{
+		if (it == headers.end()){
+			return true;
+		}
+		return boost::algorithm::to_lower_copy(it->second) != "close";
+	}
+}
+
+int Request::getKeepAliveTimeout() const {
+	if (!this->isKeepAlive()){
+		return 0;
+	}
+	auto it = headers.find("keep-alive");
+	if (it == headers.end()){
+		return INT_MAX; //will be set with a minimum.
+	}
+
+	string value = it->second;
+	if(!boost::starts_with(value, "timeout=")){
+		return 0; //other unsupported timeout types, ignore.
+	}
+
+	string secondsStr = value.substr(string("timeout=").length());
+	try{
+		return boost::lexical_cast<int>(secondsStr);
+	}
+	catch(const bad_lexical_cast&){
+		fprintf(stderr, "Received non-integer as timeout seconds...\n");
+		return 0; //should we throw?
+	}
 }
 
 RequestParser::RequestParser() {
@@ -264,43 +307,4 @@ bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
 	return true;
 }
 
-bool Request::isKeepAlive() const {
-	auto it = headers.find("connection");
-	
-	if (httpMajor < 1 || (httpMajor == 1 && httpMinor < 1)){
-		if (it == headers.end()){
-			return false;
-		}
-		return boost::algorithm::to_lower_copy(it->second) == "keep-alive";
-	}
-	else{
-		if (it == headers.end()){
-			return true;
-		}
-		return boost::algorithm::to_lower_copy(it->second) != "close";
-	}
-}
 
-int Request::getKeepAliveTimeout() const {
-	if (!this->isKeepAlive()){
-		return 0;
-	}
-	auto it = headers.find("keep-alive");
-	if (it == headers.end()){
-		return 0; //This is actually illegal per the HTTP spec, but whatever.
-	}
-
-	string value = it->second;
-	if(!boost::starts_with(value, "timeout=")){
-		return 0; //other unsupported timeout types, ignore.
-	}
-
-	string secondsStr = value.substr(string("timeout=").length());
-	try{
-		return boost::lexical_cast<int>(secondsStr);
-	}
-	catch(const bad_lexical_cast&){
-		fprintf(stderr, "Received non-integer as timeout seconds...\n");
-		return 0; //should we throw?
-	}
-}

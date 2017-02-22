@@ -270,6 +270,9 @@ void Server::serveClientStart(int clientSocket) {
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
 			}
+
+			keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
+			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0;
 			
 			pid_t childPid = fork();
 			if (childPid == 0){
@@ -292,7 +295,7 @@ void Server::serveClientStart(int clientSocket) {
 				infoLogger.log("Rejoined with forked subfork.");
 			}
 			
-			if (!request.isKeepAlive() || request.getKeepAliveTimeout() == 0){
+			if (!keepAlive){
 				break;
 			}
 		}
@@ -302,7 +305,8 @@ void Server::serveClientStart(int clientSocket) {
 			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "", true));
 		}
 		else{
-			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(),
+							  "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
 		errLogger.log(formatString("Error serving client: %1%", ex.what()));
 	}
@@ -359,10 +363,8 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	if (isHead) {
 		resp.setBody(string(), false);
 	}
-
-	keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
 	
-	if (request.isKeepAlive() && keepAliveTimeoutSec != 0){
+	if (keepAlive){
 		resp.setConnClose(false);
 		resp.setKeepAliveTimeout(keepAliveTimeoutSec);
 	}

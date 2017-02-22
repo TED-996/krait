@@ -107,7 +107,7 @@ void startKrait(int argc, char* argv[]){
 		if (waitpid(child1Pid, NULL, 0) == -1){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid: waiting for child1 to exit.") << errcodeInfoDef());
 		}
-		printf("Krait started.\nWatch stdout in %s and stderr in %s\nor run krait-cmdr watch", getStdoutPath().c_str(), getStderrPath().c_str());	
+		printf("Krait started.\nWatch stdout in %s and stderr in %s\nor run krait-cmdr watch\n", getStdoutPath().c_str(), getStderrPath().c_str());	
 	}
 }
 

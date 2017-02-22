@@ -173,6 +173,9 @@ string getStatusReason(int statusCode) {
 
 
 string formatTitleCase(string str) {
+	if (str.length() != 0){
+		str[0] = toupper(str[0]);
+	}
 	size_t idx = str.find('-');
 	while (idx != string::npos){
 		if (idx != str.length() - 1){

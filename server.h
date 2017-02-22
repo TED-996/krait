@@ -26,6 +26,7 @@ class Server {
 
 	const int maxKeepAliveSec = 60;
 	int keepAliveTimeoutSec;
+	bool keepAlive;
 
 	StringPiper cacheRequestPipe;
 	
