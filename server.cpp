@@ -25,8 +25,6 @@ using namespace boost::algorithm;
 unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
-LoggerIn Server::infoLogger;
-LoggerIn Server::errLogger;
 
 
 Server::Server(string serverRoot, int port) {
@@ -39,7 +37,7 @@ Server::Server(string serverRoot, int port) {
 		this->routes = getRoutesFromFile(routesFilename.string());
 	}
 	else{
-		infoLogger.log("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
+		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
 		this->routes = getDefaultRoutes();
 	}
 	
@@ -56,7 +54,7 @@ Server::Server(string serverRoot, int port) {
 
 	initSignals();
 
-	infoLogger.log("Server initialized.");
+	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 
 	stdinDisconnected = fdClosed(0);
 }
@@ -78,7 +76,7 @@ void Server::initSignals(){
 
 
 void Server::signalStopRequested(int sig){
-	infoLogger.log(formatString("Stop requested for process %1%", getpid()));
+	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
 	clientWaitingResponse = false;
 	if (clientWaitingResponse && socketToClose != -1){
 		respondWithObject(socketToClose,  Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
@@ -97,12 +95,14 @@ void Server::signalStopRequested(int sig){
 		sleep(1);
 		DBG("not closed...");
 	}
+
+	Loggers::logInfo(formatString("Process %1% closed.", getpid()));	
 	exit(0);
 }
 
 
 void Server::signalKillRequested(int sig){
-	infoLogger.log(formatString("Kill requested for process %1%", getpid()));
+	Loggers::logInfo(formatString("Kill requested for process %1%", getpid()));
 	//hard close
 
 	if (socketToClose != -1){
@@ -114,6 +114,7 @@ void Server::signalKillRequested(int sig){
 		kill((pid_t)pid, SIGTERM);
 	}
 
+	Loggers::logInfo(formatString("Process %1% killed.", getpid()));
 	exit(0);
 }
 
@@ -131,7 +132,7 @@ Server::~Server() {
 		tryWaitFinishedForks();
 		sleep(1);
 	}
-	infoLogger.log("Server destructed.");
+	Loggers::logInfo("Server destructed.");
 }
 
 
@@ -144,13 +145,13 @@ void Server::killChildren() {
 	for (int pid : pids) {
 		kill((pid_t)pid, SIGTERM);
 	}
-	infoLogger.log("Chilren killed.");
+	Loggers::logInfo("Chilren killed.");
 }
 
 
 void Server::runServer() {
 	setSocketListen(this->serverSocket);
-	infoLogger.log("Server running");
+	Loggers::logInfo("Server listening");
 
 	while (true) {
 		tryAcceptConnection();
@@ -198,7 +199,10 @@ void Server::tryWaitFinishedForks() {
 
 	int status;
 	pid_t pid;
-	while ((pid = waitpid(-1, &status, WNOHANG)) != 0) {
+	while (pids.size() != 0 && (pid = waitpid(-1, &status, WNOHANG)) != 0) {
+		if (pid == -1){
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid: waiting for child") << errcodeInfoDef());
+		}
 		if (WIFEXITED(status) || WIFSIGNALED(status)) {
 			DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
 			
@@ -251,7 +255,7 @@ void Server::tryCheckStdinClosed(){
 string replaceParams(string target, map<string, string> params);
 
 void Server::serveClientStart(int clientSocket) {
-	infoLogger.log("Serving a new client");
+	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
 	keepAliveTimeoutSec = maxKeepAliveSec;
 
@@ -259,14 +263,14 @@ void Server::serveClientStart(int clientSocket) {
 		while(true){ //TODO: timeout on getRequestFromSocket? also return keep-alive headers.
 			optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
-			infoLogger.log(formatString("request got"));
+			Loggers::logInfo(formatString("request got"));
 			if (!requestOpt){
-				infoLogger.log(formatString("Requests finished."));
+				Loggers::logInfo(formatString("Requests finished."));
 				break;
 			}
 			Request& request = *requestOpt;
 			
-			infoLogger.log(formatString("Request URL is %1%", request.getUrl()));
+			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
 			}
@@ -281,7 +285,7 @@ void Server::serveClientStart(int clientSocket) {
 				serveRequest(clientSocket, request);
 				clientWaitingResponse = false;
 				
-				infoLogger.log("Serving a request finished.");
+				Loggers::logInfo("Serving a request finished.");
 				close(clientSocket);
 				exit(0);
 			}
@@ -292,7 +296,7 @@ void Server::serveClientStart(int clientSocket) {
 					BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
 				}
 				pids.erase((int)childPid);
-				infoLogger.log("Rejoined with forked subfork.");
+				Loggers::logInfo("Rejoined with forked subfork.");
 			}
 			
 			if (!keepAlive){
@@ -308,7 +312,7 @@ void Server::serveClientStart(int clientSocket) {
 			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(),
 							  "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
-		errLogger.log(formatString("Error serving client: %1%", ex.what()));
+		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 	
 	
@@ -357,7 +361,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	}
 	catch (rootException& ex) {
 		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
-		errLogger.log(formatString("Error serving client: %1%", ex.what()));
+		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
 	if (isHead) {
@@ -634,11 +638,4 @@ void Server::loadContentTypeList() {
 			contentTypeByExtension["." + lineItems[i]] = mimeType;
 		}
 	}
-}
-
-void Server::setLoggers(int infoPipe, int errPipe){
-	infoLogger.~LoggerIn();
-	errLogger.~LoggerIn();
-	new(&infoLogger)LoggerIn(infoPipe);
-	new(&errLogger)LoggerIn(errPipe);
 }

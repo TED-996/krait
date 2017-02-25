@@ -74,9 +74,6 @@ class Server {
 	static void signalKillRequested(int sig);
 	static std::unordered_set<int> pids;
 
-	static LoggerIn infoLogger;
-	static LoggerIn errLogger;
-
 	bool stdinDisconnected;
 
 public:
@@ -85,6 +82,4 @@ public:
 
 	void runServer();
 	void killChildren();
-	
-	static void setLoggers(int infoPipe, int errPipe);	
 };

@@ -6,6 +6,7 @@
 #include<climits>
 #include"request.h"
 #include"fsm.h"
+#include"logger.h"
 
 #define DBG_DISABLE
 #include"dbg.h"
@@ -74,7 +75,7 @@ int Request::getKeepAliveTimeout() const {
 		return boost::lexical_cast<int>(secondsStr);
 	}
 	catch(const bad_lexical_cast&){
-		fprintf(stderr, "Received non-integer as timeout seconds...\n");
+		Loggers::logErr("Received non-integer as timeout seconds\n");
 		return 0; //should we throw?
 	}
 }

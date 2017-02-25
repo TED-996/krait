@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<boost/format.hpp>
 
+//TOOD: include Logger in this file
 
 class LoggerOut {
 	int pipeIn;
@@ -42,6 +43,31 @@ public:
 	void log(const boost::format fmt);
 
 	void close();
+};
+
+
+class Loggers {
+public:
+	static LoggerIn infoLogger;
+	static LoggerIn errLogger;
+
+	static void setLoggers(int infoPipe, int errPipe);	
+	static void setInfoLogger(int infoPipe);
+	static void setErrLogger(int errPipe);
+
+	static void logInfo(std::string message);
+	static void logErr(std::string message);
+
+	static LoggerIn& getInfoLogger(){
+		return infoLogger;
+	}
+	static LoggerIn& getErrLogger(){
+		return errLogger;
+	}
+
+private:
+	Loggers(){
+	}
 };
 
 

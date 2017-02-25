@@ -8,6 +8,34 @@
 using namespace std;
 using namespace boost::chrono;
 
+LoggerIn Loggers::infoLogger(1);
+LoggerIn Loggers::errLogger(2);
+
+void Loggers::setLoggers(int infoPipe, int errPipe){
+	setInfoLogger(infoPipe);
+	setErrLogger(errPipe);
+}
+
+void Loggers::setInfoLogger(int infoPipe){
+	/*infoLogger.~LoggerIn();
+	new(&infoLogger)LoggerIn(infoPipe);*/
+	infoLogger = LoggerIn(infoPipe);
+}
+
+void Loggers::setErrLogger(int errPipe){
+	/*errLogger.~LoggerIn();
+	new(&errLogger)LoggerIn(errPipe);*/
+	infoLogger = LoggerIn(errPipe);
+}
+
+void Loggers::logInfo(string message){
+	infoLogger.log(message);
+}
+
+void Loggers::logErr(string message){
+	errLogger.log(message);
+}
+
 LoggerOut::LoggerOut(){
 	this->pipeIn = -1;
 }
@@ -96,11 +124,8 @@ void LoggerIn::log(const char* buffer, size_t size) {
 	}
 
 	if (write(pipeOut, buffer, size) != (int)size || write(pipeOut, "\n", 1) != 1) {
-		printf("Error in LoggerIn.write; errno %d\n", errno);
+		fprintf(stderr, "Error in LoggerIn.write; errno %d\n", errno);
 	}
-
-	fwrite(buffer, size, 1, stdout);
-	printf("\n");
 }
 
 

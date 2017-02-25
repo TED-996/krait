@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <poll.h>
+#include "logger.h"
 #include "network.h"
 #include "utils.h"
 #include "except.h"
@@ -144,7 +145,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 				parser.consume(buffer, bytesRead);
 			}
 			catch(httpParseError err){
-				printf("Error parsing http request: %s\n", err.what());
+				Loggers::logErr(formatString("Error parsing http request: %s\n", err.what()));
 				return boost::none;
 			}
 		}
