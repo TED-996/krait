@@ -4,19 +4,14 @@
 #include<vector>
 #include<unordered_set>
 #include<unordered_map>
-#include<time.h>
-#include<memory>
 #include<boost/filesystem/path.hpp>
-#include<boost/pool/object_pool.hpp>
-#include<signal.h>
 #include"except.h"
 #include"routes.h"
 #include"network.h"
-#include"pythonWorker.h"
 #include"response.h"
 #include"pyml.h"
-#include"logger.h"
 #include"stringPiper.h"
+#include"cache.h"
 
 
 class Server {
@@ -28,17 +23,11 @@ class Server {
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
-	StringPiper cacheRequestPipe;
-	
-	boost::object_pool<PymlFile> pymlPool;
-	std::unordered_map<std::string, std::pair<std::time_t, PymlFile*>> pymlCache;
-	std::unordered_map<std::string, std::pair<std::time_t, std::string>> rawFileCache;
 
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
 	void tryAcceptConnection();
 	static void tryWaitFinishedForks();
-	void tryCachePymlFiles();
 	void tryCheckStdinClosed();
 
 	void serveClientStart(int clientSocket);
@@ -50,7 +39,6 @@ class Server {
 	std::string getFilenameFromTarget(std::string target);
 	std::string expandFilename(std::string filename);
 	bool pathBlocked(std::string filename);
-
 	
 	std::string getRawFile(std::string filename);
 	std::string getPymlResult(std::string filename);
@@ -73,6 +61,12 @@ class Server {
 	static void signalStopRequested(int sig);
 	static void signalKillRequested(int sig);
 	static std::unordered_set<int> pids;
+
+	static StringPiper cacheRequestPipe;
+	static bool interpretCacheRequest;
+	static FileCache<std::string> rawFileCache;
+	static FileCache<PymlFile> pymlCache;
+	static void updateParentCaches();	
 
 	bool stdinDisconnected;
 
