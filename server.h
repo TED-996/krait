@@ -40,14 +40,6 @@ class Server {
 	std::string expandFilename(std::string filename);
 	bool pathBlocked(std::string filename);
 	
-	std::string getRawFile(std::string filename);
-	std::string getPymlResult(std::string filename);
-	const PymlFile& addPymlToCache(std::string filename);
-	std::string& addRawFileToCache(std::string filename);
-	
-	const PymlFile& getPymlRequestCache(std::string filename);
-	std::string& getRawFileRequestCache(std::string filename);
-	
 	std::string getContentType(std::string filename);
 
 	void loadContentTypeList();
@@ -64,9 +56,13 @@ class Server {
 
 	static StringPiper cacheRequestPipe;
 	static bool interpretCacheRequest;
-	static FileCache<std::string> rawFileCache;
-	static FileCache<PymlFile> pymlCache;
-	static void updateParentCaches();	
+	static FileCache<PymlFile> serverCache;
+	static void updateParentCaches();
+
+	static PymlFile* constructPymlFromString(std::string filename, boost::object_pool<PymlFile>& pool);
+	static void onServerCacheMiss(std::string filename);
+
+	static std::string getPymlResultRequestCache(std::string filename);
 
 	bool stdinDisconnected;
 

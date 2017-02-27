@@ -188,7 +188,7 @@ std::string PymlFile::runPyml() const {
 
 bool PymlFile::isDynamic() const {
 	if (rootItem == NULL){
-		return true;
+		return false;
 	}
 	return rootItem->isDynamic();
 }
@@ -243,6 +243,16 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	
 	const PymlItem* result = itemStack.top().getItem(pool);
 	return result;
+}
+
+
+PymlFile::PymlFile(const string& source, bool isRaw) {
+	if (!isRaw){
+		rootItem = parseFromSource(source);
+	}
+	else{
+		rootItem = pool.strPool.construct(source);
+	}
 }
 
 

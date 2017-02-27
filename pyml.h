@@ -236,9 +236,7 @@ class PymlFile {
 	void addPymlStackTop();
 	
 public:
-	PymlFile(const std::string& pymlSource){
-		rootItem = parseFromSource(pymlSource);
-	}
+	PymlFile(const std::string& source, bool isRaw = false);
 	
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;

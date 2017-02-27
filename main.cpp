@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <unistd.h>
 #include <iostream>
 #include <string>
@@ -93,7 +92,7 @@ void startSetLoggers(string outFilename, string errFilename){
 	int infoPipe[2];
 
 	if (pipe(errPipe) != 0 || pipe(infoPipe) != 0) {
-		fprintf(stderr, "Error creating logging pipes.\n");
+		cerr << "Error creating logging pipes.\n";
 		exit(10);
 	}
 
@@ -101,7 +100,7 @@ void startSetLoggers(string outFilename, string errFilename){
 	pid_t pid = fork();
 
 	if (pid == -1) {
-		fprintf(stderr, "Error fork()ing for the logger\n");
+		cerr << "Error fork()ing for the logger\n";
 		exit(10);
 	}
 

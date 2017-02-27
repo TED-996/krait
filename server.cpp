@@ -1,17 +1,16 @@
 #include<unistd.h>
 #include<sys/wait.h>
 #include<signal.h>
-#include<algorithm>
-#include<fstream>
-#include<cctype>
 #include<vector>
+#include<ctime>
 #include<boost/filesystem.hpp>
 #include<boost/algorithm/string.hpp>
 #include"utils.h"
 #include"server.h"
 #include"except.h"
 #include"pythonWorker.h"
-#include "path.h"
+#include"path.h"
+#include"logger.h"
 
 
 #include"dbg.h"
@@ -25,6 +24,10 @@ using namespace boost::algorithm;
 unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
+FileCache<PymlFile> Server::serverCache(Server::constructPymlFromString, Server::onServerCacheMiss);
+bool Server::interpretCacheRequest;
+StringPiper Server::cacheRequestPipe;
+
 
 
 Server::Server(string serverRoot, int port) {
@@ -156,7 +159,7 @@ void Server::runServer() {
 	while (true) {
 		tryAcceptConnection();
 		tryWaitFinishedForks();
-		tryCachePymlFiles();
+		updateParentCaches();
 		tryCheckStdinClosed();
 	}
 }
@@ -214,38 +217,6 @@ void Server::tryWaitFinishedForks() {
 	}
 }
 
-
-void Server::tryCachePymlFiles() {
-	while(cacheRequestPipe.pipeAvailable()){
-		string filename = cacheRequestPipe.pipeRead();
-		DBG("next cache add is in parent");
-		if (canContainPython(filename)){
-			const auto it = pymlCache.find(filename);
-
-			if (it == pymlCache.end()){
-				addPymlToCache(filename);
-			}
-			else if (last_write_time(filename) != it->second.first){
-				pymlPool.destroy(it->second.second);
-				pymlCache.erase(it);
-				addPymlToCache(filename);
-			}
-		}
-		else{
-			const auto it = rawFileCache.find(filename);
-
-			if (it == rawFileCache.end()){
-				addRawFileToCache(filename);
-			}
-			else if (last_write_time(filename) != it->second.first){
-				rawFileCache.erase(it);
-				addRawFileToCache(filename);
-			}
-		}
-		DBG("if cache add, it was in parent");
-	}
-}
-
 void Server::tryCheckStdinClosed(){
 	if (!stdinDisconnected && fdClosed(0)){
 		kill(getpid(), SIGUSR1);
@@ -273,6 +244,9 @@ void Server::serveClientStart(int clientSocket) {
 			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
+			}
+			if (request.headerExists("If-Modified-Since")){
+				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
 			}
 
 			keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
@@ -327,13 +301,13 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	bool isHead = false;
 
 	try {
-		map<string, string> params;
-		Route route = getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
-
 		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
 			request.setVerb(HttpVerb::GET);
 		}
+
+		map<string, string> params;
+		Route route = getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
 
 		string sourceFile;
 		if (route.isDefaultTarget()) {
@@ -354,7 +328,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 			resp = Response(pythonEval("response"));
 		}
 
-		DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
+		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
 	catch (notFoundError&) {
 		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>", true);
@@ -375,11 +349,11 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	else{
 		resp.setConnClose(true);
 	}
-	DBG("pre respondWithObject");
+	//DBG("pre respondWithObject");
 
 	respondWithObjectRef(clientSocket, resp);
 	
-	DBG("responded!");
+	//DBG("responded!");
 }
 
 
@@ -430,22 +404,14 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	if (!canContainPython(filename)) {
-		Response result(1, 1, 200, unordered_map<string, string>(), getRawFile(filename), false);
-		
-		addDefaultHeaders(result, filename, request);
-		return result;
-	}
-	else {
-		string pymlResult = getPymlResult(filename);
+	string pymlResult = getPymlResultRequestCache(filename);
 
-		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
-		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-		Response result(1, 1, 200, headers, pymlResult, false); //TODO: o solutie ca sa pot folosi content-type si pentru pyml?
-		
-		addDefaultHeaders(result, filename, request);
-		return result;
-	}
+	map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
+	unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
+	Response result(1, 1, 200, headers, pymlResult, false);
+	
+	addDefaultHeaders(result, filename, request);
+	return result;
 }
 
 
@@ -457,7 +423,7 @@ bool Server::canContainPython(std::string filename){
 
 string Server::expandFilename(string filename) {
 	if (filesystem::is_directory(filename)) {
-		DBG("Converting to directory automatically");
+		//DBG("Converting to directory automatically");
 		filename = (filesystem::path(filename) / "index").string(); //Not index.html; taking care below about it
 	}
 	if (pathBlocked(filename)) {
@@ -466,104 +432,66 @@ string Server::expandFilename(string filename) {
 
 	if (!filesystem::exists(filename)){
 		if (filesystem::exists(filename + ".html")){
-			DBG("Adding .html automatically");
+			//DBG("Adding .html automatically");
 			filename += ".html";
 		}
 		if (filesystem::exists(filename + ".htm")){
-			DBG("Adding .htm automatically");
+			//DBG("Adding .htm automatically");
 			filename += ".htm";
 		}
 		if (filesystem::exists(filename + ".pyml")){
-			DBG("Adding .pyml automatically");
+			//DBG("Adding .pyml automatically");
 			filename += ".pyml";
 		}
 		
 		if (path(filename).extension() == ".html" && filesystem::exists(filesystem::change_extension(filename, ".htm"))){
 			filename = filesystem::change_extension(filename, "htm").string();
-			DBG("Changing extension to .htm");
+			//DBG("Changing extension to .htm");
 		}
 		if (path(filename).extension() == ".htm" && filesystem::exists(filesystem::change_extension(filename, ".html"))){
 			filename = filesystem::change_extension(filename, "html").string();
-			DBG("Changing extension to .html");
+			//DBG("Changing extension to .html");
 		}
 	}
 	return filename;
 }
 
 
-string readFromFile(string filename);
 
-string Server::getPymlResult(string filename) {
+string Server::getPymlResultRequestCache(string filename) {
 	//DBG("Reading pyml cache");
-	const auto it = pymlCache.find(filename);
+	interpretCacheRequest = true;
+	string result = serverCache.get(filename)->runPyml();
 
-	if (it == pymlCache.end()){
-		const PymlFile& file = getPymlRequestCache(filename);
-		return file.runPyml();
+	return result;
+}
+
+PymlFile* Server::constructPymlFromString(std::string filename, boost::object_pool<PymlFile>& pool){
+	string source = readFromFile(filename);
+	if (canContainPython(filename)){
+		return pool.construct(source, false);
 	}
-	if (last_write_time(filename) != it->second.first){
-		pymlPool.destroy(it->second.second);
-		pymlCache.erase(it);
-		const PymlFile& file = getPymlRequestCache(filename);
-		return file.runPyml();
+	else{
+		return pool.construct(source, true);
 	}
-	
-	return it->second.second->runPyml();
 }
 
-
-
-const PymlFile& Server::addPymlToCache(string filename) {
-	//DBG("Adding new item to cache");
-	time_t time = last_write_time(filename);
-	PymlFile* pymlFile = pymlPool.construct(readFromFile(filename));
-	pymlCache[filename] = make_pair(time, pymlFile);
-	
-	DBG("\tAdded pyml to cache!");
-	return *pymlFile;
-}
-
-
-string Server::getRawFile(string filename) {
-	//DBG("Reading raw cache");
-
-	const auto it = rawFileCache.find(filename);
-
-	if (it == rawFileCache.end()){
-		return getRawFileRequestCache(filename);
+void Server::onServerCacheMiss(std::string filename){
+	if (interpretCacheRequest){
+		cacheRequestPipe.pipeWrite(filename);
+		Loggers::logInfo(formatString("Cache miss on url %1%", filename));	
 	}
-	if (last_write_time(filename) != it->second.first){
-		rawFileCache.erase(it);
-		return getRawFileRequestCache(filename);
+}
+
+void Server::updateParentCaches() {
+	while(cacheRequestPipe.pipeAvailable()){
+		string filename = cacheRequestPipe.pipeRead();
+		DBG("next cache add is in parent");
+		interpretCacheRequest = false;
+		serverCache.get(filename);
+		//DBG("if cache add, it was in parent");
 	}
-	
-	return it->second.second;
 }
-
-
-string& Server::addRawFileToCache(string filename){
-	time_t time = last_write_time(filename);
-	
-	string result = readFromFile(filename);
-	rawFileCache[filename] = make_pair(time, result);
-	
-	DBG("\tAdded raw to cache!");
-	return rawFileCache[filename].second;
-}
-
-
-std::string& Server::getRawFileRequestCache(std::string filename){
-	cacheRequestPipe.pipeWrite(filename);
-	
-	return addRawFileToCache(filename);
-}
-
-const PymlFile& Server::getPymlRequestCache(std::string filename){
-	cacheRequestPipe.pipeWrite(filename);
-	
-	return addPymlToCache(filename);
-}
-
 
 
 bool Server::pathBlocked(string filename) {
@@ -577,25 +505,13 @@ bool Server::pathBlocked(string filename) {
 	return false;
 }
 
-
-string readFromFile(string filename) {
-	std::ifstream fileIn(filename, ios::in | ios::binary);
-
-	if (!fileIn) {
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
-	}
-
-	ostringstream fileData;
-	fileData << fileIn.rdbuf();
-	fileIn.close();
-
-	return fileData.str();
-}
-
-
 void Server::addDefaultHeaders(Response& response, string filename, Request& request) {
 	if (!response.headerExists("Content-Type")) {
 		response.setHeader("Content-Type", getContentType(filename));
+	}
+	std::time_t timeVal = std::time(NULL);
+	if (timeVal != -1 && !response.headerExists("Date")) {
+		response.setHeader("Date", unixTimeToString(timeVal));
 	}
 }
 
@@ -607,7 +523,7 @@ string Server::getContentType(string filename) {
 		extension = filePath.stem().extension().string();
 	}
 
-	DBG_FMT("Extension: %1%", extension);
+	//DBG_FMT("Extension: %1%", extension);
 
 	auto it = contentTypeByExtension.find(extension);
 	if (it == contentTypeByExtension.end()) {

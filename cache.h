@@ -3,7 +3,7 @@
 #include<boost/pool/object_pool.hpp>
 #include<boost/filesystem.hpp>
 #include<unordered_map>
-#include<time>
+#include<ctime>
 #include"except.h"
 
 
@@ -12,26 +12,31 @@ class FileCache {
 private:
 	struct CacheEntry{
 		std::time_t time;
-		const T* item;
+		T* item;
 	};
 public:
-	typedef const T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool);
+	typedef T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool);
+	typedef void (*cacheEventFunction)(std::string filename);
 
 private:
 	boost::object_pool<T> pool;
 	constructorFunction constructor;
+	cacheEventFunction onCacheMiss;
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
-	const T* constructAddNew(std::string filename, std::time_t time){
-		const T* result = constructor(filename, pool);
-		cacheMap[filename] = CacheEntry {time, filename};
+	T* constructAddNew(std::string filename, std::time_t time){
+		T* result = constructor(filename, pool);
+		if (onCacheMiss != NULL){
+			onCacheMiss(filename);
+		}
+		cacheMap[filename] = CacheEntry {time, result};
 		return result;
 	}
 
 	const T* replaceWithNewer(std::string filename){
 		const auto it = cacheMap.find(filename);
 
-		if (!filesystem::exists(filename)){
+		if (!boost::filesystem::exists(filename)){
 			BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 		}
 
@@ -39,20 +44,20 @@ private:
 			pool.destroy(it->second.item);
 			cacheMap.erase(it);
 		}
-		return constructAddNew(filename, filesystem::last_write_time(filename));
+		return constructAddNew(filename, boost::filesystem::last_write_time(filename));
 	}
 
 public:
-	FileCache(constructorFunction constructor)
-		: constructor(constructor){
+	FileCache(constructorFunction constructor, cacheEventFunction onCacheMiss)
+		: constructor(constructor), onCacheMiss(onCacheMiss){
 	}
 
 	bool existsNewer(std::string filename, std::time_t time){
-		if (!filesystem::exists(filename)){
+		if (!boost::filesystem::exists(filename)){
 			BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 		}
 
-		return (filesystem::last_write_time(filename) > time);
+		return (boost::filesystem::last_write_time(filename) > time);
 	}
 
 	/*
@@ -76,4 +81,4 @@ public:
 
 		return cacheMap[filename].time;
 	}
-}
+};

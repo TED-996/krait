@@ -30,8 +30,13 @@ Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor,
 	this->body = string(body);
 }
 
+bool Request::headerExists(std::string name){
+	const auto iterFound = headers.find(to_lower_copy(name));
+	return (iterFound != headers.end());
+}
+
 const string* Request::getHeader(const string& name) const {
-	auto iterFound = headers.find(to_lower_copy(name));
+	const auto iterFound = headers.find(to_lower_copy(name));
 	if (iterFound == headers.end()) {
 		return NULL;
 	}

@@ -1,7 +1,16 @@
+#include<fstream>
+#include<sstream>
+#include<locale>
+#include<boost/date_time/posix_time/posix_time.hpp>
+#include<boost/date_time/local_time_adjustor.hpp>
+#include<boost/date_time/c_local_time_adjustor.hpp>
 #include<poll.h>
 #include<errno.h>
 #include"utils.h"
 #include"except.h"
+
+using namespace std;
+using namespace boost;
 
 bool fdClosed(int fd){
 	char buffer[1024];
@@ -34,4 +43,37 @@ bool fdClosed(int fd){
 
 errcodeInfo errcodeInfoDef(){
 	return errcodeInfo(errno);
+}
+
+string readFromFile(string filename) {
+	std::ifstream fileIn(filename, ios::in | ios::binary);
+
+	if (!fileIn) {
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
+	}
+
+	ostringstream fileData;
+	fileData << fileIn.rdbuf();
+	fileIn.close();
+
+	return fileData.str();
+}
+
+std::string unixTimeToString(std::time_t timeVal){
+	typedef date_time::c_local_adjustor<posix_time::ptime> local_adj;
+	
+	posix_time::ptime asPtime = posix_time::from_time_t(timeVal);
+    //posix_time::ptime asPtimeLocal = local_adj::utc_to_local(asPtime);
+	
+	//posix_time::time_duration utcDiff = asPtimeLocal - asPtime;
+
+	ostringstream result;	
+
+	static char const* const fmt = "%a, %d %b %Y %H:%M:%S GMT";
+	std::locale outLocale(std::locale::classic(), new posix_time::time_facet(fmt));
+	result.imbue(outLocale);
+
+	result << asPtime;
+
+	return result.str();
 }
