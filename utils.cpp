@@ -60,12 +60,7 @@ string readFromFile(string filename) {
 }
 
 std::string unixTimeToString(std::time_t timeVal){
-	typedef date_time::c_local_adjustor<posix_time::ptime> local_adj;
-	
 	posix_time::ptime asPtime = posix_time::from_time_t(timeVal);
-    //posix_time::ptime asPtimeLocal = local_adj::utc_to_local(asPtime);
-	
-	//posix_time::time_duration utcDiff = asPtimeLocal - asPtime;
 
 	ostringstream result;	
 

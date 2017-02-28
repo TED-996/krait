@@ -11,7 +11,8 @@
 #include"response.h"
 #include"pyml.h"
 #include"stringPiper.h"
-#include"cache.h"
+#include"fileCache.h"
+#include"cacheController.h"
 
 
 class Server {
@@ -23,7 +24,7 @@ class Server {
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
-
+	CacheController cacheController;
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
 	void tryAcceptConnection();
@@ -41,7 +42,6 @@ class Server {
 	bool pathBlocked(std::string filename);
 	
 	std::string getContentType(std::string filename);
-
 	void loadContentTypeList();
 	
 	static bool canContainPython(std::string filename);

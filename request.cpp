@@ -256,14 +256,14 @@ bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor);
 
 Request RequestParser::getRequest() {
 	map<string, HttpVerb> stringVerbMapping = {
-		{string("GET"), HttpVerb::GET},
-		{string("HEAD"), HttpVerb::HEAD},
-		{string("POST"), HttpVerb::POST},
-		{string("PUT"), HttpVerb::PUT},
-		{string("DELETE"), HttpVerb::DELETE},
-		{string("CONNECT"), HttpVerb::CONNECT},
-		{string("OPTIONS"), HttpVerb::OPTIONS},
-		{string("TRACE"), HttpVerb::TRACE}
+		{"GET", HttpVerb::GET},
+		{"HEAD", HttpVerb::HEAD},
+		{"POST", HttpVerb::POST},
+		{"PUT", HttpVerb::PUT},
+		{"DELETE", HttpVerb::DELETE},
+		{"CONNECT", HttpVerb::CONNECT},
+		{"OPTIONS", HttpVerb::OPTIONS},
+		{"TRACE", HttpVerb::TRACE}
 	};
 
 	auto verbIt = stringVerbMapping.find(methodString);

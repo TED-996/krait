@@ -61,6 +61,7 @@ set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 add_executable(build_tests main_tests.cpp ${SOURCE_FILES})
 target_link_libraries(build_tests ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
 set_target_properties(build_tests PROPERTIES OUTPUT_NAME ${TEST_DIR}/${CMAKE_PROJECT_NAME}_tests)
+set_target_properties(build_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 add_custom_command(TARGET build_tests PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_DIR})
 add_custom_command(TARGET build_tests POST_BUILD

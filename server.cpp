@@ -30,7 +30,8 @@ StringPiper Server::cacheRequestPipe;
 
 
 
-Server::Server(string serverRoot, int port) {
+Server::Server(string serverRoot, int port) :
+	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string()) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
@@ -315,18 +316,17 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		}
 		else {
 			string targetReplaced = replaceParams(route.getTarget(), params);
-			sourceFile = getFilenameFromTarget (route.getTarget());
+			sourceFile = getFilenameFromTarget(targetReplaced);
 		}
 
 		pythonSetGlobalRequest("request", request);
 		pythonSetGlobal("url_params", params);
 		pythonSetGlobal("resp_headers", map<string, string>());
 
-		resp = getResponseFromSource(sourceFile, request);
-		
-		if (!pythonVarIsNone("response")){
-			resp = Response(pythonEval("response"));
-		}
+		resp = getResponseFromSource(sourceFile, request);		
+
+		CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(sourceFile, serverRoot).string());
+		resp.setHeader("Cache-control", CacheController::getValueFromPragma(cachePragma));
 
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
@@ -408,8 +408,19 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 	unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-	Response result(1, 1, 200, headers, pymlResult, false);
 	
+	Response result(1, 1, 500, unordered_map<string, string>(), "", true);
+
+	if (!pythonVarIsNone("response")){
+		result = Response(pythonEval("response"));
+		for (const auto& header : headers){
+			result.addHeader(header.first, header.second);
+		}
+	}
+	else {
+		result = Response(1, 1, 200, headers, pymlResult, false);
+	}
+
 	addDefaultHeaders(result, filename, request);
 	return result;
 }
