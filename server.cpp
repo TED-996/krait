@@ -31,7 +31,9 @@ StringPiper Server::cacheRequestPipe;
 
 
 Server::Server(string serverRoot, int port) :
-	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string()) {
+	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string(),
+					(path(serverRoot) / ".config" / "cache-public.cfg").string(),
+					(path(serverRoot) / ".config" / "cache-disable.cfg").string()) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
@@ -324,10 +326,6 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		pythonSetGlobal("resp_headers", map<string, string>());
 
 		resp = getResponseFromSource(sourceFile, request);		
-
-		CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(sourceFile, serverRoot).string());
-		resp.setHeader("Cache-control", CacheController::getValueFromPragma(cachePragma));
-
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
 	catch (notFoundError&) {
@@ -404,7 +402,8 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	string pymlResult = getPymlResultRequestCache(filename);
+	bool isDynamic;
+	string pymlResult = getPymlResultRequestCache(filename, &isDynamic);
 
 	map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 	unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
@@ -421,7 +420,16 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		result = Response(1, 1, 200, headers, pymlResult, false);
 	}
 
+	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string());
+	if (cachePragma == CacheController::CachePragma::Default){
+		cachePragma = isDynamic ? CacheController::CachePragma::NoCache : CacheController::CachePragma::Private;
+	}
+	result.setHeader("Cache-control", CacheController::getValueFromPragma(cachePragma));
+	addStandardCacheFields(result, cachePragma);
+	
+
 	addDefaultHeaders(result, filename, request);
+	
 	return result;
 }
 
@@ -469,10 +477,14 @@ string Server::expandFilename(string filename) {
 
 
 
-string Server::getPymlResultRequestCache(string filename) {
+string Server::getPymlResultRequestCache(string filename, bool* isDynamic) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
-	string result = serverCache.get(filename)->runPyml();
+	const PymlFile* pymlFile = serverCache.get(filename);
+	string result = pymlFile->runPyml();
+	if (isDynamic != NULL){ //TODO: split this function
+		*isDynamic = pymlFile->isDynamic();
+	}
 
 	return result;
 }
@@ -544,6 +556,13 @@ string Server::getContentType(string filename) {
 		return it->second;
 	}
 
+}
+
+
+void Server::addStandardCacheFields(Response& response, CacheController::CachePragma pragma){
+	if (pragma == CacheController::CachePragma::Private || pragma == CacheController::CachePragma::Public){
+		response.addHeader("cache-control", "max-age=300");
+	}
 }
 
 

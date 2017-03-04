@@ -1,0 +1,8 @@
+<routes>
+    <route>
+        <verb>GET</verb>
+        <regex>/</regex>
+        <target>index.html</target>
+    </route>
+    <route default="true" />
+</routes>

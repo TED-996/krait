@@ -43,6 +43,8 @@ class Server {
 	
 	std::string getContentType(std::string filename);
 	void loadContentTypeList();
+
+	void addStandardCacheFields(Response& response, CacheController::CachePragma pragma);
 	
 	static bool canContainPython(std::string filename);
 
@@ -62,7 +64,7 @@ class Server {
 	static PymlFile* constructPymlFromString(std::string filename, boost::object_pool<PymlFile>& pool);
 	static void onServerCacheMiss(std::string filename);
 
-	static std::string getPymlResultRequestCache(std::string filename);
+	static std::string getPymlResultRequestCache(std::string filename, bool *isDynamic);
 
 	bool stdinDisconnected;
 
