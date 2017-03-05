@@ -11,12 +11,17 @@ class Request:
         self.http_version = http_version
         self.headers = headers
         self.body = body
+        print query_string
+        print self.query
     
     def get_post_form(self):
         return Request._get_query(self.body)
     
     @staticmethod
     def _get_query(query_string):
+        if query_string is None or query_string == "":
+            return dict()
+        
         result=dict()
         for field in query_string.split('&'):
             items = field.split('=')

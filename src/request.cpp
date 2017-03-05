@@ -281,7 +281,7 @@ Request RequestParser::getRequest() {
 	}
 	
 	string queryString;
-	size_t queryStringStart = queryString.find('?');
+	size_t queryStringStart = url.find('?');
 	if (queryStringStart != string::npos){
 		queryString = url.substr(queryStringStart + 1);
 		url.erase(queryStringStart);
