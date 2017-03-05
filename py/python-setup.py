@@ -4,17 +4,21 @@ import urllib
 
 
 class Request:
-    def __init__(self, http_method, url, http_version, headers, body):
+    def __init__(self, http_method, url, query_string, http_version, headers, body):
         self.http_method = http_method
         self.url = url
+        self.query = Request._get_query(query_string)
         self.http_version = http_version
         self.headers = headers
         self.body = body
     
     def get_post_form(self):
-        result = dict()
-        fields = self.body.split('&')
-        for field in fields:
+        return Request._get_query(self.body)
+    
+    @staticmethod
+    def _get_query(query_string):
+        result=dict()
+        for field in query_string.split('&'):
             items = field.split('=')
             if len(items) == 1:
                 result[urllib.unquote_plus(items[0])] = ""

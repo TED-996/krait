@@ -42,6 +42,7 @@ struct Request_to_python_obj {
 		object result = requestType(
 		                    bp::str(httpVerbToString(request.getVerb())),
 		                    bp::str(request.getUrl()),
+							bp::str(request.getQueryString()),
 		                    bp::str((format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
 		                    bp::dict(request.getHeaders()),
 		                    bp::str(request.getBody())
