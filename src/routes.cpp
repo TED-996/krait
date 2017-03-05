@@ -196,5 +196,6 @@ Route& getRouteMatch(vector<Route> routes, HttpVerb verb, string url, map<string
 		}
 	}
 	BOOST_THROW_EXCEPTION(routeError() <<
-	                      stringInfoFromFormat("Error: Could not match url %1% with any route! Is there no default route?", url));
+	                      stringInfoFromFormat("Error: Could not match url %1% on method %2% with any route. Is there no default route?",
+						  					   url, httpVerbToString(verb)));
 }
