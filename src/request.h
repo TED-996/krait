@@ -12,9 +12,10 @@ private:
 	int httpMinor;
 	std::map<std::string, std::string> headers;
 	std::string body;
+	std::string queryString;
 
 public:
-	Request(HttpVerb verb, const std::string& url, int httpMajor, int httpMinor,
+	Request(HttpVerb verb, const std::string& url, const std::string &queryString, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
 
 	bool headerExists(std::string name);
@@ -37,6 +38,9 @@ public:
 	}
 	const std::string& getBody() const {
 		return body;
+	}
+	const std::string getQueryString() const {
+		return queryString;
 	}
 	bool isKeepAlive() const;
 	int getKeepAliveTimeout() const;

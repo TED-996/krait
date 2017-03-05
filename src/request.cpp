@@ -16,7 +16,7 @@ using namespace boost::algorithm;
 using namespace boost;
 
 
-Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor, const map<string, string>& headers,
+Request::Request(HttpVerb verb, const string& url, const string& queryString, int httpMajor, int httpMinor, const map<string, string>& headers,
                  const string& body) {
 	this->verb = verb;
 	this->url = url;
@@ -28,6 +28,7 @@ Request::Request(HttpVerb verb, const string& url, int httpMajor, int httpMinor,
 	}
 
 	this->body = string(body);
+	this->queryString = queryString;
 }
 
 bool Request::headerExists(std::string name){
@@ -278,8 +279,15 @@ Request RequestParser::getRequest() {
 	if (!parseHttpVersion(httpVersion, &httpMajor, &httpMinor)) {
 		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("HTTP version not recognized."));
 	}
+	
+	string queryString;
+	size_t queryStringStart = url.find('?');
+	if (queryStringStart != string::npos){
+		queryString = url.substr(queryStringStart + 1);
+		url.erase(queryStringStart);
+	}
 
-	return Request(verb, url, httpMajor, httpMinor, headers, body);
+	return Request(verb, url, queryString, httpMajor, httpMinor, headers, body);
 }
 
 bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
