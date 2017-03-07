@@ -40,7 +40,6 @@ public:
 	void removeHeader(std::string name);
 	
 	void setConnClose(bool connClose);
-	void setKeepAliveTimeout(int timeout);
 
 	bool headerExists(std::string name);
 

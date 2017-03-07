@@ -234,7 +234,7 @@ void Server::serveClientStart(int clientSocket) {
 	keepAliveTimeoutSec = maxKeepAliveSec;
 
 	try{
-		while(true){ //TODO: timeout on getRequestFromSocket? also return keep-alive headers.
+		while(true){
 			optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
 			Loggers::logInfo(formatString("request got"));
@@ -340,18 +340,9 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		resp.setBody(string(), false);
 	}
 	
-	if (keepAlive){
-		resp.setConnClose(false);
-		resp.setKeepAliveTimeout(keepAliveTimeoutSec);
-	}
-	else{
-		resp.setConnClose(true);
-	}
-	//DBG("pre respondWithObject");
+	resp.setConnClose(!keepAlive);
 
 	respondWithObjectRef(clientSocket, resp);
-	
-	//DBG("responded!");
 }
 
 

@@ -108,20 +108,19 @@ void Response::removeHeader(string name) {
 
 void Response::setConnClose(bool connClose) {
 	this->connClose = connClose;
-	
-	setHeader("Connection", connClose ? "close" : "keep-alive");
+	if (connClose){
+		setHeader("Connection", "close");
+	}
+	else{
+		removeHeader("Connection");
+	}
 }
-
-void Response::setKeepAliveTimeout(int timeout){
-	setHeader("Keep-Alive", formatString("timeout=%1%", timeout));
-}
-
 
 string getStatusReason(int statusCode);
 string formatTitleCase(string str);
 
 string Response::getResponseData() {
-	setHeader("Connection", connClose ? "close" : "keep-alive");
+	setConnClose(connClose);
 	
 	string statusLine;
 	if (fromFullResponse){
@@ -141,7 +140,6 @@ string Response::getResponseData() {
 	string headersAll = algorithm::join(headerStrings, "\r\n");
 
 	string result = statusLine + "\r\n" + headersAll + "\r\n" + body;
-	//DBG_FMT("HTTP response:\n%1%", result);
 
 	return result;
 }
