@@ -1,21 +1,17 @@
-#include<vector>
-#include <boost/regex.hpp>
 #include<string>
 #include<map>
+#include"regexList.h"
 
 
 class CacheController {
 public:
-	enum CachePragma {Default, NoCache, Private, Public};
+	enum CachePragma {Default, NoStore, Private, Public};
 private:
-	std::vector<boost::regex> cachePrivateTargets;
-	std::vector<boost::regex> cachePublicTargets;
-	std::vector<boost::regex> cacheDisableTargets;
+	RegexList noStoreTargets;
+	RegexList privateTargets;
+	RegexList publicTargets;
 
 	static std::map<CachePragma, std::string> pragmaValueMappings;
-
-	static void readRegexesIntoVector(std::string& filename, std::vector<boost::regex>& regexVector);
-	static bool regexVectorIsAnyMatch(std::string& target, std::vector<boost::regex>& regexVector);
 public:
 	CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheDisableFilename);
 

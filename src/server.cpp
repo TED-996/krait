@@ -413,7 +413,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string());
 	if (cachePragma == CacheController::CachePragma::Default){
-		cachePragma = isDynamic ? CacheController::CachePragma::NoCache : CacheController::CachePragma::Private;
+		cachePragma = isDynamic ? CacheController::CachePragma::NoStore : CacheController::CachePragma::Private;
 	}
 	result.setHeader("Cache-control", CacheController::getValueFromPragma(cachePragma));
 	addStandardCacheFields(result, cachePragma);
