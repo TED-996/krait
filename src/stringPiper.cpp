@@ -47,7 +47,9 @@ void StringPiper::pipeWrite(string data) {
 	size_t len = data.length();
 	string writeData = string((char*)&len, sizeof(len)) + data;
 	
-	write(writeHead, writeData.c_str(), writeData.length());
+	if (write(writeHead, writeData.c_str(), len) != (int) len){
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write(): writing data in StringPiper::pipeWrite") << errcodeInfoDef());
+	}
 }
 
 string StringPiper::pipeRead() {
