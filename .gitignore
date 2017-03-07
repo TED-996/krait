@@ -74,3 +74,4 @@ docs/*
 .idea/*
 err.log
 info.log
+callgrind-out/*

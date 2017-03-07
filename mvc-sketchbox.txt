@@ -1,0 +1,36 @@
+controller: pagina apelata initial (dupa rute)
+<!
+.
+.
+.
+.
+model = models.MyModel(...)
+!>
+<#view "views/myWebpageView.pyml" #ctrl controllers.MyWebpageController(model)#>
+
+---
+
+View: pagina aleasa de controller
+<html>
+...
+<body>
+.
+.
+<@ctrl.val1@><@ctrl.val2@>
+
+!!!: verificare: <# view "views/embedView.pyml" #ctrl ctrl.embedCtrl #late #>
+.
+.
+</body>
+</head>
+
+---
+
+Model: python pur
+
+---
+
+init.py:
+
+import models
+import controllers
