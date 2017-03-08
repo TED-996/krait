@@ -4,7 +4,7 @@
 #include<vector>
 #include<ctime>
 #include<boost/filesystem.hpp>
-#include<boost/algorithm/string.hpp>
+#include<string.h>
 #include"utils.h"
 #include"server.h"
 #include"except.h"
@@ -18,7 +18,6 @@
 using namespace std;
 using namespace boost;
 using namespace boost::filesystem;
-using namespace boost::algorithm;
 
 
 unordered_set<int> Server::pids;
@@ -55,6 +54,8 @@ Server::Server(string serverRoot, int port) :
 	DBG("server socket got");
 
 	pythonInit(serverRoot);
+
+	DBG("python initialized");
 
 	loadContentTypeList();
 
@@ -561,18 +562,30 @@ void Server::loadContentTypeList() {
 	filesystem::path contentFilePath = getExecRoot() / "globals" / "mime.types";
 	std::ifstream mimeFile(contentFilePath.string());
 
-	std::string line;
-	while (getline(mimeFile, line)) {
-		vector<string> lineItems;
-		algorithm::split(lineItems, line, is_any_of(" \t\r\n"), token_compress_on);
+	char line[1024];
+	string mimeType;
 
-		if (lineItems.size() < 2 || lineItems[0][0] == '#') {
+	while (mimeFile.getline(line, 1023)) {
+		if (line[0] == '\0' || line[0] == '#'){
 			continue;
 		}
 
-		string mimeType = lineItems[0];
-		for (unsigned int i = 1; i < lineItems.size(); i++) {
-			contentTypeByExtension["." + lineItems[i]] = mimeType;
+		const char* separators = " \t\r\n";
+		char* ptr = strtok(line, separators);
+		if (ptr == NULL){
+			continue;
 		}
+
+		mimeType.assign(ptr);
+		ptr = strtok(NULL, separators);
+		while(ptr != NULL){
+			//This SHOULD be fine.
+			//Make it an extension (html to .html)
+			*(ptr - 1) = '.';
+			contentTypeByExtension[string(ptr - 1)] = mimeType;
+			
+			ptr = strtok(NULL, separators);
+		}
+		
 	}
 }
