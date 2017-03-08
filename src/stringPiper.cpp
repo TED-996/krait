@@ -5,6 +5,8 @@
 #include"except.h"
 #include"limits.h"
 
+#include"dbg.h"
+
 using namespace std;
 
 StringPiper::StringPiper(){
@@ -41,18 +43,21 @@ void StringPiper::closeWrite(){
 }
 
 void StringPiper::pipeWrite(string data) {
+	DBG_FMT("StringPiper::pipeWrite('%1%') on fd %2%", data, writeHead);
 	if (data.length() > PIPE_BUF){
 		fprintf(stderr, "[WARN] StringPiper: tried to write more than PIPE_BUF at a time; not atomic so weird errors may occur!");
 	}
 	size_t len = data.length();
 	string writeData = string((char*)&len, sizeof(len)) + data;
 	
-	if (write(writeHead, writeData.c_str(), len) != (int) len){
+	int writeResult = write(writeHead, writeData.c_str(), writeData.length());
+	if (writeResult != (int) writeData.length()){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write(): writing data in StringPiper::pipeWrite") << errcodeInfoDef());
 	}
 }
 
 string StringPiper::pipeRead() {
+	DBG_FMT("StringPiper::pipeRead() on fd %d", readHead);
 	size_t length;
 	if (read(readHead, &length, sizeof(length)) != sizeof(length)){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading length in StringPiper::pipeRead") << errcodeInfoDef());
@@ -61,9 +66,12 @@ string StringPiper::pipeRead() {
 	char* data = new char[length + 1];
 	data[length] = '\0';
 	
-	if (read(readHead, data, length) != (int)length){
+	DBG_FMT("StringPiper::pipeRead(): bulk on fd %1%, length is %2%", readHead, length);
+	int readResult = read(readHead, data, length);
+	if (readResult != (int)length){
 		delete[] data;
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading bulk in StringPiper::pipeRead") << errcodeInfoDef());
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("read(): reading bulk in StringPiper::pipeRead, wanted %1% but got %2% bytes",
+			length, readResult) << errcodeInfoDef());
 	}
 	
 	string result = string(data, length);
