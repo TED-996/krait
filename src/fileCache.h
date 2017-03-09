@@ -5,6 +5,7 @@
 #include<unordered_map>
 #include<ctime>
 #include"except.h"
+#include"utils.h"
 
 
 template <typename T>
@@ -13,23 +14,32 @@ private:
 	struct CacheEntry{
 		std::time_t time;
 		T* item;
+		char tag[33];
 	};
 public:
-	typedef T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool);
+	typedef T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool, char* tagDest);
 	typedef void (*cacheEventFunction)(std::string filename);
+	typedef void (*hashFunction)(T& item, unsigned char destination[16]);
 
 private:
 	boost::object_pool<T> pool;
 	constructorFunction constructor;
 	cacheEventFunction onCacheMiss;
+	hashFunction itemHashFunction;
+
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
 	T* constructAddNew(std::string filename, std::time_t time){
-		T* result = constructor(filename, pool);
+		CacheEntry resultEntry;
+		memzero(resultEntry);
+
+		T* result = constructor(filename, pool, resultEntry.tag);
 		if (onCacheMiss != NULL){
 			onCacheMiss(filename);
 		}
-		cacheMap[filename] = CacheEntry {time, result};
+		resultEntry.time = time;
+		resultEntry.item = result;
+		cacheMap[filename] = resultEntry;
 		return result;
 	}
 
@@ -69,7 +79,7 @@ public:
 			return replaceWithNewer(filename);
 		}
 		else{
-			return cacheMap[filename].item;
+			return it->second.item;
 		}
 	}
 
@@ -80,5 +90,23 @@ public:
 		}
 
 		return cacheMap[filename].time;
+	}
+
+	bool checkCacheTag(std::string filename, std::string tag){
+		const auto it = cacheMap.find(filename);
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+			replaceWithNewer(filename);
+		}
+
+		return (strcmp(tag.c_str(), cacheMap[filename].tag) == 0);
+	}
+
+	std::string getCacheTag(std::string filename){
+		const auto it = cacheMap.find(filename);
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+			replaceWithNewer(filename);
+		}
+
+		return cacheMap[filename].tag;
 	}
 };

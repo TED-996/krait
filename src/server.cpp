@@ -4,6 +4,8 @@
 #include<vector>
 #include<ctime>
 #include<boost/filesystem.hpp>
+#include<boost/algorithm/string/trim.hpp>
+#include<boost/algorithm/string/predicate.hpp>
 #include<string.h>
 #include"utils.h"
 #include"server.h"
@@ -23,7 +25,7 @@ using namespace boost::filesystem;
 unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
-FileCache<PymlFile> Server::serverCache(Server::constructPymlFromString, Server::onServerCacheMiss);
+FileCache<PymlFile> Server::serverCache(Server::constructPymlFromFilename, Server::onServerCacheMiss);
 bool Server::interpretCacheRequest;
 StringPiper Server::cacheRequestPipe;
 
@@ -394,30 +396,41 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	bool isDynamic;
-	string pymlResult = getPymlResultRequestCache(filename, &isDynamic);
+	Response result(1, 1, 500, unordered_map<string, string>(), "", true);	
 
-	map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
-	unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
-	
-	Response result(1, 1, 500, unordered_map<string, string>(), "", true);
-
-	if (!pythonVarIsNone("response")){
-		result = Response(pythonEval("response"));
-		for (const auto& header : headers){
-			result.addHeader(header.first, header.second);
-		}
-	}
-	else {
-		result = Response(1, 1, 200, headers, pymlResult, false);
-	}
-
+	bool isDynamic = getPymlIsDynamic(filename);
 	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string());
+
 	if (cachePragma == CacheController::CachePragma::Default){
 		cachePragma = isDynamic ? CacheController::CachePragma::NoStore : CacheController::CachePragma::Private;
 	}
-	result.setHeader("Cache-control", CacheController::getValueFromPragma(cachePragma));
-	addStandardCacheFields(result, cachePragma);
+	string etag;
+	if (request.headerExists("if-none-match")){
+		etag = *request.getHeader("if-none-match");
+		etag = etag.substr(1, etag.length() - 2);
+	}
+	if (CacheController::doesPragmaEnableCache(cachePragma) && serverCache.checkCacheTag(filename, etag)){
+		result = Response(1, 1, 304, unordered_map<string, string>(), "", false);
+	}
+	else{
+		string pymlResult = getPymlResultRequestCache(filename);
+
+		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
+		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
+		
+
+		if (!pythonVarIsNone("response")){
+			result = Response(pythonEval("response"));
+			for (const auto& header : headers){
+				result.addHeader(header.first, header.second);
+			}
+		}
+		else {
+			result = Response(1, 1, 200, headers, pymlResult, false);
+		}
+	}
+
+	addStandardCacheHeaders(result, filename, cachePragma);
 	
 
 	addDefaultHeaders(result, filename, request);
@@ -469,20 +482,24 @@ string Server::expandFilename(string filename) {
 
 
 
-string Server::getPymlResultRequestCache(string filename, bool* isDynamic) {
+string Server::getPymlResultRequestCache(string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
 	const PymlFile* pymlFile = serverCache.get(filename);
-	string result = pymlFile->runPyml();
-	if (isDynamic != NULL){ //TODO: split this function
-		*isDynamic = pymlFile->isDynamic();
-	}
-
-	return result;
+	return pymlFile->runPyml();
 }
 
-PymlFile* Server::constructPymlFromString(std::string filename, boost::object_pool<PymlFile>& pool){
+
+bool Server::getPymlIsDynamic(string filename){
+	interpretCacheRequest = true;
+	const PymlFile* pymlFile = serverCache.get(filename);
+	return pymlFile->isDynamic();
+}
+
+
+PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest){
 	string source = readFromFile(filename);
+	generateTagFromStat(filename, tagDest);
 	if (canContainPython(filename)){
 		return pool.construct(source, false);
 	}
@@ -551,9 +568,12 @@ string Server::getContentType(string filename) {
 }
 
 
-void Server::addStandardCacheFields(Response& response, CacheController::CachePragma pragma){
+void Server::addStandardCacheHeaders(Response& response, string filename, CacheController::CachePragma pragma){
+	response.setHeader("cache-control", CacheController::getValueFromPragma(pragma));
+	
 	if (pragma == CacheController::CachePragma::Private || pragma == CacheController::CachePragma::Public){
-		response.addHeader("cache-control", "max-age=300");
+		response.addHeader("cache-control", "max-age=10");
+		response.addHeader("etag", "\"" + serverCache.getCacheTag(filename) + "\"");
 	}
 }
 

@@ -14,3 +14,4 @@ bool fdClosed(int fd);
 std::string readFromFile(std::string filename);
 std::string unixTimeToString(std::time_t timeVal);
 std::time_t stringToUnixTime(std::string str);
+void generateTagFromStat(std::string filename, char* dest);

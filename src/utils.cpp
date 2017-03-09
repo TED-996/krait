@@ -6,6 +6,7 @@
 #include<boost/date_time/c_local_time_adjustor.hpp>
 #include<poll.h>
 #include<errno.h>
+#include<sys/stat.h>
 #include"utils.h"
 #include"except.h"
 
@@ -71,4 +72,14 @@ std::string unixTimeToString(std::time_t timeVal){
 	result << asPtime;
 
 	return result.str();
+}
+
+void generateTagFromStat(std::string filename, char* dest){
+	struct stat statResult;
+	if (stat(filename.c_str(), &statResult) != 0){
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("stat(): generating ETag") << errcodeInfoDef());
+	}
+
+	string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
+	strcpy(dest, result.c_str());
 }

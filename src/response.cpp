@@ -68,12 +68,7 @@ void Response::setBody(std::string body, bool updateLength) {
 	this->body = body;
 
 	if (updateLength){
-		if (body.length() == 0) {
-			removeHeader("Content-Length");
-		}
-		else {
-			setHeader("Content-Length", std::to_string(body.length()));
-		}
+		setHeader("Content-Length", std::to_string(body.length()));
 	}
 }
 

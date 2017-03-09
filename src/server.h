@@ -44,7 +44,7 @@ class Server {
 	std::string getContentType(std::string filename);
 	void loadContentTypeList();
 
-	void addStandardCacheFields(Response& response, CacheController::CachePragma pragma);
+	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
 	
 	static bool canContainPython(std::string filename);
 
@@ -61,10 +61,11 @@ class Server {
 	static FileCache<PymlFile> serverCache;
 	static void updateParentCaches();
 
-	static PymlFile* constructPymlFromString(std::string filename, boost::object_pool<PymlFile>& pool);
+	static PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
 	static void onServerCacheMiss(std::string filename);
 
-	static std::string getPymlResultRequestCache(std::string filename, bool *isDynamic);
+	static bool getPymlIsDynamic(std::string filename);
+	static std::string getPymlResultRequestCache(std::string filename);
 
 	bool stdinDisconnected;
 

@@ -11,11 +11,15 @@ private:
 	RegexList privateTargets;
 	RegexList publicTargets;
 
+	int maxAge;
+
 	static std::map<CachePragma, std::string> pragmaValueMappings;
 public:
 	CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheDisableFilename);
 
 	CachePragma getCacheControl(std::string targetFilename);
+	int getMaxAge(std::string filename);
 	
 	static std::string getValueFromPragma(CachePragma pragma);
+	static bool doesPragmaEnableCache(CachePragma pragma);
 };
