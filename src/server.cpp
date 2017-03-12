@@ -34,7 +34,8 @@ StringPiper Server::cacheRequestPipe;
 Server::Server(string serverRoot, int port) :
 	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string(),
 					(path(serverRoot) / ".config" / "cache-public.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-disable.cfg").string()) {
+					(path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
+					(path(serverRoot) / ".config" / "cache-longterm.cfg").string()) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
@@ -399,17 +400,14 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	Response result(1, 1, 500, unordered_map<string, string>(), "", true);	
 
 	bool isDynamic = getPymlIsDynamic(filename);
-	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string());
+	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string(), !isDynamic);
 
-	if (cachePragma == CacheController::CachePragma::Default){
-		cachePragma = isDynamic ? CacheController::CachePragma::NoStore : CacheController::CachePragma::Private;
-	}
 	string etag;
 	if (request.headerExists("if-none-match")){
 		etag = *request.getHeader("if-none-match");
 		etag = etag.substr(1, etag.length() - 2);
 	}
-	if (CacheController::doesPragmaEnableCache(cachePragma) && serverCache.checkCacheTag(filename, etag)){
+	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)){
 		result = Response(1, 1, 304, unordered_map<string, string>(), "", false);
 	}
 	else{
@@ -564,15 +562,13 @@ string Server::getContentType(string filename) {
 	else {
 		return it->second;
 	}
-
 }
 
 
 void Server::addStandardCacheHeaders(Response& response, string filename, CacheController::CachePragma pragma){
-	response.setHeader("cache-control", CacheController::getValueFromPragma(pragma));
+	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
 	
-	if (pragma == CacheController::CachePragma::Private || pragma == CacheController::CachePragma::Public){
-		response.addHeader("cache-control", "max-age=10");
+	if (pragma.isStore){
 		response.addHeader("etag", "\"" + serverCache.getCacheTag(filename) + "\"");
 	}
 }

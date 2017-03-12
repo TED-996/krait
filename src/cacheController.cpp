@@ -1,45 +1,94 @@
 #include"cacheController.h"
+#include"utils.h"
 
 #include"dbg.h"
 
 using namespace std;
 
-map<CacheController::CachePragma, string> CacheController::pragmaValueMappings {
-	{CacheController::CachePragma::NoStore, "no-cache, no-store"},
-	{CacheController::CachePragma::Private, "private"},
-	{CacheController::CachePragma::Public, ""}
-};
-
-CacheController::CacheController(string cachePrivateFilename, string cachePublicFilename, string cacheDisableFilename)
+CacheController::CacheController(string cachePrivateFilename, string cachePublicFilename, string cacheNoStoreFilename, string cacheLongTermFilename)
 	:
-		noStoreTargets(RegexList::fromFile(cacheDisableFilename)),
+		noStoreTargets(RegexList::fromFile(cacheNoStoreFilename)),
 		privateTargets(RegexList::fromFile(cachePrivateFilename)),
-		publicTargets(RegexList::fromFile(cachePublicFilename)){
-	maxAge = 10;
+		publicTargets(RegexList::fromFile(cachePublicFilename)),
+		longTermTargets(RegexList::fromFile(cacheLongTermFilename)){
+	maxAgeDefault = 300;
+	maxAgeLongTerm = 864000;
 }
 
-CacheController::CachePragma CacheController::getCacheControl(string targetFilename){
+CacheController::CachePragma CacheController::getCacheControl(string targetFilename, bool defaultIsStore){
+	pair<string, bool> cacheKey = make_pair(targetFilename, defaultIsStore);
+
+	const auto it = pragmaCache.find(cacheKey);
+	if (it != pragmaCache.end()){
+		return it->second;
+	}
+
+	CachePragma result;
+	memzero(result);
+	result.isStore = defaultIsStore;
+	result.isCache = defaultIsStore;
+	result.isRevalidate = true;
 	if (noStoreTargets.isMatch(targetFilename)){
-		return CacheController::CachePragma::NoStore;
+		result.isStore = false;
+		result.isCache = false;
+		result.isRevalidate = true;
 	}
 	if (privateTargets.isMatch(targetFilename)){
-		return CacheController::CachePragma::Private;
+		result.isPrivate = true;
+		result.isCache = true;
+		result.isStore = true;
 	}
 	if (publicTargets.isMatch(targetFilename)){
-		return CacheController::CachePragma::Public;
+		result.isPrivate = false;
+		result.isCache = true;
+		result.isStore = true;
 	}
-	return CacheController::CachePragma::Default;
-}
 
-int CacheController::getMaxAge(string filename){
-	return maxAge;
+	//Modifiers (some assume stuff so just add them.)
+	if (longTermTargets.isMatch(targetFilename)){
+		result.isLongTerm = true;
+		result.isCache = true;
+		result.isStore = true;
+	}
+
+	pragmaCache[cacheKey] = result;
+
+	return result;
 }
 
 string CacheController::getValueFromPragma(CacheController::CachePragma pragma){
-	string baseResult = pragmaValueMappings[pragma];
-	return baseResult + (baseResult.empty() ? "must-revalidate" : ", must-revalidate");
-}
+	vector<string> result;
+	if (!pragma.isCache){
+		result.push_back("no-cache");
+	}
+	if (!pragma.isStore){
+		result.push_back("no-store");
+	}
+	if (pragma.isPrivate){
+		result.push_back("private");
+	}
+	if (pragma.isStore){
+		if (pragma.isLongTerm){
+			result.push_back(formatString("max-age=%d", maxAgeLongTerm));
+		}
+		else{
+			result.push_back(formatString("max-age=%d", maxAgeDefault));			
+		}
+	}
+	if (pragma.isRevalidate){
+		result.push_back("must-revalidate");
+	}
 
-bool CacheController::doesPragmaEnableCache(CacheController::CachePragma pragma){
-	return pragma != CacheController::CachePragma::NoStore && pragma != CacheController::CachePragma::Default;
+	if (result.size() == 0){
+		return "";
+	}
+	else{
+		string resultStr(result[0]);
+		for (size_t i = 1; i < result.size(); i++){
+			resultStr.append(", ", 2);
+			resultStr.append(result[i]);
+		}
+
+		return resultStr;
+	}
 }

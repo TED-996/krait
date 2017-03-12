@@ -1,25 +1,33 @@
 #include<string>
 #include<map>
+#include<utility>
 #include"regexList.h"
 
 
 class CacheController {
 public:
-	enum CachePragma {Default, NoStore, Private, Public};
+	struct CachePragma {
+		bool isCache:1;
+		bool isStore:1;
+		bool isPrivate:1;
+		bool isLongTerm:1;
+		bool isRevalidate:1;
+	};
 private:
 	RegexList noStoreTargets;
 	RegexList privateTargets;
 	RegexList publicTargets;
+	RegexList longTermTargets;
 
-	int maxAge;
+	int maxAgeDefault;
+	int maxAgeLongTerm;
 
-	static std::map<CachePragma, std::string> pragmaValueMappings;
+	std::map<std::pair<std::string, bool>, CachePragma> pragmaCache;
+
 public:
-	CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheDisableFilename);
+	CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheNoStoreFilename, std::string cacheLongTermFilename);
 
-	CachePragma getCacheControl(std::string targetFilename);
-	int getMaxAge(std::string filename);
+	CachePragma getCacheControl(std::string targetFilename, bool defaultIsStore);
 	
-	static std::string getValueFromPragma(CachePragma pragma);
-	static bool doesPragmaEnableCache(CachePragma pragma);
+	std::string getValueFromPragma(CachePragma pragma);
 };
