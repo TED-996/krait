@@ -15,6 +15,14 @@ public:
 	virtual bool isDynamic() const {
 		return false;
 	}
+
+	virtual const PymlItem* getNext(const PymlItem* last) const {
+		return NULL;
+	}
+
+	virtual const std::string* getEmbeddedString(std::string* storage) const {
+		return NULL;
+	}
 };
 
 
@@ -32,6 +40,10 @@ public:
 	bool isDynamic() const override {
 		return false;
 	}
+
+	const std::string* getEmbeddedString(std::string* storage) const override{
+		return &str;
+	}
 };
 
 
@@ -46,6 +58,8 @@ public:
 	bool isDynamic() const override;
 	
 	const PymlItem* tryCollapse() const;
+
+	const PymlItem* getNext(const PymlItem* last) const override;
 };
 
 
@@ -59,6 +73,11 @@ public:
 	
 	bool isDynamic() const override {
 		return true;
+	}
+
+	const std::string* getEmbeddedString(std::string* storage) const override {
+		storage->assign(runPyml());
+		return storage;
 	}
 };
 
@@ -74,6 +93,11 @@ public:
 	bool isDynamic() const override {
 		return true;
 	}
+
+	const std::string* getEmbeddedString(std::string* storage) const override {
+		storage->assign(runPyml());
+		return storage;
+	}
 };
 
 
@@ -87,6 +111,13 @@ public:
 	
 	bool isDynamic() const override {
 		return true;
+	}
+
+	const PymlItem* getNext(const PymlItem* last) const override{
+		if (last == NULL){
+			runPyml();
+		}
+		return NULL;
 	}
 };
 
@@ -108,6 +139,8 @@ public:
 	bool isDynamic() const override {
 		return true;
 	}
+
+	const PymlItem* getNext(const PymlItem* last) const override;
 };
 
 
@@ -131,6 +164,8 @@ public:
 	bool isDynamic() const override {
 		return true;
 	}
+
+	const PymlItem* getNext(const PymlItem* last) const override;
 };
 
 
@@ -243,4 +278,8 @@ public:
 	
 	bool isDynamic() const;
 	std::string runPyml() const;
+
+	const PymlItem* getRootItem() const{
+		return rootItem;
+	}
 };

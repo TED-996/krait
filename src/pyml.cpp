@@ -1,4 +1,3 @@
-#define DBG_DISABLE
 #include"dbg.h"
 
 #include <boost/format.hpp>
@@ -33,6 +32,21 @@ bool PymlItemSeq::isDynamic() const {
 	return false;
 }
 
+const PymlItem* PymlItemSeq::getNext(const PymlItem* last) const {
+	if (last == NULL && items.size() != 0){
+		return items[0];
+	}
+
+	for (int i = 0; i < (int)items.size(); i++){
+		DBG_FMT("trying item %d", i);
+		if (items[i] == last && i + 1 < (int)items.size()){
+			return items[i + 1];
+		}
+	}
+
+	return NULL;
+}
+
 const PymlItem* PymlItemSeq::tryCollapse() const {
 	if (items.size() == 0){
 		return NULL;
@@ -49,7 +63,6 @@ std::string PymlItemPyEval::runPyml() const {
 	string evalResult = pythonEval(code);
 	return htmlEscape(evalResult);
 }
-
 
 std::string PymlItemPyEvalRaw::runPyml() const {
 	return pythonEval(code);
@@ -79,14 +92,45 @@ std::string PymlItemIf::runPyml() const {
 }
 
 
+const PymlItem* PymlItemIf::getNext(const PymlItem* last) const{
+	if (last != NULL){
+		return NULL;
+	}
+
+	if (pythonTest(conditionCode)){
+		return itemIfTrue;
+	}
+	else{
+		return itemIfFalse;
+	}
+}
+
+
 std::string PymlItemFor::runPyml() const {
-	pythonRun(initCode); //todo:remove this or back to for
+	pythonRun(initCode);
 	string result;
 	while(pythonTest(conditionCode)){
 		result += loopItem->runPyml();
 		pythonRun(updateCode);
 	}
 	return result;
+}
+
+
+const PymlItem* PymlItemFor::getNext(const PymlItem* last) const{
+	if (last == NULL){
+		pythonRun(initCode);
+	}
+	else{
+		pythonRun(updateCode);
+	}
+
+	if (pythonTest(conditionCode)){
+		return loopItem;
+	}
+	else{
+		return NULL;
+	}
 }
 
 
