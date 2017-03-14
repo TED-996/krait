@@ -39,7 +39,6 @@ const PymlItem* PymlItemSeq::getNext(const PymlItem* last) const {
 	}
 
 	for (int i = 0; i < (int)items.size(); i++){
-		DBG_FMT("trying item %d", i);
 		if (items[i] == last && i + 1 < (int)items.size()){
 			return items[i + 1];
 		}
@@ -385,7 +384,7 @@ bool PymlFile::consumeOne(char chr){
 				addPymlWorkingPyCode(PymlWorkingItem::Type::PyEval, pythonPrepareStr(tmp));
 			}
 			TransAlways(0, false)
- 		StatesNext(7) //eval raw
+		StatesNext(7) //eval raw
 			SaveThis()
 			
 			TransIfWs(10, true)
@@ -627,7 +626,7 @@ bool PymlFile::consumeOne(char chr){
 			
 			TransAlways(0, false)
 		StatesNext(73) //"</f"
-			DBG("closing /f");
+			//DBG("closing /f");
 			SaveThis()
 			
 			TransIf('o', 74, true)
@@ -850,7 +849,7 @@ void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 	addCodeToPymlWorkingFor(1, condCode);
 	addCodeToPymlWorkingFor(2, updateCode);
 
-	DBG("done!");
+	//DBG("done!");
 }
 
 
@@ -908,8 +907,8 @@ string pythonPrepareStr(string pyCode) {
 			}
 			if (result[idx + idx2] != indentChr) {
 				BOOST_THROW_EXCEPTION(serverError() <<
-				                      stringInfoFromFormat("Unexpected character '%c' (\\x%02x) at pos %d in indent before Python code; expected '%c' (\\x%02x)",
-				                              result[idx + idx2], (int) result[idx + idx2], idx + idx2, indentChr, (int)indentChr));
+									  stringInfoFromFormat("Unexpected character '%c' (\\x%02x) at pos %d in indent before Python code; expected '%c' (\\x%02x)",
+											  result[idx + idx2], (int) result[idx + idx2], idx + idx2, indentChr, (int)indentChr));
 			}
 		}
 		result.erase(idx, idx2);

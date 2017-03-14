@@ -1,11 +1,11 @@
 #pragma once
 
 #include "pymlIterator.h"
+#include "valueOrPtr.h"
 
 class IteratorResult {
 private:
-	std::vector<std::string> strStorage;
-	std::vector<const std::string*> strIterated;
+	std::vector<ValueOrPtr<std::string>> strIterated;
 
 	size_t totalLength;
 	size_t currentIdx;

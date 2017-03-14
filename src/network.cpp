@@ -179,13 +179,13 @@ void respondWithObjectRef(int clientSocket, Response& response) {
 
 	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
 
-	DBG("getting first bodyNext");
+	//DBG("getting first bodyNext");
 	const string* bodyNext = response.getBodyNext();
 	while(bodyNext != NULL){
 		//DBG_FMT("sending body: string ptr is %p, body is %p, len is %d", bodyNext, bodyNext->c_str(), bodyNext->length());
 
 		respondWithBuffer(clientSocket, bodyNext->c_str(), bodyNext->length());
-		DBG("bodyNext sent, getting next");
+		//DBG("bodyNext sent, getting next");
 		bodyNext = response.getBodyNext();
 
 	}
@@ -203,7 +203,7 @@ void respondWithCString(int clientSocket, const char* response) {
 
 
 void respondWithBuffer(int clientSocket, const char* response, size_t size) {
-	DBG("inRespondWithBuffer");
+	//DBG("inRespondWithBuffer");
 	size_t lenLeft = size;
 	const size_t maxBlockSize = 65536;
 

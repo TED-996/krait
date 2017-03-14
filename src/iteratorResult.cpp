@@ -4,13 +4,13 @@
 
 using namespace std;
 
+
 IteratorResult::IteratorResult(PymlIterator iterator){
 	exhaustIterator(iterator);
 }
 
 IteratorResult::IteratorResult(std::string fullString) {
-	strStorage.push_back(fullString);
-	strIterated.push_back(&(strStorage[0]));
+	strIterated.push_back(ValueOrPtr<string>(fullString));
 
 	currentIdx = 0;
 	totalLength = fullString.length();
@@ -21,18 +21,16 @@ void IteratorResult::exhaustIterator(PymlIterator &iterator) {
 	totalLength = 0;
 	while(*iterator != NULL){
 		if (iterator.isTmpStr(*iterator)){
-			strStorage.push_back(string(**iterator));
-			strIterated.push_back(&strStorage[strStorage.size() - 1]);
+			strIterated.push_back(ValueOrPtr<string>(**iterator));
+			//DBG_FMT("added to storage: %1%", *strIterated[strIterated.size() - 1].get());
 		}
 		else{
-			strIterated.push_back(*iterator);
+			strIterated.push_back(ValueOrPtr<string>(*iterator));
 		}
 		totalLength += (*iterator)->length();
-		DBG_FMT("exhausting iterator: total length %d", totalLength);
 
 		++iterator;
 	}
-	DBG_FMT("exhausting iterator: total length %d", totalLength);
 	currentIdx = 0;
 }
 
@@ -44,12 +42,10 @@ const IteratorResult& IteratorResult::operator++() {
 }
 
 const std::string *IteratorResult::operator*() {
-	DBG_FMT("iterated len: %d, idx %d", strIterated.size(), currentIdx);
-
 	if (currentIdx >= strIterated.size()){
 		return NULL;
 	}
-	return strIterated[currentIdx];
+	return strIterated[currentIdx].get();
 }
 
 
