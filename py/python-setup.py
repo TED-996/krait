@@ -1,5 +1,11 @@
 import sys
 import os
+
+config_dir = os.path.join(project_dir, ".config")
+
+sys.path.append(config_dir)
+
+
 import urllib
 
 
@@ -80,8 +86,7 @@ class IteratorWrapper:
             return None
 
 
-
-main_script_path = os.path.join(project_dir, ".config", "init.py")
+main_script_path = os.path.join(config_dir, "init.py")
 if os.path.exists(main_script_path):
     execfile(main_script_path)
 

@@ -2,6 +2,8 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <boost/optional.hpp>
+#include "iteratorResult.h"
 
 class Response {
 	int httpMajor;
@@ -11,7 +13,7 @@ class Response {
 
 	std::unordered_map<std::string, std::string> headers;
 
-	std::string body;
+	IteratorResult bodyIterator;
 	bool connClose;
 	
 	std::string statusLine;
@@ -23,6 +25,8 @@ public:
 	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
 	         std::string body, bool connClose);
 	Response(std::string fullResponse);
+	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
+			 IteratorResult bodyIterator, bool connClose);
 
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;
@@ -43,5 +47,7 @@ public:
 
 	bool headerExists(std::string name);
 
-	std::string getResponseData();
+	std::string getResponseHeaders();
+	const std::string* getBodyNext();
+
 };

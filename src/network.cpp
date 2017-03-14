@@ -16,7 +16,6 @@
 #include "utils.h"
 #include "except.h"
 
-#define DBG_DISABLE
 #include "dbg.h"
 
 using namespace std;
@@ -107,7 +106,6 @@ void printSocket(int clientSocket) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): printing socket") << errcodeInfoDef());
 		}
 
-		DBG_FMT("read %1% bytes", readBytes);
 		printf("%s\n", data);
 	}
 }
@@ -177,10 +175,22 @@ void respondRequest200(int clientSocket) {
 
 
 void respondWithObjectRef(int clientSocket, Response& response) {
-	string responseData = response.getResponseData();
+	string responseData = response.getResponseHeaders();
 
 	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
+
+	DBG("getting first bodyNext");
+	const string* bodyNext = response.getBodyNext();
+	while(bodyNext != NULL){
+		//DBG_FMT("sending body: string ptr is %p, body is %p, len is %d", bodyNext, bodyNext->c_str(), bodyNext->length());
+
+		respondWithBuffer(clientSocket, bodyNext->c_str(), bodyNext->length());
+		DBG("bodyNext sent, getting next");
+		bodyNext = response.getBodyNext();
+
+	}
 }
+
 
 void respondWithObject(int clientSocket, Response response){
 	respondWithObjectRef(clientSocket, response);
@@ -193,14 +203,17 @@ void respondWithCString(int clientSocket, const char* response) {
 
 
 void respondWithBuffer(int clientSocket, const char* response, size_t size) {
+	DBG("inRespondWithBuffer");
 	size_t lenLeft = size;
 	const size_t maxBlockSize = 65536;
 
 	while (lenLeft > 0) {
 		size_t lenCurrent = min(maxBlockSize, lenLeft);
+		//DBG_FMT("sending buffer one, %d bytes from ptr %p", lenCurrent, response);
 		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK){
 				lenCurrent = 0;
+				DBG("eagain/wouldblock");
 			}
 			else{
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfoDef());

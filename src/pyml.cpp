@@ -1,3 +1,4 @@
+#define DBG_DISABLE
 #include"dbg.h"
 
 #include <boost/format.hpp>

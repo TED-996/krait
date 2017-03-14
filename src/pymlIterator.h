@@ -18,4 +18,8 @@ public:
 	PymlIterator operator++(int);
 
 	bool compareWith(std::string other);
+
+	bool isTmpStr(const std::string* strPtr){
+		return strPtr == &tmpStr;
+	}
 };

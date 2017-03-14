@@ -23,7 +23,8 @@ static unordered_map<int, string> statusReasons {
 };
 
 
-Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<string, string> headers, string body, bool connClose) {
+Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<string, string> headers, string body, bool connClose)
+	: bodyIterator(body){
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->statusCode = statusCode;
@@ -34,10 +35,27 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, unordered_map<s
 		this->headers[to_lower_copy(it.first)] = it.second;
 	}
 
-	setBody(body, true);
+	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
-Response::Response(string fullResponse){
+Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
+                   IteratorResult bodyIterator, bool connClose)
+	: bodyIterator(bodyIterator){
+	this->httpMajor = httpMajor;
+	this->httpMinor = httpMinor;
+	this->statusCode = statusCode;
+	this->fromFullResponse = false;
+	this->connClose = connClose;
+
+	for (auto it : headers){
+		this->headers[to_lower_copy(it.first)] = it.second;
+	}
+
+	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
+}
+
+Response::Response(string fullResponse)
+	: bodyIterator(""){
 	this->fromFullResponse = true;
 	parseFullResponse(fullResponse);
 }
@@ -65,10 +83,10 @@ void Response::parseFullResponse(string response){
 
 
 void Response::setBody(std::string body, bool updateLength) {
-	this->body = body;
+	this->bodyIterator = IteratorResult(body);
 
 	if (updateLength){
-		setHeader("Content-Length", std::to_string(body.length()));
+		setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 	}
 }
 
@@ -114,7 +132,7 @@ void Response::setConnClose(bool connClose) {
 string getStatusReason(int statusCode);
 string formatTitleCase(string str);
 
-string Response::getResponseData() {
+string Response::getResponseHeaders() {
 	setConnClose(connClose);
 	
 	string statusLine;
@@ -134,9 +152,7 @@ string Response::getResponseData() {
 
 	string headersAll = algorithm::join(headerStrings, "\r\n");
 
-	string result = statusLine + "\r\n" + headersAll + "\r\n" + body;
-
-	return result;
+	return statusLine + "\r\n" + headersAll + "\r\n";
 }
 
 
@@ -150,6 +166,12 @@ bool Response::headerExists(string name) {
 	else {
 		return true;
 	}
+}
+
+const std::string* Response::getBodyNext() {
+	const string* result = *bodyIterator;
+	++bodyIterator;
+	return result;
 }
 
 
