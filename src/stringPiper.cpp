@@ -5,6 +5,7 @@
 #include"except.h"
 #include"limits.h"
 
+#define DBG_DISABLE
 #include"dbg.h"
 
 using namespace std;

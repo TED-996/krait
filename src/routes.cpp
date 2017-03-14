@@ -45,9 +45,9 @@ bool Route::isMatch(HttpVerb verb, string url, map<string, string>& outParams) {
 			string paramIdentifier = paramRequest.second;
 			if (paramIndex >= matchVariables.size()) {
 				BOOST_THROW_EXCEPTION(routeError() <<
-				                      stringInfoFromFormat("Error matching URL %1% with route for regex %2%: argument %3% "
-				                              "requires position %4%, but there are only %5% capture groups.",
-				                              url, urlRegex.str(), paramIdentifier, paramIndex, matchVariables.size()));
+									  stringInfoFromFormat("Error matching URL %1% with route for regex %2%: argument %3% "
+											  "requires position %4%, but there are only %5% capture groups.",
+											  url, urlRegex.str(), paramIdentifier, paramIndex, matchVariables.size()));
 			}
 
 			outParams[paramIdentifier]  = string(matchVariables[paramIndex]);
@@ -108,7 +108,7 @@ Route Route::getRoute(ptree routePtree) {
 		}
 		else {
 			BOOST_THROW_EXCEPTION(routeParseError() <<
-			                      stringInfo("Error: Found route with attribute 'default', but value is not 'true'."));
+								  stringInfo("Error: Found route with attribute 'default', but value is not 'true'."));
 		}
 	}
 	try {
@@ -136,11 +136,11 @@ Route Route::getRoute(ptree routePtree) {
 	}
 	catch (ptree_bad_path& ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not find route parameter '%1%'.",
-		                      ex.path<string>()));
+							  ex.path<string>()));
 	}
 	catch (ptree_bad_data& ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() <<
-		                      stringInfoFromFormat("Error: Could not convert data '%1%' to the expected type.", ex.data<string>()));
+							  stringInfoFromFormat("Error: Could not convert data '%1%' to the expected type.", ex.data<string>()));
 	}
 }
 
@@ -158,7 +158,7 @@ vector<Route> getRoutesFromFile(string filename) {
 	}
 	catch (xml_parser_error& ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error parsing routes file '%1%. Additional data:\n%2%",
-		                      filename, ex.what()));
+							  filename, ex.what()));
 	}
 
 	try {
@@ -173,7 +173,7 @@ vector<Route> getRoutesFromFile(string filename) {
 		DBG("one route");
 		if (rt.first != "route") {
 			BOOST_THROW_EXCEPTION(routeParseError() <<
-			                      stringInfo("Error parsing routes:: one of <routes>'s children is not <route>."));
+								  stringInfo("Error parsing routes:: one of <routes>'s children is not <route>."));
 		}
 		try {
 			results.push_back(Route::getRoute(rt.second));
@@ -196,6 +196,6 @@ Route& getRouteMatch(vector<Route> routes, HttpVerb verb, string url, map<string
 		}
 	}
 	BOOST_THROW_EXCEPTION(routeError() <<
-	                      stringInfoFromFormat("Error: Could not match url %1% on method %2% with any route. Is there no default route?",
-						  					   url, httpVerbToString(verb)));
+						  stringInfoFromFormat("Error: Could not match url %1% on method %2% with any route. Is there no default route?",
+											   url, httpVerbToString(verb)));
 }

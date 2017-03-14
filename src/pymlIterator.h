@@ -1,5 +1,4 @@
 #pragma once
-#include<iterator>
 #include<stack>
 #include"pyml.h"
 
@@ -15,7 +14,10 @@ public:
 	const std::string* operator*();
 
 	PymlIterator& operator++();
-	PymlIterator operator++(int);
 
 	bool compareWith(std::string other);
+
+	bool isTmpStr(const std::string* strPtr){
+		return strPtr == &tmpStr;
+	}
 };

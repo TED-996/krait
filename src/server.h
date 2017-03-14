@@ -65,7 +65,7 @@ class Server {
 	static void onServerCacheMiss(std::string filename);
 
 	static bool getPymlIsDynamic(std::string filename);
-	static std::string getPymlResultRequestCache(std::string filename);
+	static IteratorResult getPymlResultRequestCache(std::string filename);
 
 	bool stdinDisconnected;
 

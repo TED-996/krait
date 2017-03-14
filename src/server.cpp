@@ -412,7 +412,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		result = Response(1, 1, 304, unordered_map<string, string>(), "", false);
 	}
 	else{
-		string pymlResult = getPymlResultRequestCache(filename);
+		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
 		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
@@ -481,11 +481,11 @@ string Server::expandFilename(string filename) {
 
 
 
-string Server::getPymlResultRequestCache(string filename) {
+IteratorResult Server::getPymlResultRequestCache(string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
 	const PymlFile* pymlFile = serverCache.get(filename);
-	return pymlFile->runPyml();
+	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
 }
 
 
