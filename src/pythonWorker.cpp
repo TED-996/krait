@@ -16,6 +16,11 @@ namespace bp = boost::python;
 
 static dict mainGlobal; //Globals I know, but it's the best way without exposing python to main and others.
 static object mainModule;
+
+static dict kraitGlobal;
+static object kraitModule;
+
+
 static object requestType;
 
 static bool alreadySet = false;
@@ -40,13 +45,13 @@ struct Request_to_python_obj {
 		DBG("in Request->PyObject()");
 
 		object result = requestType(
-		                    bp::str(httpVerbToString(request.getVerb())),
-		                    bp::str(request.getUrl()),
+							bp::str(httpVerbToString(request.getVerb())),
+							bp::str(request.getUrl()),
 							bp::str(request.getQueryString()),
-		                    bp::str((format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
-		                    bp::dict(request.getHeaders()),
-		                    bp::str(request.getBody())
-		                );
+							bp::str((format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
+							bp::dict(request.getHeaders()),
+							bp::str(request.getBody())
+						);
 
 		return incref(result.ptr());
 	}
@@ -88,7 +93,10 @@ void pythonReset(string projectDir) {
 
 		exec_file(bp::str((getExecRoot() / "py" / "python-setup.py").string()), mainGlobal, mainGlobal);
 
-		requestType = mainGlobal["Request"];
+		kraitModule = import("krait");
+		kraitGlobal = extract<dict>(kraitModule.attr("__dict__"));
+
+		requestType = kraitGlobal["Request"];
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in pythonReset()!");
@@ -234,7 +242,7 @@ void pythonSetGlobalRequest(string name, Request value) {
 		DBG("Python error in pythonSetGlobalRequest(), converting Request to PyObject");
 
 		string errorString = (format("Error in pythonSetGlobalRequest(%1%, python::object):\n%2%") % name %
-		                      pyErrAsString()).str();
+							  pyErrAsString()).str();
 
 		DBG_FMT("In catch: got errorstring %1%", errorString);
 

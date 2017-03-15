@@ -15,6 +15,7 @@
 #include "network.h"
 #include "utils.h"
 #include "except.h"
+#include "requestParser.h"
 
 #include "dbg.h"
 

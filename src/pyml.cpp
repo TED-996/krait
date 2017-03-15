@@ -841,9 +841,11 @@ void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 	boost::trim(collection);
 	
 	//1: krIterator; 2: collection;;; 3: entry
-	string initCode = (boost::format("%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value") % krIterator % collection % entry).str();
+	string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
+	                   % krIterator % collection % entry).str();
 	string condCode = (boost::format("not %1%.over") % krIterator).str();
-	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value") % krIterator % collection % entry).str();
+	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
+	                     % krIterator % collection % entry).str();
 	
 	addCodeToPymlWorkingFor(0, initCode);
 	addCodeToPymlWorkingFor(1, condCode);
