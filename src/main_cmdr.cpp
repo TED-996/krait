@@ -22,10 +22,12 @@ int main(int argc, char* argv[]){
 		if (string(argv[1]) == "stop"){
 			argsOk = true;
 			sendCommandClose();
+			printf("Stop sent.\n");
 		}
 		else if (string(argv[1]) == "kill"){
 			argsOk = true;
 			sendCommandKill();
+			printf("Kill sent.\n");
 		}
 		else if (string(argv[1]) == "watch"){
 			argsOk = true;
