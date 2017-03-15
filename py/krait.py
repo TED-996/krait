@@ -12,8 +12,6 @@ class Request:
         self.http_version = http_version
         self.headers = headers
         self.body = body
-        print query_string
-        print self.query
 
     '''
     Returns a dict in the format {"name": "value", ... }
@@ -47,7 +45,9 @@ class Request:
         boundary = boundary_field[9:]
         if len(boundary) >= 2 and boundary[0] == '"' and boundary[-1] == '"':
             boundary = boundary[1:-1]
+        boundary = "--" + boundary
         boundary_next = "\r\n" + boundary
+        # print "found  multipart form data with boundary", boundary
 
         result = []
         found_idx = 0 if self.body.startswith(boundary) else self.body.find(boundary_next)
