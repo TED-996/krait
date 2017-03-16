@@ -47,8 +47,7 @@ class Request:
             boundary = boundary[1:-1]
         boundary = "--" + boundary
         boundary_next = "\r\n" + boundary
-        # print "found  multipart form data with boundary", boundary
-
+        
         result = []
         found_idx = 0 if self.body.startswith(boundary) else self.body.find(boundary_next)
         while found_idx != -1 and self.body[found_idx + len(boundary_next):found_idx + len(boundary_next) + 2] != "--":
@@ -112,6 +111,16 @@ class Request:
             else:
                 result[urllib.unquote_plus(items[0])] = urllib.unquote_plus(items[1])
         return result
+
+    def __str__(self):
+        return "{} {}{} {}\r\n{}\r\n{}".format(
+            self.http_method,
+            self.url,
+            "?" + "&".join(["{}={}".format(k, v) for k, v in self.query.iteritems()]) if self.query is not dict() else "",
+            self.http_version,
+            "".join(["{}: {}\r\n".format(k, v) for k, v in self.headers.iteritems()]),
+            self.body
+        )
 
 
 class Response:

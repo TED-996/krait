@@ -1,13 +1,16 @@
 By severity:
 
+* MVC:
+<#insert filename #>: early include - optional
+<#embed filename #>: late include
+<%view view_name %vm python code %>
+
+* dedent: fix bugs; simplify.
+
 * Moderate:
     * HTTP compliance:
         * Transfer-Encoding:chunked
-        * multipart
     * Relevant syntax error messages (for EVERY. SINGLE. STATE. IN. THE. FSM.) - these would be based on the final state in the FSM
-    * 
 * Low:
-    * HTTP compliance:
-        * clientside caching (If-Modified-Since)
     * Python:
         * standard library maybe?

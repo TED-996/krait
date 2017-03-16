@@ -120,7 +120,7 @@ void pythonRun(string command) {
 
 		string errorString = pyErrAsString();
 		PyErr_Clear();
-		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(command));
 	}
 }
 
@@ -137,7 +137,7 @@ string pythonEval(string command) {
 
 		string errorString = pyErrAsString();
 		PyErr_Clear();
-		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(command));
 	}
 }
 
@@ -152,7 +152,7 @@ bool pythonTest(std::string condition){
 		
 		string errorString = pyErrAsString();
 		PyErr_Clear();
-		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(condition));
 	}
 }
 

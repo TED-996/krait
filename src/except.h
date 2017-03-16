@@ -8,6 +8,7 @@
 
 typedef boost::error_info<struct tag_string_info, const std::string> stringInfo;
 typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo; //TODO: make default
+typedef boost::error_info<struct tag_pycode_info, const std::string> pyCodeInfo;
 
 stringInfo stringInfoFromFormat(std::string format, ...);
 errcodeInfo errcodeInfoDef();
