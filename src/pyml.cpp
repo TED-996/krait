@@ -1,4 +1,4 @@
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include"dbg.h"
 
 #include <boost/format.hpp>
@@ -833,7 +833,7 @@ void PymlFile::addPymlStackTop() {
 }
 
 void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
-	DBG_FMT("for in with entries %1% and %2%", entry, collection);
+	//DBG_FMT("for in with entries %1% and %2%", entry, collection);
 	
 	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
@@ -857,7 +857,7 @@ void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 
 //Dedent string
 string pythonPrepareStr(string pyCode) {
-	DBG_FMT("pythonPrepareStr(%1%)", pyCode);
+	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
 	if (pyCode.length() == 0 || !isspace(pyCode[0])){
 		return pyCode;
 	}
@@ -912,7 +912,7 @@ string pythonPrepareStr(string pyCode) {
 		}
 		else if (chr == indentChr && inIndent){
 			lineIndent++;
-			DBG("inIndentUp");
+			//DBG("inIndentUp");
 		}
 		else{
 			inIndent = false;
@@ -934,7 +934,7 @@ string pythonPrepareStr(string pyCode) {
 		}
 	}
 
-	DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
+	//DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
 	string result;
 	result.resize(outSize); //outSize may be a bit larger, this is fine.
 
@@ -961,7 +961,7 @@ string pythonPrepareStr(string pyCode) {
 
 	result.resize(pyCode.length() - offset);
 
-	DBG_FMT("result: %1%", result);
+	//DBG_FMT("result: %1%", result);
 
 	return result;
 }
