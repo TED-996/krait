@@ -1,4 +1,4 @@
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
 
 #include <boost/format.hpp>
@@ -60,8 +60,7 @@ const PymlItem* PymlItemSeq::tryCollapse() const {
 string htmlEscape(string htmlCode);
 
 std::string PymlItemPyEval::runPyml() const {
-	string evalResult = pythonEval(code);
-	return htmlEscape(evalResult);
+	return htmlEscape(pythonEval(code));
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {
@@ -858,68 +857,111 @@ void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 
 //Dedent string
 string pythonPrepareStr(string pyCode) {
+	DBG_FMT("pythonPrepareStr(%1%)", pyCode);
 	if (pyCode.length() == 0 || !isspace(pyCode[0])){
 		return pyCode;
 	}
-		
-	string result = pyCode;
+
 	//First remove first line if whitespace.
 
-	unsigned int idx;
-	bool foundNewline = false;
-	for (idx = 0; idx < result.length(); idx++) {
-		if (foundNewline && result[idx] != '\r' && result[idx] != '\n') {
-			break;
-		}
-		if (!isspace(result[idx])) {
-			idx = 0;
-			break;
-		}
-		if (result[idx] == '\n') {
-			foundNewline = true;
-		}
-	}
-	unsigned int codeStartIdx = idx;
+	const size_t commonIndentSentinel = pyCode.length() + 1;
+	size_t commonIndent = commonIndentSentinel;
+	size_t outSize = pyCode.length();
+	size_t lineIndent = 0;
+	int codeLines = 0;
+	char indentChr = '\0';
+	bool lineWs = true;
+	bool inIndent = true;
 
-	if (codeStartIdx == result.length()) {
-		return "";
-	}
-
-	char indentChr = result[codeStartIdx];
-	for (idx = codeStartIdx; idx < result.length(); idx++) {
-		if (result[idx] != indentChr) {
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == ' ' || chr == '\t'){
+			indentChr = chr;
+			break;
+		}
+		else if (chr == '\r' || chr == '\n'){
+			continue;
+		}
+		else{
 			break;
 		}
 	}
-	int indentRemove = idx - codeStartIdx;
-	if (indentRemove == 0) {
+	if (indentChr == '\0'){
 		return pyCode;
 	}
-	//DBG_FMT("Indent is %1%", indentRemove);
 
-	for (idx = codeStartIdx; idx < result.length(); idx++) {
-		int idx2;
-		for (idx2 = 0; idx2 < indentRemove; idx2++) {
-			if (result[idx + idx2] == '\r') {
-				continue;
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == '\r' || chr == '\n'){
+			if (!lineWs){
+				codeLines++;
+
+				if (commonIndent == commonIndentSentinel){
+					commonIndent = lineIndent;
+				}
+				else if (lineIndent < commonIndent) {
+					size_t indentDiff = commonIndent - lineIndent;
+					outSize += (codeLines - 1) * indentDiff;
+					commonIndent = lineIndent;
+				}
 			}
-			if (result[idx + idx2] == '\n') {
-				//DBG("Premature break in dedent");
-				break;
-			}
-			if (result[idx + idx2] != indentChr) {
-				BOOST_THROW_EXCEPTION(serverError() <<
-									  stringInfoFromFormat("Unexpected character '%c' (\\x%02x) at pos %d in indent before Python code; expected '%c' (\\x%02x)",
-											  result[idx + idx2], (int) result[idx + idx2], idx + idx2, indentChr, (int)indentChr));
-			}
+			outSize -= (lineIndent < commonIndent ? lineIndent : commonIndent);
+			lineIndent = 0;
+			lineWs = true;
+			inIndent = true;
 		}
-		result.erase(idx, idx2);
-		for (; idx < result.length(); idx++) {
-			if (result[idx] == '\n') {
-				break;
+		else if (chr == indentChr && inIndent){
+			lineIndent++;
+			DBG("inIndentUp");
+		}
+		else{
+			inIndent = false;
+			if (chr != ' ' && chr != '\t'){
+				lineWs = false;
 			}
 		}
 	}
+
+	if (!lineWs) {
+		codeLines++;
+
+		if (commonIndent == commonIndentSentinel) {
+			commonIndent = lineIndent;
+		} else if (lineIndent < commonIndent) {
+			size_t indentDiff = commonIndent - lineIndent;
+			outSize += (codeLines - 1) * indentDiff;
+			commonIndent = lineIndent;
+		}
+	}
+
+	DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
+	string result;
+	result.resize(outSize); //outSize may be a bit larger, this is fine.
+
+	size_t offset = 0;
+	lineIndent = 0;
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == '\r' || chr == '\n'){
+			lineIndent = 0;
+			result[i - offset] = pyCode[i];
+		}
+		else{
+			if (lineIndent < commonIndent){
+				lineIndent++;
+				offset++;
+			}
+			else {
+				if (offset != 0) {
+					result[i - offset] = pyCode[i];
+				}
+			}
+		}
+	}
+
+	result.resize(pyCode.length() - offset);
+
+	DBG_FMT("result: %1%", result);
 
 	return result;
 }
@@ -927,6 +969,7 @@ string pythonPrepareStr(string pyCode) {
 
 string htmlEscape(string htmlCode) {
 	string result;
+	bool resultEmpty = true;
 
 	const char* replacements[256];
 	memzero(replacements);
@@ -939,10 +982,22 @@ string htmlEscape(string htmlCode) {
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
 		if (replacements[(int)htmlCode[idx]] != NULL) {
-			result += htmlCode.substr(oldIdx, idx - oldIdx) + replacements[(int)htmlCode[idx]];
+			if (resultEmpty){
+				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
+				resultEmpty = false;
+			}
+
+			result.append(htmlCode, oldIdx, idx - oldIdx);
+			result.append(replacements[(int)htmlCode[idx]]);
 			oldIdx = idx + 1;
 		}
 	}
 
-	return result + htmlCode.substr(oldIdx, htmlCode.length() - oldIdx);
+	if (resultEmpty) {
+		return htmlCode;
+	}
+	else {
+		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
+		return result;
+	}
 }

@@ -38,16 +38,19 @@
         <p class="lead">This is an approximation of your HTTP request:</p>
 
         <pre><@
-        "{} {}{} {}\n{}\n{}".format(
+
+        "{} {}{} {}\n{}\n\n{}".format(
           request.http_method,
           request.url,
-          "" if len(request.query) == 0 else '?' + "&".join(["{}={}".format(key, value) for key, value in request.query.iteritems()]),
+
+          "" if len(request.query) == 0 else "?" + "&".join(["{}={}".format(key, value) for key, value in request.query.iteritems()]),
           request.http_version,
           "\n".join(["{}: {}".format(key, value) for key, value in request.headers.iteritems()]),
           request.body
+
         )
-        @>
-        </pre>
+
+        @></pre>
       </div>
 
     </div><!-- /.container -->
