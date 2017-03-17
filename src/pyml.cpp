@@ -132,6 +132,14 @@ const PymlItem* PymlItemFor::getNext(const PymlItem* last) const{
 	}
 }
 
+const PymlItem* PymlItemEmbed::getNext(const PymlItem *last) const {
+	if (last == NULL){
+		return cache.get(filename)->getRootItem();
+	}
+	else {
+		return NULL;
+	}
+}
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
 	: data(NoneData()){
@@ -155,6 +163,9 @@ PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
 	}
 	else if (type == Type::For ){
 		data = ForData();
+	}
+	else if (type == Type::Embed){
+		data = EmbedData();
 	}
 	else{
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
@@ -213,6 +224,10 @@ public:
 		PymlItemFor* newItem = pool.forExecPool.malloc();
 		PymlItemFor* item = new(newItem) PymlItemFor(pythonPrepareStr(forData.initCode), forData.conditionCode, forData.updateCode, loopItem);
 		return item;
+	}
+
+	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
+		return pool.embedPool.construct(embedData.filename, embedData.cache);
 	}
 };
 
@@ -284,12 +299,13 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 		addPymlWorkingStr(tmp);
 	}
 	
-	const PymlItem* result = itemStack.top().getItem(pool);
+	const PymlItem* result = itemStack.top().getItem(pool, cache);
 	return result;
 }
 
 
-PymlFile::PymlFile(const string& source, bool isRaw) {
+PymlFile::PymlFile(const string& source, FileCache<PymlFile>& cache, bool isRaw)
+	: cache(cache) {
 	if (!isRaw){
 		rootItem = parseFromSource(source);
 	}
@@ -853,6 +869,17 @@ void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 	//DBG("done!");
 }
 
+void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
+	}
+	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
+	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Str);
+	newItem->getData<PymlWorkingItem::EmbedData>()->filename = filename;
+	newItem->getData<PymlWorkingItem::EmbedData>()->cache = cache;
+
+	data.items.push_back(newItem);
+}
 
 
 //Dedent string
@@ -1001,3 +1028,4 @@ string htmlEscape(string htmlCode) {
 		return result;
 	}
 }
+

@@ -4,6 +4,7 @@
 #include<stack>
 #include<boost/pool/object_pool.hpp>
 #include<boost/variant.hpp>
+#include"fileCache.h"
 
 
 class PymlItem {
@@ -169,6 +170,28 @@ public:
 };
 
 
+class PymlItemEmbed : public PymlItem {
+private:
+	std::string filename;
+	FileCache<PymlFile>& cache;
+
+public:
+	PymlItemEmbed(std::string filename, FileCache<PymlFile>& cache)
+		: filename(filename), cache(cache){
+	}
+
+	std::string runPyml() const override{
+		return cache.get(filename)->getRootItem()->runPyml();
+	}
+
+	const PymlItem* getNext(const PymlItem* last) const override;
+
+	bool isDynamic() const override {
+		return cache.get(filename)->isDynamic();
+	}
+};
+
+
 struct PymlItemPool {
 	boost::object_pool<PymlItem> itemPool;
 	boost::object_pool<PymlItemStr> strPool;
@@ -178,11 +201,12 @@ struct PymlItemPool {
 	boost::object_pool<PymlItemPyExec> pyExecPool;
 	boost::object_pool<PymlItemIf> ifExecPool;
 	boost::object_pool<PymlItemFor> forExecPool;
+	boost::object_pool<PymlItemEmbed> embedPool;
 };
 
 
 struct PymlWorkingItem {
-	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For };
+	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For, Embed };
 	struct NoneData {
 	};
 	struct StrData {
@@ -206,10 +230,14 @@ struct PymlWorkingItem {
 		std::string updateCode;
 		PymlWorkingItem* loopItem;
 	};
+	struct EmbedData {
+		std::string filename;
+		FileCache<PymlFile>& cache;
+	};
 	
-	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData> data;
+	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData, EmbedData> data;
 	
-	Type type; //TODO: set
+	Type type;
 	PymlWorkingItem(Type type);
 	
 	template<typename T>
@@ -236,6 +264,8 @@ class PymlFile {
 	PymlItemPool pool;
 	boost::object_pool<PymlWorkingItem> workingItemPool;
 	std::string tmpStr;
+
+	FileCache<PymlFile>& cache;
 	
 	int krItIndex;
 	
@@ -261,6 +291,7 @@ class PymlFile {
 	
 	void addPymlWorkingStr(const std::string& str);
 	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
+	void addPymlWorkingEmbed(const std::string& filename);
 	void pushPymlWorkingIf(const std::string& condition);
 	bool addSeqToPymlWorkingIf(bool isElse);
 	void pushPymlWorkingFor();
@@ -271,7 +302,7 @@ class PymlFile {
 	void addPymlStackTop();
 	
 public:
-	PymlFile(const std::string& source, bool isRaw = false);
+	PymlFile(const std::string& source, FileCache<PymlFile>& cache, bool isRaw = false);
 	
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;

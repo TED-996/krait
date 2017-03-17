@@ -26,7 +26,7 @@ using namespace boost::filesystem;
 unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
-FileCache<PymlFile> Server::serverCache(Server::constructPymlFromFilename, Server::onServerCacheMiss);
+PymlCache Server::serverCache(Server::constructPymlFromFilename, Server::onServerCacheMiss);
 bool Server::interpretCacheRequest;
 StringPiper Server::cacheRequestPipe;
 
@@ -518,9 +518,10 @@ void Server::updateParentCaches() {
 	while(cacheRequestPipe.pipeAvailable()){
 		string filename = cacheRequestPipe.pipeRead();
 		DBG("next cache add is in parent");
+
 		interpretCacheRequest = false;
 		serverCache.get(filename);
-		//DBG("if cache add, it was in parent");
+		interpretCacheRequest = true;
 	}
 }
 

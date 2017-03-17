@@ -11,7 +11,7 @@
 #include"response.h"
 #include"pyml.h"
 #include"stringPiper.h"
-#include"fileCache.h"
+#include"pymlCache.h"
 #include"cacheController.h"
 
 
@@ -33,7 +33,6 @@ class Server {
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
-	Response getResponseFromSource(std::string filename);
 	void addDefaultHeaders(Response& response, std::string filename, Request& request);
 	Response getResponseFromSource(std::string filename, Request& request);
 
@@ -58,7 +57,7 @@ class Server {
 
 	static StringPiper cacheRequestPipe;
 	static bool interpretCacheRequest;
-	static FileCache<PymlFile> serverCache;
+	static PymlCache serverCache;
 	static void updateParentCaches();
 
 	static PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
