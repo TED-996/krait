@@ -484,14 +484,14 @@ string Server::expandFilename(string filename) {
 IteratorResult Server::getPymlResultRequestCache(string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
-	const PymlFile* pymlFile = serverCache.get(filename);
+	const IPymlFile* pymlFile = serverCache.get(filename);
 	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
 }
 
 
 bool Server::getPymlIsDynamic(string filename){
 	interpretCacheRequest = true;
-	const PymlFile* pymlFile = serverCache.get(filename);
+	const IPymlFile* pymlFile = serverCache.get(filename);
 	return pymlFile->isDynamic();
 }
 
@@ -500,10 +500,10 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 	string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
 	if (canContainPython(filename)){
-		return pool.construct(source, false);
+		return pool.construct(source, serverCache, false);
 	}
 	else{
-		return pool.construct(source, true);
+		return pool.construct(source, serverCache, true);
 	}
 }
 

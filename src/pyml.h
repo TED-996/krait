@@ -4,24 +4,26 @@
 #include<stack>
 #include<boost/pool/object_pool.hpp>
 #include<boost/variant.hpp>
-#include"fileCache.h"
+#include"IPymlCache.h"
+#include"IPymlFile.h"
+#include"IPymlFile.h"
 
 
-class PymlItem {
+class PymlItem : public IPymlItem {
 public:
-	virtual std::string runPyml() const {
+	virtual std::string runPyml() const override {
 		return "";
 	}
 	
-	virtual bool isDynamic() const {
+	virtual bool isDynamic() const override {
 		return false;
 	}
 
-	virtual const PymlItem* getNext(const PymlItem* last) const {
+	virtual const IPymlItem* getNext(const IPymlItem* last) const override {
 		return NULL;
 	}
 
-	virtual const std::string* getEmbeddedString(std::string* storage) const {
+	virtual const std::string* getEmbeddedString(std::string* storage) const override {
 		return NULL;
 	}
 };
@@ -60,7 +62,7 @@ public:
 	
 	const PymlItem* tryCollapse() const;
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
 
@@ -114,7 +116,7 @@ public:
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override{
+	const IPymlItem* getNext(const IPymlItem* last) const override{
 		if (last == NULL){
 			runPyml();
 		}
@@ -141,7 +143,7 @@ public:
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
 
@@ -166,17 +168,17 @@ public:
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
 
 class PymlItemEmbed : public PymlItem {
 private:
 	std::string filename;
-	FileCache<PymlFile>& cache;
+	IPymlCache& cache;
 
 public:
-	PymlItemEmbed(std::string filename, FileCache<PymlFile>& cache)
+	PymlItemEmbed(std::string filename, IPymlCache& cache)
 		: filename(filename), cache(cache){
 	}
 
@@ -184,7 +186,7 @@ public:
 		return cache.get(filename)->getRootItem()->runPyml();
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 
 	bool isDynamic() const override {
 		return cache.get(filename)->isDynamic();
@@ -232,7 +234,7 @@ struct PymlWorkingItem {
 	};
 	struct EmbedData {
 		std::string filename;
-		FileCache<PymlFile>& cache;
+		IPymlCache* cache;
 	};
 	
 	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData, EmbedData> data;
@@ -250,7 +252,7 @@ struct PymlWorkingItem {
 };
 
 
-class PymlFile {
+class PymlFile : public IPymlFile {
 	const PymlItem* rootItem;
 	
 	int state;
@@ -265,7 +267,7 @@ class PymlFile {
 	boost::object_pool<PymlWorkingItem> workingItemPool;
 	std::string tmpStr;
 
-	FileCache<PymlFile>& cache;
+	IPymlCache& cache;
 	
 	int krItIndex;
 	
@@ -302,7 +304,7 @@ class PymlFile {
 	void addPymlStackTop();
 	
 public:
-	PymlFile(const std::string& source, FileCache<PymlFile>& cache, bool isRaw = false);
+	PymlFile(const std::string& source, IPymlCache& cache, bool isRaw = false);
 	
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;
@@ -310,7 +312,7 @@ public:
 	bool isDynamic() const;
 	std::string runPyml() const;
 
-	const PymlItem* getRootItem() const{
-		return rootItem;
+	const IPymlItem* getRootItem() const{
+		return (IPymlItem*) rootItem;
 	}
 };

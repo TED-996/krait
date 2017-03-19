@@ -1,8 +1,7 @@
 #pragma once
-
-class PymlFile;
+#include "IPymlFile.h"
 
 class IPymlCache {
 public:
-	virtual const PymlFile* get(std::string filename) = 0;
+	virtual const IPymlFile* get(std::string filename) = 0;
 };

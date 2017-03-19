@@ -9,7 +9,6 @@
 #include"utils.h"
 #include"fsm.h"
 
-
 using namespace std;
 
 
@@ -33,7 +32,7 @@ bool PymlItemSeq::isDynamic() const {
 	return false;
 }
 
-const PymlItem* PymlItemSeq::getNext(const PymlItem* last) const {
+const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 	if (last == NULL && items.size() != 0){
 		return items[0];
 	}
@@ -91,7 +90,7 @@ std::string PymlItemIf::runPyml() const {
 }
 
 
-const PymlItem* PymlItemIf::getNext(const PymlItem* last) const{
+const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
 	if (last != NULL){
 		return NULL;
 	}
@@ -116,7 +115,7 @@ std::string PymlItemFor::runPyml() const {
 }
 
 
-const PymlItem* PymlItemFor::getNext(const PymlItem* last) const{
+const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 	if (last == NULL){
 		pythonRun(initCode);
 	}
@@ -132,7 +131,7 @@ const PymlItem* PymlItemFor::getNext(const PymlItem* last) const{
 	}
 }
 
-const PymlItem* PymlItemEmbed::getNext(const PymlItem *last) const {
+const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 	if (last == NULL){
 		return cache.get(filename)->getRootItem();
 	}
@@ -227,7 +226,7 @@ public:
 	}
 
 	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(embedData.filename, embedData.cache);
+		return pool.embedPool.construct(embedData.filename, *embedData.cache);
 	}
 };
 
@@ -299,12 +298,12 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 		addPymlWorkingStr(tmp);
 	}
 	
-	const PymlItem* result = itemStack.top().getItem(pool, cache);
+	const PymlItem* result = itemStack.top().getItem(pool);
 	return result;
 }
 
 
-PymlFile::PymlFile(const string& source, FileCache<PymlFile>& cache, bool isRaw)
+PymlFile::PymlFile(const string& source, IPymlCache& cache, bool isRaw)
 	: cache(cache) {
 	if (!isRaw){
 		rootItem = parseFromSource(source);
@@ -876,7 +875,7 @@ void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Str);
 	newItem->getData<PymlWorkingItem::EmbedData>()->filename = filename;
-	newItem->getData<PymlWorkingItem::EmbedData>()->cache = cache;
+	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cache;
 
 	data.items.push_back(newItem);
 }

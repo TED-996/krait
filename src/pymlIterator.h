@@ -4,11 +4,11 @@
 
 class PymlIterator {
 private:
-	std::stack<const PymlItem*> items;
+	std::stack<const IPymlItem*> items;
 	std::string tmpStr;
 	const std::string* lastValuePtr;
 public:
-	PymlIterator(const PymlItem* rootItem);
+	PymlIterator(const IPymlItem* rootItem);
 	PymlIterator(const PymlIterator& other);
 
 	const std::string* operator*();
