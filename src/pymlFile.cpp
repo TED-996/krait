@@ -1,10 +1,8 @@
-#define DBG_DISABLE
 #include"dbg.h"
 
-#include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include"pyml.h"
-#include"pythonWorker.h"
+#include "pythonWorker.h"
+#include "pymlFile.h"
 #include"except.h"
 #include"utils.h"
 #include"fsm.h"
@@ -12,229 +10,15 @@
 using namespace std;
 
 
-string pythonPrepareStr(string pyCode);
-
-
-string PymlItemSeq::runPyml() const {
-	string result;
-	for (const PymlItem* it : items){
-		result += it->runPyml();
-	}
-	return result;
-}
-
-bool PymlItemSeq::isDynamic() const {
-	for (auto it: items){
-		if (it->isDynamic()){
-			return true;
-		}
-	}
-	return false;
-}
-
-const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
-	if (last == NULL && items.size() != 0){
-		return items[0];
-	}
-
-	for (int i = 0; i < (int)items.size(); i++){
-		if (items[i] == last && i + 1 < (int)items.size()){
-			return items[i + 1];
-		}
-	}
-
-	return NULL;
-}
-
-const PymlItem* PymlItemSeq::tryCollapse() const {
-	if (items.size() == 0){
-		return NULL;
-	}
-	if (items.size() == 1){
-		return items[0];
-	}
-	return (PymlItem*)this;
-}
-
-string htmlEscape(string htmlCode);
-
-std::string PymlItemPyEval::runPyml() const {
-	return htmlEscape(pythonEval(code));
-}
-
-std::string PymlItemPyEvalRaw::runPyml() const {
-	return pythonEval(code);
-}
-
-
-std::string PymlItemPyExec::runPyml() const {
-	DBG_FMT("running pyExec: %1%", code);
-	pythonRun(code);
-	return "";
-}
-
-
-std::string PymlItemIf::runPyml() const {
-	if (pythonTest(conditionCode)){
-		if (itemIfTrue == NULL){
-			return "";
-		}
-		return itemIfTrue->runPyml();
+PymlFile::PymlFile(const string& source, string embedRoot, IPymlCache& cache, bool isRaw)
+		: embedRoot(boost::filesystem::path(embedRoot)), cache(cache) {
+	if (!isRaw){
+		rootItem = parseFromSource(source);
 	}
 	else{
-		if (itemIfFalse == NULL){
-			return "";
-		}
-		return itemIfFalse->runPyml();
+		rootItem = pool.strPool.construct(source);
 	}
 }
-
-
-const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
-	if (last != NULL){
-		return NULL;
-	}
-
-	if (pythonTest(conditionCode)){
-		return itemIfTrue;
-	}
-	else{
-		return itemIfFalse;
-	}
-}
-
-
-std::string PymlItemFor::runPyml() const {
-	pythonRun(initCode);
-	string result;
-	while(pythonTest(conditionCode)){
-		result += loopItem->runPyml();
-		pythonRun(updateCode);
-	}
-	return result;
-}
-
-
-const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
-	if (last == NULL){
-		pythonRun(initCode);
-	}
-	else{
-		pythonRun(updateCode);
-	}
-
-	if (pythonTest(conditionCode)){
-		return loopItem;
-	}
-	else{
-		return NULL;
-	}
-}
-
-const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
-	if (last == NULL){
-		return cache.get(filename)->getRootItem();
-	}
-	else {
-		return NULL;
-	}
-}
-
-PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
-	: data(NoneData()){
-	//DBG_FMT("In PymlWorkingItem constructor; type = %1%", (int)type);
-	this->type = type;
-	if (type == Type::None){
-	}
-	else if (type == Type::Str){
-		data = StrData();
-	}
-	else if (type == Type::Seq){
-		data = SeqData();
-	}
-	else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec){
-		PyCodeData dataTmp;
-		dataTmp.type = type;
-		data = dataTmp;
-	}
-	else if (type == Type::If){
-		data = IfData();
-	}
-	else if (type == Type::For ){
-		data = ForData();
-	}
-	else if (type == Type::Embed){
-		data = EmbedData();
-	}
-	else{
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
-	}
-}
-
-
-class GetItemVisitor : public boost::static_visitor<const PymlItem*>{
-	PymlItemPool& pool;
-public:
-	GetItemVisitor(PymlItemPool& pool)
-	: pool(pool){
-	}
-	
-	const PymlItem* operator()(PymlWorkingItem::NoneData data){
-		(void)data; //Silence the warning.
-		return pool.itemPool.construct();
-	}
-	const PymlItem* operator()(PymlWorkingItem::StrData strData){
-		return pool.strPool.construct(strData.str);
-	}
-	const PymlItem* operator()(PymlWorkingItem::SeqData seqData){
-		vector<const PymlItem*> items;
-		for (PymlWorkingItem* it : seqData.items){
-			const PymlItem* item = it->getItem(pool);
-			if (item != NULL){
-				items.push_back(item);
-			}
-		}
-		const PymlItemSeq* result = pool.seqPool.construct(items);
-		return result->tryCollapse();
-	}
-	const PymlItem* operator()(PymlWorkingItem::PyCodeData pyCodeData){
-		if (pyCodeData.type == PymlWorkingItem::Type::PyExec){
-			return pool.pyExecPool.construct(pythonPrepareStr(pyCodeData.code));
-		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEval){
-			return pool.pyEvalPool.construct(pythonPrepareStr(pyCodeData.code));
-		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw){
-			return pool.pyEvalRawPool.construct(pythonPrepareStr(pyCodeData.code));
-		}
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
-	}
-	const PymlItem* operator()(PymlWorkingItem::IfData ifData){
-		const PymlItem* itemIfTrue = ifData.itemIfTrue->getItem(pool);
-		const PymlItem* itemIfFalse = NULL;
-		if (ifData.itemIfFalse != NULL){
-			itemIfFalse = ifData.itemIfFalse->getItem(pool);
-		}
-		
-		return pool.ifExecPool.construct(pythonPrepareStr(ifData.condition), itemIfTrue, itemIfFalse);
-	}
-	const PymlItem* operator()(PymlWorkingItem::ForData forData ){
-		const PymlItem* loopItem = forData.loopItem->getItem(pool);
-		PymlItemFor* newItem = pool.forExecPool.malloc();
-		PymlItemFor* item = new(newItem) PymlItemFor(pythonPrepareStr(forData.initCode), forData.conditionCode, forData.updateCode, loopItem);
-		return item;
-	}
-
-	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(embedData.filename, *embedData.cache);
-	}
-};
-
-const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
-	GetItemVisitor visitor(pool);
-	return boost::apply_visitor(visitor, data);
-}
-
 
 std::string PymlFile::runPyml() const {
 	if (rootItem == NULL){
@@ -242,6 +26,7 @@ std::string PymlFile::runPyml() const {
 	}
 	return rootItem->runPyml();
 }
+
 
 bool PymlFile::isDynamic() const {
 	if (rootItem == NULL){
@@ -258,18 +43,18 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 	absIdx = 0;
 	saveIdx = 0;
 	workingBackBuffer.clear();
-	
+
 	krItIndex = 0;
-	
+
 	while(itemStack.size() != 0){ //No clear() method...
 		//DBG_FMT("Popping; size is %1%", itemStack.size());
 		itemStack.pop();
 	}
 	//DBG_FMT("Pushing; size is %1%", itemStack.size());
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
-	
+
 	//DBG("PreConsuming:");
-	
+
 	for (const char chr : source){
 		//DBG("consuming one");
 		while(!consumeOne(chr)){
@@ -277,19 +62,19 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 		}
 		//DBG("consume one ok");
 	}
-	
+
 	consumeOne('\0'); //Required to close all pending states.
-	
+
 	if (itemStack.size() != 1){
 		DBG_FMT("Error unexpected end! state is %1%", state);
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unexpected end. Tag not closed."));
 	}
-	
+
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		DBG_FMT("Error top not Seq! State is %1%", state);
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: after consuming file, working item is not PymlWorkingItem::SeqData."));
 	}
-	
+
 	if (workingBackBuffer.size() + workingIdx != 0){
 		string tmp = workingBackBuffer + string(workingStr, workingIdx);
 		if (tmp[tmp.length() - 1] == '\0'){
@@ -297,25 +82,14 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 		}
 		addPymlWorkingStr(tmp);
 	}
-	
+
 	const PymlItem* result = itemStack.top().getItem(pool);
 	return result;
 }
 
 
-PymlFile::PymlFile(const string& source, IPymlCache& cache, bool isRaw)
-	: cache(cache) {
-	if (!isRaw){
-		rootItem = parseFromSource(source);
-	}
-	else{
-		rootItem = pool.strPool.construct(source);
-	}
-}
-
-
 bool PymlFile::consumeOne(char chr){
-	//DBG_FMT("In state %1%, consuming chr %2%", state, chr);
+	DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, &absIdx, &saveIdx)
@@ -348,6 +122,7 @@ bool PymlFile::consumeOne(char chr){
 			TransElif('@', 3, true)
 			TransElif('!', 4, true)
 			TransElif('?', 5, true) //Enable for if/while/etc support
+			TransElif('%', 90, true) //<%embed path %> / <%view path %vm path>
 			TransElse(1, true)
 		StatesNext(3)
 			SaveThis()
@@ -705,6 +480,72 @@ bool PymlFile::consumeOne(char chr){
 			pushPymlWorkingSeq();
 			
 			TransAlways(0, false)
+		StatesNext(90) //<%|embed ... | <%|view
+			DBG("<%|");
+			SaveThis()
+
+			TransIf('e', 91, true)
+			TransElse(1, true)
+		StatesNext(91)
+			SaveThis()
+
+			TransIf('m', 92, true)
+			TransElse(1, true)
+		StatesNext(92)
+			SaveThis()
+
+			TransIf('b', 93, true)
+			TransElse(1, true)
+		StatesNext(93)
+			SaveThis()
+
+			TransIf('e', 94, true)
+			TransElse(1, true)
+		StatesNext(94)
+			SaveThis()
+
+			TransIf('d', 95, true)
+			TransElse(1, true)
+		StatesNext(95)
+			SaveThis()
+
+			TransIf(' ', 96, true)
+			TransElse(1, true)
+		StatesNext(96)
+			DBG("<%embed|");
+			SavepointRevert()
+			SaveStore(tmp)
+			SaveStart()
+
+			if (tmp.size() > 0){
+				addPymlWorkingStr(tmp);
+			}
+
+			TransIf('%', 98, true)
+			TransElse(97, true)
+		StatesNext(97)
+			SaveThis()
+
+			TransIf('%', 98, true)
+			TransElse(97, true)
+		StatesNext(98)
+			SavepointStoreOff(-1)
+			SaveThis()
+
+			TransIf('%', 98, true)
+			TransElif('>', 99, true)
+			TransElse(97, true)
+		StatesNext(99) //<%embed ... %>|
+			SavepointRevert()
+
+			SaveStore(tmp)
+			DBG_FMT("added embed with code %1%", tmp);
+
+			if (tmp.size() > 0){
+				addPymlWorkingEmbed(tmp);
+			}
+
+			TransAlways(0, false)
 		StatesEnd()
 	FsmEnd()
 }
@@ -728,9 +569,21 @@ void PymlFile::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::strin
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 	PymlWorkingItem* newItem = workingItemPool.construct(type);
-	
+
 	newItem->getData<PymlWorkingItem::PyCodeData>()->code = code;
-	
+
+	data.items.push_back(newItem);
+}
+
+void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
+	}
+	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
+	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Embed);
+	newItem->getData<PymlWorkingItem::EmbedData>()->filename = (embedRoot / filename).string();
+	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cache;
+
 	data.items.push_back(newItem);
 }
 
@@ -743,10 +596,10 @@ void PymlFile::pushPymlWorkingFor() {
 	itemStack.emplace(PymlWorkingItem::Type::For);
 }
 
+
 void PymlFile::pushPymlWorkingSeq() {
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
 }
-
 
 bool PymlFile::addSeqToPymlWorkingIf(bool isElse){
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
@@ -756,17 +609,17 @@ bool PymlFile::addSeqToPymlWorkingIf(bool isElse){
 	PymlWorkingItem* item = workingItemPool.construct(PymlWorkingItem::Type::Seq);
 	*item = itemSrc;
 	itemStack.pop();
-	
+
 	if (itemStack.empty()){
 		return false;
 	}
-	
+
 	PymlWorkingItem::IfData* data = itemStack.top().getData<PymlWorkingItem::IfData>();
 	if (data == NULL){
 		DBG_FMT("Bad item data; expected IfData, got %1%", itemStack.top().type);
 		return false;
 	}
-	
+
 	if (isElse){
 		if (data->itemIfFalse != NULL){
 			return false;
@@ -795,20 +648,21 @@ bool PymlFile::addSeqToPymlWorkingFor() {
 	PymlWorkingItem* item = workingItemPool.construct(PymlWorkingItem::Type::Seq);
 	*item = itemSrc;
 	itemStack.pop();
-	
+
 	if (itemStack.empty()){
 		return false;
 	}
-	
+
 	PymlWorkingItem::ForData* data = itemStack.top().getData<PymlWorkingItem::ForData>();
 	if (data == NULL){
 		DBG_FMT("Bad item data; expected ForData, got %1%", itemStack.top().type);
 		return false;
 	}
-	
+
 	data->loopItem = item;
 	return true;
 }
+
 
 void PymlFile::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	if (!stackTopIsType<PymlWorkingItem::ForData>()){
@@ -816,7 +670,7 @@ void PymlFile::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	}
 
 	PymlWorkingItem::ForData& data = getStackTop<PymlWorkingItem::ForData>();
-	
+
 	if (where == 0){
 		data.initCode = code;
 	}
@@ -828,168 +682,43 @@ void PymlFile::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	}
 }
 
-
 void PymlFile::addPymlStackTop() {
 	PymlWorkingItem& itemSrc = itemStack.top();
 	PymlWorkingItem* newItem = workingItemPool.construct(itemSrc.type);
 	*newItem = itemSrc;
 	itemStack.pop();
-	
+
 	if (itemStack.empty()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tried reducing a stack with just one item."));
 	}
-	
+
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
-	
+
 	data.items.push_back(newItem);
 }
 
 void PymlFile::pushPymlWorkingForIn(std::string entry, std::string collection){
 	//DBG_FMT("for in with entries %1% and %2%", entry, collection);
-	
+
 	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
 	boost::trim(collection);
-	
+
 	//1: krIterator; 2: collection;;; 3: entry
 	string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
 	                   % krIterator % collection % entry).str();
 	string condCode = (boost::format("not %1%.over") % krIterator).str();
 	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
 	                     % krIterator % collection % entry).str();
-	
+
 	addCodeToPymlWorkingFor(0, initCode);
 	addCodeToPymlWorkingFor(1, condCode);
 	addCodeToPymlWorkingFor(2, updateCode);
 
 	//DBG("done!");
-}
-
-void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
-	}
-	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
-	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Str);
-	newItem->getData<PymlWorkingItem::EmbedData>()->filename = filename;
-	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cache;
-
-	data.items.push_back(newItem);
-}
-
-
-//Dedent string
-string pythonPrepareStr(string pyCode) {
-	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
-	if (pyCode.length() == 0 || !isspace(pyCode[0])){
-		return pyCode;
-	}
-
-	//First remove first line if whitespace.
-
-	const size_t commonIndentSentinel = pyCode.length() + 1;
-	size_t commonIndent = commonIndentSentinel;
-	size_t outSize = pyCode.length();
-	size_t lineIndent = 0;
-	int codeLines = 0;
-	char indentChr = '\0';
-	bool lineWs = true;
-	bool inIndent = true;
-
-	for (size_t i = 0; i < pyCode.length(); i++){
-		char chr = pyCode[i];
-		if (chr == ' ' || chr == '\t'){
-			indentChr = chr;
-			break;
-		}
-		else if (chr == '\r' || chr == '\n'){
-			continue;
-		}
-		else{
-			break;
-		}
-	}
-	if (indentChr == '\0'){
-		return pyCode;
-	}
-
-	for (size_t i = 0; i < pyCode.length(); i++){
-		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n'){
-			if (!lineWs){
-				codeLines++;
-
-				if (commonIndent == commonIndentSentinel){
-					commonIndent = lineIndent;
-				}
-				else if (lineIndent < commonIndent) {
-					size_t indentDiff = commonIndent - lineIndent;
-					outSize += (codeLines - 1) * indentDiff;
-					commonIndent = lineIndent;
-				}
-			}
-			outSize -= (lineIndent < commonIndent ? lineIndent : commonIndent);
-			lineIndent = 0;
-			lineWs = true;
-			inIndent = true;
-		}
-		else if (chr == indentChr && inIndent){
-			lineIndent++;
-			//DBG("inIndentUp");
-		}
-		else{
-			inIndent = false;
-			if (chr != ' ' && chr != '\t'){
-				lineWs = false;
-			}
-		}
-	}
-
-	if (!lineWs) {
-		codeLines++;
-
-		if (commonIndent == commonIndentSentinel) {
-			commonIndent = lineIndent;
-		} else if (lineIndent < commonIndent) {
-			size_t indentDiff = commonIndent - lineIndent;
-			outSize += (codeLines - 1) * indentDiff;
-			commonIndent = lineIndent;
-		}
-	}
-
-	//DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
-	string result;
-	result.resize(outSize); //outSize may be a bit larger, this is fine.
-
-	size_t offset = 0;
-	lineIndent = 0;
-	for (size_t i = 0; i < pyCode.length(); i++){
-		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n'){
-			lineIndent = 0;
-			result[i - offset] = pyCode[i];
-		}
-		else{
-			if (lineIndent < commonIndent){
-				lineIndent++;
-				offset++;
-			}
-			else {
-				if (offset != 0) {
-					result[i - offset] = pyCode[i];
-				}
-			}
-		}
-	}
-
-	result.resize(pyCode.length() - offset);
-
-	//DBG_FMT("result: %1%", result);
-
-	return result;
 }
 
 

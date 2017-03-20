@@ -291,3 +291,115 @@ map<string, string> pythonGetGlobalMap(string name) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
+
+//Dedent string
+string pythonPrepareStr(string pyCode) {
+	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
+	if (pyCode.length() == 0 || !isspace(pyCode[0])){
+		return pyCode;
+	}
+
+	//First remove first line if whitespace.
+
+	const size_t commonIndentSentinel = pyCode.length() + 1;
+	size_t commonIndent = commonIndentSentinel;
+	size_t outSize = pyCode.length();
+	size_t lineIndent = 0;
+	int codeLines = 0;
+	char indentChr = '\0';
+	bool lineWs = true;
+	bool inIndent = true;
+
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == ' ' || chr == '\t'){
+			indentChr = chr;
+			break;
+		}
+		else if (chr == '\r' || chr == '\n'){
+			continue;
+		}
+		else{
+			break;
+		}
+	}
+	if (indentChr == '\0'){
+		return pyCode;
+	}
+
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == '\r' || chr == '\n'){
+			if (!lineWs){
+				codeLines++;
+
+				if (commonIndent == commonIndentSentinel){
+					commonIndent = lineIndent;
+				}
+				else if (lineIndent < commonIndent) {
+					size_t indentDiff = commonIndent - lineIndent;
+					outSize += (codeLines - 1) * indentDiff;
+					commonIndent = lineIndent;
+				}
+			}
+			outSize -= (lineIndent < commonIndent ? lineIndent : commonIndent);
+			lineIndent = 0;
+			lineWs = true;
+			inIndent = true;
+		}
+		else if (chr == indentChr && inIndent){
+			lineIndent++;
+			//DBG("inIndentUp");
+		}
+		else{
+			inIndent = false;
+			if (chr != ' ' && chr != '\t'){
+				lineWs = false;
+			}
+		}
+	}
+
+	if (!lineWs) {
+		codeLines++;
+
+		if (commonIndent == commonIndentSentinel) {
+			commonIndent = lineIndent;
+		} else if (lineIndent < commonIndent) {
+			size_t indentDiff = commonIndent - lineIndent;
+			outSize += (codeLines - 1) * indentDiff;
+			commonIndent = lineIndent;
+		}
+	}
+
+	//DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
+	string result;
+	result.resize(outSize); //outSize may be a bit larger, this is fine.
+
+	size_t offset = 0;
+	lineIndent = 0;
+	for (size_t i = 0; i < pyCode.length(); i++){
+		char chr = pyCode[i];
+		if (chr == '\r' || chr == '\n'){
+			lineIndent = 0;
+			result[i - offset] = pyCode[i];
+		}
+		else{
+			if (lineIndent < commonIndent){
+				lineIndent++;
+				offset++;
+			}
+			else {
+				if (offset != 0) {
+					result[i - offset] = pyCode[i];
+				}
+			}
+		}
+	}
+
+	result.resize(pyCode.length() - offset);
+
+	//DBG_FMT("result: %1%", result);
+
+	return result;
+}

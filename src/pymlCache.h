@@ -4,7 +4,7 @@
 #include<unordered_map>
 #include<ctime>
 #include "IPymlCache.h"
-#include "pyml.h"
+#include "pymlFile.h"
 
 class PymlCache : public IPymlCache {
 private:
@@ -29,7 +29,7 @@ private:
 	const IPymlFile* replaceWithNewer(std::string filename);
 	
 public:
-	PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheEvent);
+	PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheMiss);
 	const IPymlFile* get(std::string filename) override;
 
 	bool existsNewer(std::string filename, std::time_t time);

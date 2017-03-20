@@ -1,10 +1,9 @@
 #include "pymlCache.h"
-#include<boost/filesystem.hpp>
 #include"except.h"
 #include"utils.h"
 
 
-PymlCache::PymlCache(PymlCache::constructorFunction constructor,PymlCache::cacheEventFunction onCacheEvent)
+PymlCache::PymlCache(PymlCache::constructorFunction constructor,PymlCache::cacheEventFunction onCacheMiss)
 	: constructor(constructor), onCacheMiss(onCacheMiss){
 	frozen = false;
 };
