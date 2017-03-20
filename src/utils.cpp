@@ -9,6 +9,7 @@
 #include<sys/stat.h>
 #include"utils.h"
 #include"except.h"
+#include "dbg.h"
 
 using namespace std;
 using namespace boost;
@@ -50,6 +51,8 @@ string readFromFile(string filename) {
 	std::ifstream fileIn(filename, ios::in | ios::binary);
 
 	if (!fileIn) {
+		DBG("except in readFromFile");
+		fileIn.close();
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 

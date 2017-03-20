@@ -6,6 +6,7 @@
 #include<boost/filesystem.hpp>
 #include<boost/algorithm/string/trim.hpp>
 #include<boost/algorithm/string/predicate.hpp>
+#include<functional>
 #include<string.h>
 #include"utils.h"
 #include"server.h"
@@ -26,9 +27,6 @@ using namespace boost::filesystem;
 unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
-PymlCache Server::serverCache(Server::constructPymlFromFilename, Server::onServerCacheMiss);
-bool Server::interpretCacheRequest;
-StringPiper Server::cacheRequestPipe;
 
 
 
@@ -36,7 +34,14 @@ Server::Server(string serverRoot, int port) :
 	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string(),
 					(path(serverRoot) / ".config" / "cache-public.cfg").string(),
 					(path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-longterm.cfg").string()) {
+					(path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
+	serverCache(
+			std::bind(&Server::constructPymlFromFilename,
+			     this,
+			     std::placeholders::_1,
+			     std::placeholders::_2,
+			     std::placeholders::_3),
+			std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
 	this->serverRoot = path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
@@ -333,7 +338,8 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		resp = getResponseFromSource(sourceFile, request);		
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
-	catch (notFoundError&) {
+	catch (notFoundError& err) {
+		DBG_FMT("notFound: %1%", err.what());
 		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
 	catch (rootException& ex) {
@@ -401,7 +407,8 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	Response result(1, 1, 500, unordered_map<string, string>(), "", true);	
 
 	bool isDynamic = getPymlIsDynamic(filename);
-	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filesystem::relative(filename, serverRoot).string(), !isDynamic);
+	CacheController::CachePragma cachePragma = cacheController.getCacheControl(
+			filesystem::relative(filename, serverRoot).string(), !isDynamic);
 
 	string etag;
 	if (request.headerExists("if-none-match")){
@@ -450,6 +457,7 @@ string Server::expandFilename(string filename) {
 		filename = (filesystem::path(filename) / "index").string(); //Not index.html; taking care below about it
 	}
 	if (pathBlocked(filename)) {
+		DBG_FMT("Blocking path %1%", filename);
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
@@ -497,13 +505,15 @@ bool Server::getPymlIsDynamic(string filename){
 
 
 PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest){
+	DBG_FMT("constructFromFilename(%1%)", filename);
 	string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
+	PymlFile::CacheInfo cacheInfo {serverCache, serverRoot};
 	if (canContainPython(filename)){
-		return pool.construct(source, serverCache, false);
+		return pool.construct(PymlFile::SrcInfo {source, false}, cacheInfo);
 	}
 	else{
-		return pool.construct(source, serverCache, true);
+		return pool.construct(PymlFile::SrcInfo {source, true}, cacheInfo);
 	}
 }
 

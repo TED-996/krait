@@ -1,6 +1,7 @@
 #include "pymlCache.h"
 #include"except.h"
 #include"utils.h"
+#include "dbg.h"
 
 
 PymlCache::PymlCache(PymlCache::constructorFunction constructor,PymlCache::cacheEventFunction onCacheMiss)
@@ -35,7 +36,10 @@ IPymlFile* PymlCache::constructAddNew(std::string filename, std::time_t time){
 const IPymlFile* PymlCache::replaceWithNewer(std::string filename){
 	const auto it = cacheMap.find(filename);
 
+	DBG_FMT("testing exists with filename %1%", filename);
 	if (!boost::filesystem::exists(filename)){
+		DBG("except in replaceWithNewer");
+		DBG_FMT("reading anyway: %1%", readFromFile(filename));
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 	}
 
@@ -52,6 +56,7 @@ bool PymlCache::existsNewer(std::string filename, std::time_t time){
 	}
 
 	if (!boost::filesystem::exists(filename)){
+		DBG("except in existsNewer");
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 	}
 

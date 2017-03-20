@@ -8,6 +8,17 @@
 
 
 class PymlFile : public IPymlFile {
+public:
+	struct CacheInfo {
+		IPymlCache& cache;
+		boost::filesystem::path embedRoot;
+	};
+	struct SrcInfo {
+		const std::string& source;
+		bool isRaw;
+	};
+
+private:
 	const PymlItem* rootItem;
 	
 	int state;
@@ -22,8 +33,7 @@ class PymlFile : public IPymlFile {
 	boost::object_pool<PymlWorkingItem> workingItemPool;
 	std::string tmpStr;
 
-	IPymlCache& cache;
-	boost::filesystem::path embedRoot;
+	CacheInfo cacheInfo;
 	
 	int krItIndex;
 	
@@ -60,7 +70,7 @@ class PymlFile : public IPymlFile {
 	void addPymlStackTop();
 	
 public:
-	PymlFile(const std::string& source, std::string embedRoot, IPymlCache& cache, bool isRaw = false);
+	PymlFile(PymlFile::SrcInfo srcInfo, PymlFile::CacheInfo cacheInfo);
 	
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;

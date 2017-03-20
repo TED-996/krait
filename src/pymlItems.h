@@ -180,7 +180,7 @@ public:
 	}
 
 	std::string runPyml() const override{
-		return cache.get(filename)->getRootItem()->runPyml();
+		return cache.get(filename)->runPyml();
 	}
 
 	const IPymlItem* getNext(const IPymlItem* last) const override;

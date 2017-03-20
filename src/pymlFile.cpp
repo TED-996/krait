@@ -6,17 +6,18 @@
 #include"except.h"
 #include"utils.h"
 #include"fsm.h"
+#include"path.h"
 
 using namespace std;
 
 
-PymlFile::PymlFile(const string& source, string embedRoot, IPymlCache& cache, bool isRaw)
-		: embedRoot(boost::filesystem::path(embedRoot)), cache(cache) {
-	if (!isRaw){
-		rootItem = parseFromSource(source);
+PymlFile::PymlFile(PymlFile::SrcInfo srcInfo, PymlFile::CacheInfo cacheInfo)
+		: cacheInfo(cacheInfo) {
+	if (!srcInfo.isRaw){
+		rootItem = parseFromSource(srcInfo.source);
 	}
 	else{
-		rootItem = pool.strPool.construct(source);
+		rootItem = pool.strPool.construct(srcInfo.source);
 	}
 }
 
@@ -89,7 +90,7 @@ const PymlItem* PymlFile::parseFromSource(const std::string& source) {
 
 
 bool PymlFile::consumeOne(char chr){
-	DBG_FMT("In state %1%, consuming chr %2%", state, chr);
+	//DBG_FMT("In state %1%, consuming chr %2%", state, chr);
 	string tmp;
 	
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, &absIdx, &saveIdx)
@@ -103,7 +104,7 @@ bool PymlFile::consumeOne(char chr){
 			//DBG_FMT("some pointers: ")
 			SaveStart()
 			//DBG("started save");
-			
+
 			TransIf('<', 2, true)
 			TransElse(1, true)
 			
@@ -456,7 +457,7 @@ bool PymlFile::consumeOne(char chr){
 			SavepointRevert()
 			SaveStore(tmpStr) //member string
 			SaveStart()
-		
+
 			TransIf('?', 80, true)
 			TransElse(79, true)
 		StatesNext(79) //for entry ?in iterator
@@ -581,8 +582,14 @@ void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Embed);
-	newItem->getData<PymlWorkingItem::EmbedData>()->filename = (embedRoot / filename).string();
-	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cache;
+
+	std::string newFilename = (cacheInfo.embedRoot / filename).string();
+	DBG_FMT("embed filename is %1%", newFilename);
+	DBG("calling checkExists()");
+	pathCheckExists(newFilename);
+
+	newItem->getData<PymlWorkingItem::EmbedData>()->filename = newFilename;
+	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cacheInfo.cache;
 
 	data.items.push_back(newItem);
 }

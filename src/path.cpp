@@ -1,5 +1,6 @@
 #include<unistd.h>
 #include<errno.h>
+#include<sys/stat.h>
 
 #include"utils.h"
 #include"path.h"
@@ -21,4 +22,16 @@ path getExecRoot() {
 
 path getCreateDataRoot(){
 	return getExecRoot();
+}
+
+bool pathCheckExists(std::string filename){
+	struct stat data;
+	int stat_result = stat(filename.c_str(), &data);
+	if (stat_result == 0){
+		return true;
+	}
+	else{
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("not found: by stat on %1%", filename.c_str())
+			<< errcodeInfoDef());
+	}
 }

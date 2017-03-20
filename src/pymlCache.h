@@ -3,6 +3,7 @@
 #include<boost/pool/object_pool.hpp>
 #include<unordered_map>
 #include<ctime>
+#include <functional>
 #include "IPymlCache.h"
 #include "pymlFile.h"
 
@@ -14,8 +15,10 @@ private:
 		char tag[33];
 	};
 public:
-	typedef PymlFile* (*constructorFunction)(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
-	typedef void (*cacheEventFunction)(std::string filename);
+	//typedef PymlFile* (*constructorFunction)(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
+	//typedef void (*cacheEventFunction)(std::string filename);
+	typedef std::function<PymlFile*(std::string, boost::object_pool<PymlFile>&, char*)> constructorFunction;
+	typedef std::function<void(std::string)> cacheEventFunction;
 
 private:
 	boost::object_pool<PymlFile> pool;
