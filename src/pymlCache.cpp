@@ -10,6 +10,7 @@ PymlCache::PymlCache(PymlCache::constructorFunction constructor,PymlCache::cache
 };
 
 const IPymlFile* PymlCache::get(std::string filename){
+	DBG_FMT("PymlCache::get() on filename %1% (len %2%)", filename, filename.length());
 	const auto it = cacheMap.find(filename);
 	if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
 		return replaceWithNewer(filename);

@@ -540,6 +540,7 @@ bool PymlFile::consumeOne(char chr){
 			SavepointRevert()
 
 			SaveStore(tmp)
+			boost::trim(tmp);
 			DBG_FMT("added embed with code %1%", tmp);
 
 			if (tmp.size() > 0){
@@ -584,7 +585,7 @@ void PymlFile::addPymlWorkingEmbed(const std::string &filename) {
 	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Embed);
 
 	std::string newFilename = (cacheInfo.embedRoot / filename).string();
-	DBG_FMT("embed filename is %1%", newFilename);
+	DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
 	DBG("calling checkExists()");
 	pathCheckExists(newFilename);
 
