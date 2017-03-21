@@ -229,3 +229,38 @@ const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
 	GetItemVisitor visitor(pool);
 	return boost::apply_visitor(visitor, data);
 }
+
+string htmlEscape(string htmlCode) {
+	string result;
+	bool resultEmpty = true;
+
+	const char* replacements[256];
+	memzero(replacements);
+	replacements[(int)'&'] = "&amp;";
+	replacements[(int)'<'] = "&lt;";
+	replacements[(int)'>'] = "&gt;";
+	replacements[(int)'"'] = "&quot;";
+	replacements[(int)'\''] = "&#39;";
+
+	unsigned int oldIdx = 0;
+	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
+		if (replacements[(int)htmlCode[idx]] != NULL) {
+			if (resultEmpty){
+				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
+				resultEmpty = false;
+			}
+
+			result.append(htmlCode, oldIdx, idx - oldIdx);
+			result.append(replacements[(int)htmlCode[idx]]);
+			oldIdx = idx + 1;
+		}
+	}
+
+	if (resultEmpty) {
+		return htmlCode;
+	}
+	else {
+		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
+		return result;
+	}
+}

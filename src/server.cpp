@@ -8,6 +8,7 @@
 #include<boost/algorithm/string/predicate.hpp>
 #include<functional>
 #include<string.h>
+#include<memory>
 #include"utils.h"
 #include"server.h"
 #include"except.h"
@@ -15,7 +16,8 @@
 #include"path.h"
 #include"logger.h"
 #include"pymlIterator.h"
-
+#include"rawPymlParser.h"
+#include"v2PymlParser.h"
 
 #include"dbg.h"
 
@@ -508,13 +510,14 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 	DBG_FMT("constructFromFilename(%1%)", filename);
 	string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
-	PymlFile::CacheInfo cacheInfo {serverCache, serverRoot};
-	if (canContainPython(filename)){
-		return pool.construct(PymlFile::SrcInfo {source, false}, cacheInfo);
+	unique_ptr<IPymlParser> parser;
+	if (canContainPython(filename)) {
+		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache, serverRoot));
 	}
 	else{
-		return pool.construct(PymlFile::SrcInfo {source, true}, cacheInfo);
+		parser = unique_ptr<IPymlParser>(new RawPymlParser());
 	}
+	return pool.construct(source.begin(), source.end(), parser);
 }
 
 void Server::onServerCacheMiss(std::string filename){

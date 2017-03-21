@@ -1,0 +1,38 @@
+@for ... in ... : \n
+.
+.
+.
+@/for
+
+@expr_to_print
+
+@!expr_to_print_raw
+
+@{ py code }
+
+@if ... : \n
+.
+.
+.
+@/if
+
+\@... (ramane)
+
+
+
+start =
+      ((char_ - '\' - '@')*
+    | ('\' << char_)
+    | ( '@' << at_item))
+at_item =
+      "if" ws py_code_non_colon ':' start if_trailer
+    | "for" ws py_code_non_in 'in' py_code_non_colon ':' start '@/for'
+    | "import" ws py_code_non_ws ws
+    | "import" ws py_code_non_ws
+    | '!' py_code_non_ws ws
+    | '!' py_code_non_ws
+    | py_code_non_ws ws
+    | py_code_non_ws
+
+if_trailer =
+      "@/if"
