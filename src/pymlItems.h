@@ -1,26 +1,26 @@
 #pragma once
 #include<string>
 #include<vector>
-#include<stack>
 #include<boost/pool/object_pool.hpp>
 #include<boost/variant.hpp>
+#include"IPymlCache.h"
 
 
-class PymlItem {
+class PymlItem : public IPymlItem {
 public:
-	virtual std::string runPyml() const {
+	virtual std::string runPyml() const override {
 		return "";
 	}
-	
-	virtual bool isDynamic() const {
+
+	virtual bool isDynamic() const override {
 		return false;
 	}
 
-	virtual const PymlItem* getNext(const PymlItem* last) const {
+	virtual const IPymlItem* getNext(const IPymlItem* last) const override {
 		return NULL;
 	}
 
-	virtual const std::string* getEmbeddedString(std::string* storage) const {
+	virtual const std::string* getEmbeddedString(std::string* storage) const override {
 		return NULL;
 	}
 };
@@ -32,11 +32,11 @@ public:
 	PymlItemStr(const std::string& str){
 		this->str = str;
 	}
-	
+
 	std::string runPyml() const override {
 		return str;
 	}
-	
+
 	bool isDynamic() const override {
 		return false;
 	}
@@ -53,13 +53,13 @@ public:
 	PymlItemSeq(const std::vector<const PymlItem*>& items){
 		this->items = items;
 	}
-	
+
 	std::string runPyml() const override;
 	bool isDynamic() const override;
-	
+
 	const PymlItem* tryCollapse() const;
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
 
@@ -70,7 +70,7 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
-	
+
 	bool isDynamic() const override {
 		return true;
 	}
@@ -89,7 +89,7 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
-	
+
 	bool isDynamic() const override {
 		return true;
 	}
@@ -108,12 +108,12 @@ public:
 		this->code = code;
 	}
 	std::string runPyml() const override;
-	
+
 	bool isDynamic() const override {
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override{
+	const IPymlItem* getNext(const IPymlItem* last) const override{
 		if (last == NULL){
 			runPyml();
 		}
@@ -126,21 +126,21 @@ class PymlItemIf : public PymlItem {
 	std::string conditionCode;
 	const PymlItem* itemIfTrue;
 	const PymlItem* itemIfFalse;
-	
+
 public:
 	PymlItemIf(const std::string& conditionCode, const PymlItem* itemIfTrue, const PymlItem* itemIfFalse){
 		this->conditionCode = conditionCode;
 		this->itemIfTrue = itemIfTrue;
 		this->itemIfFalse = itemIfFalse;
 	}
-	
+
 	std::string runPyml() const override;
-	
+
 	bool isDynamic() const override {
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
 
@@ -148,9 +148,9 @@ class PymlItemFor : public PymlItem {
 	std::string initCode;
 	std::string conditionCode;
 	std::string updateCode;
-	
+
 	const PymlItem* loopItem;
-	
+
 public:
 	PymlItemFor(const std::string& initCode, const std::string& conditionCode, const std::string& updateCode, const PymlItem* loopItem){
 		this->initCode = initCode;
@@ -158,14 +158,36 @@ public:
 		this->updateCode = updateCode;
 		this->loopItem = loopItem;
 	}
-	
+
 	std::string runPyml() const override;
-	
+
 	bool isDynamic() const override {
 		return true;
 	}
 
-	const PymlItem* getNext(const PymlItem* last) const override;
+	const IPymlItem* getNext(const IPymlItem* last) const override;
+};
+
+
+class PymlItemEmbed : public PymlItem {
+private:
+	std::string filename;
+	IPymlCache& cache;
+
+public:
+	PymlItemEmbed(std::string filename, IPymlCache& cache)
+			: filename(filename), cache(cache){
+	}
+
+	std::string runPyml() const override{
+		return cache.get(filename)->runPyml();
+	}
+
+	const IPymlItem* getNext(const IPymlItem* last) const override;
+
+	bool isDynamic() const override {
+		return cache.get(filename)->isDynamic();
+	}
 };
 
 
@@ -178,11 +200,12 @@ struct PymlItemPool {
 	boost::object_pool<PymlItemPyExec> pyExecPool;
 	boost::object_pool<PymlItemIf> ifExecPool;
 	boost::object_pool<PymlItemFor> forExecPool;
+	boost::object_pool<PymlItemEmbed> embedPool;
 };
 
 
 struct PymlWorkingItem {
-	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For };
+	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For, Embed };
 	struct NoneData {
 	};
 	struct StrData {
@@ -206,80 +229,22 @@ struct PymlWorkingItem {
 		std::string updateCode;
 		PymlWorkingItem* loopItem;
 	};
-	
-	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData> data;
-	
-	Type type; //TODO: set
+	struct EmbedData {
+		std::string filename;
+		IPymlCache* cache;
+	};
+
+	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData, EmbedData> data;
+
+	Type type;
 	PymlWorkingItem(Type type);
-	
+
 	template<typename T>
 	T* getData(){
 		return boost::get<T>(&data);
 	}
-	
+
 	const PymlItem* getItem(PymlItemPool& pool) const;
-	
+
 };
 
-
-class PymlFile {
-	const PymlItem* rootItem;
-	
-	int state;
-	std::string workingBackBuffer;
-	char workingStr[65536];
-	unsigned int workingIdx;
-	unsigned int absIdx;
-	unsigned int saveIdx;
-	
-	std::stack<PymlWorkingItem> itemStack;
-	PymlItemPool pool;
-	boost::object_pool<PymlWorkingItem> workingItemPool;
-	std::string tmpStr;
-	
-	int krItIndex;
-	
-	template<typename T>
-	bool stackTopIsType(){
-		return !itemStack.empty() && boost::get<T>(&itemStack.top().data) != nullptr;
-	}
-	
-	template<typename T>
-	T& getStackTop(){
-		return boost::get<T>(itemStack.top().data);
-	}
-	
-	template<typename T>
-	T& popStackTop(){
-		T& result = boost::get<T>(itemStack.top().data);
-		itemStack.pop();
-		return result;
-	}
-	
-	const PymlItem* parseFromSource(const std::string& source);
-	bool consumeOne(char chr);
-	
-	void addPymlWorkingStr(const std::string& str);
-	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
-	void pushPymlWorkingIf(const std::string& condition);
-	bool addSeqToPymlWorkingIf(bool isElse);
-	void pushPymlWorkingFor();
-	void addCodeToPymlWorkingFor(int where, const std::string& code);
-	bool addSeqToPymlWorkingFor();
-	void pushPymlWorkingForIn(std::string entry, std::string collection);
-	void pushPymlWorkingSeq();
-	void addPymlStackTop();
-	
-public:
-	PymlFile(const std::string& source, bool isRaw = false);
-	
-	PymlFile(PymlFile&) = delete;
-	PymlFile(PymlFile const&) = delete;
-	
-	bool isDynamic() const;
-	std::string runPyml() const;
-
-	const PymlItem* getRootItem() const{
-		return rootItem;
-	}
-};

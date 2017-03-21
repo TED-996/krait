@@ -5,7 +5,8 @@ By severity:
 <#embed filename #>: late include
 <%view view_name %vm python code %>
 
-* dedent: fix bugs; simplify.
+* !!compile exec scripts!
+* !!set eval() filename to be more descriptive (better than <string>); maybe find a way to get python script line number/at least idx?
 
 * Moderate:
     * HTTP compliance:

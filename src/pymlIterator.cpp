@@ -5,7 +5,7 @@
 
 using namespace std;
 
-PymlIterator::PymlIterator(const PymlItem* rootItem){
+PymlIterator::PymlIterator(const IPymlItem* rootItem){
 	items.push(rootItem);
 
 	lastValuePtr = rootItem->getEmbeddedString(&tmpStr);
@@ -32,8 +32,8 @@ PymlIterator& PymlIterator::operator++(){
 	const string* retStr = NULL;
 	while(retStr == NULL && !items.empty()){
 		//Starting a new item.
-		const PymlItem* lastItem = NULL;
-		const PymlItem* nextItem = items.top()->getNext(NULL);
+		const IPymlItem* lastItem = NULL;
+		const IPymlItem* nextItem = items.top()->getNext(NULL);
 		while (nextItem == NULL && !items.empty()){
 			lastItem = items.top();
 			items.pop();

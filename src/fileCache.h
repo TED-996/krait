@@ -19,13 +19,12 @@ private:
 public:
 	typedef T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool, char* tagDest);
 	typedef void (*cacheEventFunction)(std::string filename);
-	typedef void (*hashFunction)(T& item, unsigned char destination[16]);
 
 private:
 	boost::object_pool<T> pool;
 	constructorFunction constructor;
 	cacheEventFunction onCacheMiss;
-	hashFunction itemHashFunction;
+	bool frozen;
 
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
@@ -60,9 +59,14 @@ private:
 public:
 	FileCache(constructorFunction constructor, cacheEventFunction onCacheMiss)
 		: constructor(constructor), onCacheMiss(onCacheMiss){
+		frozen = false;
 	}
 
 	bool existsNewer(std::string filename, std::time_t time){
+		if (frozen){
+			return true;
+		}
+
 		if (!boost::filesystem::exists(filename)){
 			BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 		}
@@ -108,5 +112,13 @@ public:
 		}
 
 		return cacheMap[filename].tag;
+	}
+
+	void freeze(){
+		frozen = true;
+	}
+
+	void unfreeze(){
+		frozen = false;
 	}
 };

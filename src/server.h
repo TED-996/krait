@@ -9,9 +9,9 @@
 #include"routes.h"
 #include"network.h"
 #include"response.h"
-#include"pyml.h"
+#include "pymlFile.h"
 #include"stringPiper.h"
-#include"fileCache.h"
+#include"pymlCache.h"
 #include"cacheController.h"
 
 
@@ -33,7 +33,6 @@ class Server {
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
-	Response getResponseFromSource(std::string filename);
 	void addDefaultHeaders(Response& response, std::string filename, Request& request);
 	Response getResponseFromSource(std::string filename, Request& request);
 
@@ -46,7 +45,7 @@ class Server {
 
 	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
 	
-	static bool canContainPython(std::string filename);
+	bool canContainPython(std::string filename);
 
 	static void initSignals();
 
@@ -56,16 +55,16 @@ class Server {
 	static void signalKillRequested(int sig);
 	static std::unordered_set<int> pids;
 
-	static StringPiper cacheRequestPipe;
-	static bool interpretCacheRequest;
-	static FileCache<PymlFile> serverCache;
-	static void updateParentCaches();
+	StringPiper cacheRequestPipe;
+	bool interpretCacheRequest;
+	PymlCache serverCache;
+	void updateParentCaches();
 
-	static PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
-	static void onServerCacheMiss(std::string filename);
+	PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
+	void onServerCacheMiss(std::string filename);
 
-	static bool getPymlIsDynamic(std::string filename);
-	static IteratorResult getPymlResultRequestCache(std::string filename);
+	bool getPymlIsDynamic(std::string filename);
+	IteratorResult getPymlResultRequestCache(std::string filename);
 
 	bool stdinDisconnected;
 

@@ -18,3 +18,5 @@ void pythonSetGlobalRequest(std::string name, Request value);
 
 std::string pythonGetGlobalStr(std::string name);
 std::map<std::string, std::string> pythonGetGlobalMap(std::string name);
+
+std::string pythonPrepareStr(std::string pyCode);
