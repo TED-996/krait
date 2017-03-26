@@ -4,9 +4,13 @@
 #include"path.h"
 #include "v2PymlParser.h"
 
+
 #include "dbg.h"
 
 using namespace std;
+
+
+V2PymlParserFsm V2PymlParser::parserFsm;
 
 
 V2PymlParser::V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot)
@@ -17,11 +21,38 @@ V2PymlParser::V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot)
 
 
 void V2PymlParser::consume(std::string::iterator start, std::string::iterator end){
-	BOOST_THROW_EXCEPTION(serverError() << stringInfo("v2 parser not implemented yet."));
+	//BOOST_THROW_EXCEPTION(serverError() << stringInfo("v2 parser not implemented yet."));
+
+	while(itemStack.size() != 0){
+		itemStack.pop();
+	}
+	itemStack.emplace(PymlWorkingItem::Type::Seq);
+
+	parserFsm.reset();
+	parserFsm.setParser(this);
+	while(start != end){
+		parserFsm.consumeOne(*start);
+		start++;
+	}
+
+	parserFsm.doFinalPass();
+
+	if (itemStack.size() != 1){
+		DBG_FMT("Error unexpected end! state is %1%", parserFsm.getState());
+		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("Error parsing pyml file: Unexpected end, tag not closed."));
+	}
+
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		DBG_FMT("Error top not Seq! State is %1%", parserFsm.getState());
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: after consuming file, working item is not PymlWorkingItem::SeqData."));
+	}
+
+	const PymlItem* result = itemStack.top().getItem(pool);
+	rootItem = result;
 }
 
 
-IPymlItem* V2PymlParser::getParsed(){
+const IPymlItem* V2PymlParser::getParsed(){
 	return rootItem;
 }
 
@@ -70,7 +101,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 
 void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
 	itemStack.emplace(PymlWorkingItem::Type::If);
-	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition;
+	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition; //TODO: prepare + trim !!IMPORTANT
 }
 
 void V2PymlParser::pushPymlWorkingFor() {
@@ -82,7 +113,7 @@ void V2PymlParser::pushPymlWorkingSeq() {
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
 }
 
-bool V2PymlParser::addSeqToPymlWorkingIf(bool isElse){
+bool V2PymlParser::addSeqToPymlWorkingIf() {
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		return false;
 	}
@@ -101,23 +132,16 @@ bool V2PymlParser::addSeqToPymlWorkingIf(bool isElse){
 		return false;
 	}
 
-	if (isElse){
-		if (data->itemIfFalse != NULL){
-			return false;
-		}
-		else{
-			data->itemIfFalse = item;
-			return true;
-		}
+	if (data->itemIfTrue == nullptr){
+		data->itemIfTrue = item;
+		return true;
+	}
+	else if (data->itemIfFalse == nullptr){
+		data->itemIfFalse = item;
+		return true;
 	}
 	else{
-		if (data->itemIfTrue != NULL){
-			return false;
-		}
-		else{
-			data->itemIfTrue = item;
-			return true;
-		}
+		return false;
 	}
 }
 
@@ -174,7 +198,9 @@ void V2PymlParser::addPymlStackTop() {
 	}
 
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
-		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
+		BOOST_THROW_EXCEPTION(
+				serverError() <<
+				stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 
@@ -201,3 +227,249 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 
 	//DBG("done!");
 }
+
+
+V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 30) { //TODO: tune
+	parser = nullptr;
+	init();
+}
+
+void V2PymlParserFsm::init() {
+	typedef SimpleFsmTransition Simple;
+	typedef ActionFsmTransition Action;
+	typedef SavepointSetFsmTransition SavepointSet;
+	typedef SavepointRevertFsmTransition SavepointRevert;
+	typedef PushFsmTransition Push;
+	typedef DiscardFsmTransition Discard;
+	typedef AlwaysFsmTransition Always;
+	typedef AndConditionFsmTransition Condition;
+	typedef SkipFsmTransition Skip;
+	typedef WhitespaceFsmTransition Whitespace;
+	typedef OrFinalFsmTransition OrFinal;
+
+	typedef PymlAddStrTransition PymlAddStr;
+
+	const size_t start = 0;
+	const size_t atRoot = 1;
+	const size_t atRoot2 = 2;
+	const size_t execRoot = 3;
+	const size_t evalRoot = 4;
+	const size_t evalRawRoot = 5;
+
+	const size_t atI = 6;
+	const size_t atIf = 7;
+	const size_t ifRoot = 8;
+	const size_t elseRoot = 9;
+
+	const size_t atFor = 10;
+	const size_t forEntry = 11;
+	const size_t forPreIn = 12;
+	const size_t forPostIn = 13;
+	const size_t forCollection = 14;
+
+	const size_t atSlash = 15;
+	const size_t endIf = 16;
+	const size_t endFor = 17;
+
+	const size_t atImport = 18;
+	const size_t importRoot = 19;
+
+
+	std::string bracketDepthKey("bracketDepth");
+
+	add(start, new SavepointSet(new Simple('@', atRoot)));
+	add(start, new Always(start));
+
+	add(atRoot, new SavepointRevert(new Simple('@', start)));
+	add(atRoot, new SavepointSet(new PymlAddStr(&parser, new SavepointRevert(new Always(atRoot2)))));
+
+	// @{...}
+	add(atRoot2, new Skip(new Action(new Simple('{', execRoot), [=](FsmV2& fsm) {fsm.setProp(bracketDepthKey, 0);})));
+	//Finish @{...}
+	add(execRoot, new PymlAddPyCodeTransition(&parser,
+	                                           new Skip(new Condition(new Simple('}', start),
+	                                                                  [=](char chr, FsmV2& fsm) {
+	                                                                      return fsm.getProp(bracketDepthKey) == 0;})),
+	                                           PymlWorkingItem::Type::PyExec));
+	//Increase depth
+	add(execRoot, new Action(new Simple('{', execRoot), [=](FsmV2& fsm) {
+		fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);
+	}));
+	//Decrease depth
+	add(execRoot, new Action(new Condition(new Simple('}', start),
+	                                        [=](char chr, FsmV2& fsm) {return fsm.getProp(bracketDepthKey) != 0;}),
+	                          [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);}));
+	//escape strings
+	addStringLiteralParser(execRoot, execRoot, '\"', '\\');
+	addStringLiteralParser(execRoot, execRoot, '\'', '\\');
+	//continue PyExec
+	add(execRoot, new Always(execRoot));
+
+	// @if
+	// Start with an 'i'
+	add(atRoot2, new Simple('i', atI));
+	// Continue with an 'f'
+	add(atI, new Simple('f', atIf));
+	// Whitespace after 'if'
+	add(atIf, new Discard(new Whitespace(ifRoot)));
+	// Otherwise, simple eval
+	add(atIf, new Always(evalRoot, false));
+	//Quotes inside if condition
+	addStringLiteralParser(ifRoot, ifRoot, '\"', '\\');
+	addStringLiteralParser(ifRoot, ifRoot, '\'', '\\');
+	//Finish if
+	add(ifRoot, new PymlAddIfTransition(&parser, new Skip(new Simple(':', start))));
+	//Continue if condition
+	add(ifRoot, new Always(ifRoot));
+
+	// @else
+	addBulkParser(atRoot2, elseRoot, evalRoot, "else");
+	// Finish @else:
+	add(elseRoot, new PymlAddElseTransition(&parser, new Simple(':', start)));
+	// Optionally consume whitespace
+	add(elseRoot, new Whitespace(elseRoot));
+	// Otherwise, if's a simple eval
+	add(elseRoot, new Always(evalRoot, false));
+
+	// @/
+	add(atRoot2, new Simple('/', atSlash));
+
+	// @/if
+	addBulkParser(atSlash, endIf, evalRoot, "if");
+	// Finish /if with whitespace
+	add(endIf, new PymlFinishIfTransition(&parser, new OrFinal(new Whitespace(start))));
+	// Finish /if with @
+	add(endIf, new PymlFinishIfTransition(&parser, new Skip(new Simple('@', start))));
+	// Otherwise, simple eval
+	add(endIf, new Always(evalRoot, false));
+
+	// @for ... in ...:
+	addBulkParser(atSlash, atFor, evalRoot, "for");
+	// Continue to set entry
+	add(atFor, new Discard(new Skip(new Whitespace(forEntry))));
+	// Otherwise, simple eval
+	add(atFor, new Always(evalRoot, false));
+	// Quotes setting entry (probably not really useful but you never know)
+	addStringLiteralParser(forEntry, forEntry, '\"', '\\');
+	addStringLiteralParser(forEntry, forEntry, '\'', '\\');
+	// Whitespace before 'in'
+	add(forEntry, new SavepointSet(new Whitespace(forPreIn)));
+	// Continue for entry
+	add(forEntry, new Always(forEntry));
+	// actual "in"
+	addBulkParser(forPreIn, forPostIn, forEntry, "in");
+	// Otherwise, entry not finished.
+	add(forPreIn, new Always(forEntry, false));
+	// If whitespace after "in"
+	add(forPostIn, new Push(new SavepointRevert(new Whitespace(forCollection))));
+	// Otherwise, it wasn't a true "in"
+	add(forPostIn, new Always(forEntry, false));
+	// String literals in for collection
+	addStringLiteralParser(forCollection, forCollection, '\"', '\\');
+	addStringLiteralParser(forCollection, forCollection, '\'', '\\');
+	// End of collection
+	add(forCollection, new PymlAddForInTransition(&parser, new Push(new Skip(new Simple(':', start)))));
+	// Continue for collection
+	add(forCollection, new Always(forCollection));
+
+	// /for
+	addBulkParser(atSlash, endFor, evalRoot, "for");
+	// Finish with whitespace
+	add(endFor, new PymlFinishForTransition(&parser, new OrFinal(new Whitespace(start))));
+	// Finish with @
+	add(endFor, new PymlFinishForTransition(&parser, new Skip(new Simple('@', start))));
+	// Otherwise, simple eval
+	add(endFor, new Always(evalRoot, false));
+
+	// @import
+	addBulkParser(atI, atImport, evalRoot, "mport");
+	// Whitespace after @import
+	add(atImport, new Discard(new Skip(new Whitespace(importRoot))));
+	// Otherwise, simple eval
+	add(atImport, new Always(evalRoot, false));
+	// At import: quoted strings
+	addStringLiteralParser(importRoot, importRoot, '\"', '\\');
+	addStringLiteralParser(importRoot, importRoot, '\'', '\\');
+	// Finish at import with whitespace
+	add(atImport, new PymlAddEmbedTransition(&parser, new OrFinal(new Whitespace(start))));
+	// TODO: ADD ORFINAL EVERYWHERE
+	// TODO: END ACTIONS: finalAddPymlStr
+	// Finish import with @
+	add(atImport, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
+	// Continue @import
+	add(atImport, new Always(atImport));
+
+	//Add more @... here
+
+
+	//Cleanup:
+	// @i: if not "if" or "import", it's a simple eval
+	add(atI, new Always(evalRoot, false));
+	// @/: if not if or for, simple eval (it's probably going to fail, but the fail location may be more intuitive)
+	add(atSlash, new Always(evalRoot, false));
+
+	// @!expr
+	add(atRoot2, new Skip(new Simple('!', evalRawRoot)));
+	// Finish by whitespace
+	add(evalRawRoot, new PymlAddPyCodeTransition(&parser,
+	                                             new OrFinal(new Whitespace(start)), PymlWorkingItem::PyEvalRaw));
+	// Finish by @...@
+	add(evalRawRoot, new PymlAddPyCodeTransition(&parser,
+	                                             new Skip(new Simple('@', start)), PymlWorkingItem::PyEvalRaw));
+	//TODO: do ^^^ this for (most) instances of WhitespaceFsmTransition (including things like /if)
+	// Escape strings
+	addStringLiteralParser(evalRawRoot, evalRawRoot, '\"', '\\');
+	addStringLiteralParser(evalRawRoot, evalRawRoot, '\'', '\\');
+	// Continue PyEvalRaw
+	add(evalRawRoot, new Always(evalRawRoot));
+
+	// @expr; THIS MUST BE THE LAST @... TRANSITIONS
+	add(atRoot2, new Skip(new Always(evalRoot, false)));
+	// Finish by whitespace
+	add(evalRoot, new PymlAddPyCodeTransition(&parser, new OrFinal(new Whitespace(start)), PymlWorkingItem::PyEval));
+	// Finish by @...@
+	add(evalRoot, new PymlAddPyCodeTransition(&parser, new Skip(new Simple('@', start)), PymlWorkingItem::PyEval));
+	// Escape strings
+	addStringLiteralParser(evalRoot, evalRoot, '\"', '\\');
+	addStringLiteralParser(evalRoot, evalRoot, '\'', '\\');
+	// Continue PyEvalRaw
+	add(evalRoot, new Always(evalRoot));
+
+	addFinalActionToMany([=](FsmV2& fsm){ finalAddPymlStr();}, {
+		start, atRoot, atRoot2
+	});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+		stringInfo("Incomplete '@...'/'@!...' Python expression, most likely unfinished string literal"));},
+	                     {evalRoot, evalRawRoot});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+		stringInfo("Unterminated '@{ ... }' block."));},
+	                     {execRoot});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+		stringInfo("Incomplete '@if ... :' instruction."));},
+	                     {ifRoot});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+	    stringInfo("Incomplete '@else:' instruction."));},
+	                     {elseRoot});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+		stringInfo("Incomplete '@for ... in ... :' instruction."));},
+	                     {forEntry, forPreIn, forPostIn, forCollection});
+	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
+		stringInfo("Incomplete '@import ...' instruction."));},
+	                     {importRoot});
+	addFinalActionToMany([=](FsmV2& fsm){ BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat(
+				"BUG IN PYML PARSER: stuck in final state %1%", fsm.getState()
+		));},
+	                     {atI, atIf, atFor, atSlash, endIf, endFor, atImport});
+}
+
+void V2PymlParserFsm::finalAddPymlStr() {
+	string pymlStr = getResetStored();
+	if (pymlStr.length() != 0){
+		parser->addPymlWorkingStr(pymlStr);
+	}
+}
+
+void V2PymlParserFsm::finalThrowError(const pymlError &err) {
+	BOOST_THROW_EXCEPTION(err);
+}
+

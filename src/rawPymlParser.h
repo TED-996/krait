@@ -9,5 +9,5 @@ public:
 	RawPymlParser();
 
 	void consume(std::string::iterator start, std::string::iterator end);
-	IPymlItem* getParsed();
+	const IPymlItem* getParsed();
 };

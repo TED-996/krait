@@ -9,6 +9,6 @@ void RawPymlParser::consume(std::string::iterator start, std::string::iterator e
 	pymlItem = PymlItemStr(std::string(start, end));
 }
 
-IPymlItem *RawPymlParser::getParsed() {
+const IPymlItem *RawPymlParser::getParsed() {
 	return &pymlItem;
 }

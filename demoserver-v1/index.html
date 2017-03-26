@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!
+import time
+import random
+ !>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Welcome to Krait!</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/jumbotron-narrow.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <div class="container">
+        <! page_url = "/" !>
+        <%embed .header.html %>
+
+      <!
+      randVal = random.randrange(2)
+      suffixes = {
+        1 : "st",
+        2 : "nd",
+        3 : "rd"
+      }
+      !>
+
+      <div class="jumbotron">
+        <h1>Welcome to Krait!</h1>
+        <p class="lead">Originally it said "Merry Christmas from Krait" but the holidays are over :(</p>
+        <p><a class="btn btn-lg btn-success" href="#" role="button">Click this button today!</a></p>
+        <p>It's <@ time.strftime("%x") @> already! </p>
+      </div>
+
+      <?if randVal == 0 ?>
+        <?for idx=1 ?; idx <= 3 ?; idx+=1 ?>
+          <div class="alert alert-info">
+            <h3> LOOK AT IT (for the <@ str(idx) + suffixes.get(idx, "th") @> time) </h3>
+            <p> this appears 3 times but it's in the original html only once! YEAAAH demos! </p>
+          </div>
+        </for>
+      </if>
+
+      <h2> Why choose Krait? </h2>
+
+      <!
+      subh_left = [
+        ("New car smell", "Krait is still new!"),
+        ("Support budding developers", "there's lots of love here"),
+        ("Bug hunting!", "Spot a bug? Let me know!")
+      ]
+      subh_right = [
+        ("Python!", "Why choose PHP when you can choose Python?"),
+        ("Seriously, Python.", "it's just an awesome language"),
+        ("Python is a selling point", "Look at it!")
+      ]
+      !>
+
+      <div class="row marketing">
+        <div class="col-lg-6">
+          <?for heading, para ?in subh_left ?>
+            <h4><@ heading @></h4>
+            <p><@ para @></p>
+          </for>
+        </div>
+
+        <div class="col-lg-6">
+          <?for heading, para ?in subh_right ?>
+            <h4><@ heading @></h4>
+            <p><@ para @></p>
+          </for>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <p>Made with raw hearts!</p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+</html>

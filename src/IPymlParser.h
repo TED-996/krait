@@ -5,5 +5,5 @@
 class IPymlParser {
 public:
 	virtual void consume(std::string::iterator start, std::string::iterator end) = 0;
-	virtual IPymlItem* getParsed() = 0;
+	virtual const IPymlItem* getParsed() = 0;
 };

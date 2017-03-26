@@ -28,6 +28,7 @@ struct routeError: virtual rootException {};
 struct notFoundError : virtual rootException {};
 struct serverError: virtual rootException {};
 struct cmdrError: virtual rootException {};
+struct pymlError: virtual rootException {};
 
 struct notImplementedError: virtual rootException {};
 
