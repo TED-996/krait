@@ -22,6 +22,7 @@ V2PymlParser::V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot)
 
 void V2PymlParser::consume(std::string::iterator start, std::string::iterator end){
 	//BOOST_THROW_EXCEPTION(serverError() << stringInfo("v2 parser not implemented yet."));
+	DBG_FMT("consuming a len of %1%", end - start);
 
 	while(itemStack.size() != 0){
 		itemStack.pop();
@@ -31,6 +32,7 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 	parserFsm.reset();
 	parserFsm.setParser(this);
 	while(start != end){
+		DBG_FMT("consuming %1% in state %2%", *start, parserFsm.getState());
 		parserFsm.consumeOne(*start);
 		start++;
 	}
@@ -91,7 +93,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 	std::string newFilename = (embedRoot / filename).string();
 	DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
 	DBG("calling checkExists()");
-	pathCheckExists(newFilename);
+	//pathCheckExists(newFilename);
 
 	newItem->getData<PymlWorkingItem::EmbedData>()->filename = newFilename;
 	newItem->getData<PymlWorkingItem::EmbedData>()->cache = &cache;
@@ -221,6 +223,7 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
 	                     % krIterator % collection % entry).str();
 
+	pushPymlWorkingFor();
 	addCodeToPymlWorkingFor(0, initCode);
 	addCodeToPymlWorkingFor(1, condCode);
 	addCodeToPymlWorkingFor(2, updateCode);
@@ -229,7 +232,7 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 }
 
 
-V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 30) { //TODO: tune
+V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 50) { //TODO: tune
 	parser = nullptr;
 	init();
 }
@@ -281,7 +284,7 @@ void V2PymlParserFsm::init() {
 	add(start, new Always(start));
 
 	add(atRoot, new SavepointRevert(new Simple('@', start)));
-	add(atRoot, new SavepointSet(new PymlAddStr(&parser, new SavepointRevert(new Always(atRoot2)))));
+	add(atRoot, new SavepointSet(new PymlAddStr(&parser, new SavepointRevert(new Always(atRoot2, false)))));
 
 	// @{...}
 	add(atRoot2, new Skip(new Action(new Simple('{', execRoot), [=](FsmV2& fsm) {fsm.setProp(bracketDepthKey, 0);})));
@@ -344,7 +347,7 @@ void V2PymlParserFsm::init() {
 	add(endIf, new Always(evalRoot, false));
 
 	// @for ... in ...:
-	addBulkParser(atSlash, atFor, evalRoot, "for");
+	addBulkParser(atRoot2, atFor, evalRoot, "for");
 	// Continue to set entry
 	add(atFor, new Discard(new Skip(new Whitespace(forEntry))));
 	// Otherwise, simple eval
@@ -391,13 +394,13 @@ void V2PymlParserFsm::init() {
 	addStringLiteralParser(importRoot, importRoot, '\"', '\\');
 	addStringLiteralParser(importRoot, importRoot, '\'', '\\');
 	// Finish at import with whitespace
-	add(atImport, new PymlAddEmbedTransition(&parser, new OrFinal(new Whitespace(start))));
+	add(importRoot, new PymlAddEmbedTransition(&parser, new OrFinal(new Whitespace(start))));
 	// TODO: ADD ORFINAL EVERYWHERE
 	// TODO: END ACTIONS: finalAddPymlStr
 	// Finish import with @
-	add(atImport, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
+	add(importRoot, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
 	// Continue @import
-	add(atImport, new Always(atImport));
+	add(importRoot, new Always(atImport));
 
 	//Add more @... here
 
@@ -424,7 +427,7 @@ void V2PymlParserFsm::init() {
 	add(evalRawRoot, new Always(evalRawRoot));
 
 	// @expr; THIS MUST BE THE LAST @... TRANSITIONS
-	add(atRoot2, new Skip(new Always(evalRoot, false)));
+	add(atRoot2, new Always(evalRoot, false));
 	// Finish by whitespace
 	add(evalRoot, new PymlAddPyCodeTransition(&parser, new OrFinal(new Whitespace(start)), PymlWorkingItem::PyEval));
 	// Finish by @...@

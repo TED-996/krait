@@ -1,5 +1,6 @@
 #include "fsmV2.h"
 #include "except.h"
+#include "dbg.h"
 
 using namespace std;
 
@@ -91,7 +92,7 @@ void FsmV2::addToBulk(size_t state, FsmTransition *transition) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested bulk state to add transition to larger than maximum."));
 	}
 
-	transitions[maxState + state].emplace_back(transition);
+	transitions[state].emplace_back(transition);
 }
 
 void FsmV2::addStateActionToBulk(size_t state, FsmV2::fsmAction action) {
@@ -99,7 +100,7 @@ void FsmV2::addStateActionToBulk(size_t state, FsmV2::fsmAction action) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add action to larger than maximum."));
 	}
 
-	stateActions[maxState + state].push_back(action);
+	stateActions[state].push_back(action);
 }
 
 void FsmV2::setSavepoint(size_t offset) {
@@ -238,6 +239,7 @@ void FsmV2::consumeOne(char chr) {
 			found->execute(*this);
 			state = found->getNextState(*this);
 			consumed = found->isConsume(*this);
+			DBG_FMT("consumed: %1% to state %2%", consumed, state);
 		}
 	}
 
