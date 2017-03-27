@@ -1,7 +1,6 @@
 #pragma once
 #include <stack>
 #include <string>
-#include <boost/filesystem.hpp>
 #include "pymlItems.h"
 #include "IPymlCache.h"
 #include "IPymlParser.h"
@@ -210,7 +209,6 @@ private:
 	boost::object_pool<PymlWorkingItem> workingItemPool;
 
 	IPymlCache& cache;
-	boost::filesystem::path embedRoot;
 
 	int krItIndex;
 
@@ -246,7 +244,7 @@ public:
 	void pushPymlWorkingSeq();
 	void addPymlStackTop();
 
-	V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot);
+	V2PymlParser(IPymlCache& cache);
 
 	void consume(std::string::iterator start, std::string::iterator end);
 	const IPymlItem* getParsed();

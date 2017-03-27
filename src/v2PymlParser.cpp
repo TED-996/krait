@@ -13,8 +13,8 @@ using namespace std;
 V2PymlParserFsm V2PymlParser::parserFsm;
 
 
-V2PymlParser::V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot)
-	: cache(cache), embedRoot(embedRoot){
+V2PymlParser::V2PymlParser(IPymlCache& cache)
+	: cache(cache){
 	rootItem = NULL;
 	krItIndex = 0;
 }
@@ -94,7 +94,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Embed);
 
-	std::string newFilename = (embedRoot / filename).string();
+	std::string newFilename = formatString("krait.get_full_path(%1%)", filename);
 	DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
 	//DBG("calling checkExists()");
 	//pathCheckExists(newFilename);

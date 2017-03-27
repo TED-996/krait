@@ -128,11 +128,19 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 	if (last == NULL){
-		return cache.get(filename)->getRootItem();
+		return cache.get(pythonEval(filename))->getRootItem();
 	}
 	else {
 		return NULL;
 	}
+}
+
+std::string PymlItemEmbed::runPyml() const {
+	return cache.get(pythonEval(filename))->runPyml();
+}
+
+bool PymlItemEmbed::isDynamic() const {
+	return cache.get(pythonEval(filename))->isDynamic();
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
@@ -221,7 +229,7 @@ public:
 	}
 
 	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(embedData.filename, *embedData.cache);
+		return pool.embedPool.construct(pythonPrepareStr(embedData.filename), *embedData.cache);
 	}
 };
 

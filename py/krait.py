@@ -1,5 +1,9 @@
 import urllib
 import collections
+import os
+
+
+site_root = ""
 
 
 class Request:
@@ -47,7 +51,8 @@ class Request:
             boundary = boundary[1:-1]
         boundary = "--" + boundary
         boundary_next = "\r\n" + boundary
-        
+        print "found  multipart form data with boundary", boundary
+
         result = []
         found_idx = 0 if self.body.startswith(boundary) else self.body.find(boundary_next)
         while found_idx != -1 and self.body[found_idx + len(boundary_next):found_idx + len(boundary_next) + 2] != "--":
@@ -103,7 +108,7 @@ class Request:
         if query_string is None or query_string == "":
             return dict()
 
-        result=dict()
+        result = dict()
         for field in query_string.split('&'):
             items = field.split('=')
             if len(items) == 1:
@@ -166,3 +171,8 @@ class IteratorWrapper:
         except StopIteration:
             self.over = True
             return None
+
+
+def get_full_path(filename):
+    global site_root
+    return os.path.join(site_root, filename)

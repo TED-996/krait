@@ -239,7 +239,7 @@ void FsmV2::consumeOne(char chr) {
 			found->execute(*this);
 			state = found->getNextState(*this);
 			consumed = found->isConsume(*this);
-			DBG_FMT("consumed: %1% to state %2%", consumed, state);
+			//DBG_FMT("consumed: %1% to state %2%", consumed, state);
 		}
 	}
 

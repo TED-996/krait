@@ -180,15 +180,11 @@ public:
 			: filename(filename), cache(cache){
 	}
 
-	std::string runPyml() const override{
-		return cache.get(filename)->runPyml();
-	}
+	std::string runPyml() const override;
 
 	const IPymlItem* getNext(const IPymlItem* last) const override;
 
-	bool isDynamic() const override {
-		return cache.get(filename)->isDynamic();
-	}
+	bool isDynamic() const override;
 };
 
 

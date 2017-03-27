@@ -513,7 +513,7 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 	unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
 		DBG("choosing v2 pyml parser");
-		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache, serverRoot));
+		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
 	}
 	else{
 		parser = unique_ptr<IPymlParser>(new RawPymlParser());
