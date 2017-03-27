@@ -22,7 +22,7 @@ V2PymlParser::V2PymlParser(IPymlCache& cache, boost::filesystem::path embedRoot)
 
 void V2PymlParser::consume(std::string::iterator start, std::string::iterator end){
 	//BOOST_THROW_EXCEPTION(serverError() << stringInfo("v2 parser not implemented yet."));
-	DBG_FMT("consuming a len of %1%", end - start);
+	//DBG_FMT("consuming a len of %1%", end - start);
 
 	while(itemStack.size() != 0){
 		itemStack.pop();
@@ -32,7 +32,7 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 	parserFsm.reset();
 	parserFsm.setParser(this);
 	while(start != end){
-		DBG_FMT("consuming %1% in state %2%", *start, parserFsm.getState());
+		//DBG_FMT("In state %1%: consuming ch %2%", parserFsm.getState(), *start);
 		parserFsm.consumeOne(*start);
 		start++;
 	}
@@ -60,6 +60,7 @@ const IPymlItem* V2PymlParser::getParsed(){
 
 
 void V2PymlParser::addPymlWorkingStr(const std::string& str) {
+	//DBG_FMT("added str %1%", str);
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
@@ -72,6 +73,8 @@ void V2PymlParser::addPymlWorkingStr(const std::string& str) {
 
 
 void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) {
+	//DBG_FMT("added pycode %1%", code);
+
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
@@ -84,6 +87,7 @@ void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::s
 }
 
 void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
+	//DBG_FMT("added embed %1%", filename);
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
@@ -92,7 +96,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 
 	std::string newFilename = (embedRoot / filename).string();
 	DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
-	DBG("calling checkExists()");
+	//DBG("calling checkExists()");
 	//pathCheckExists(newFilename);
 
 	newItem->getData<PymlWorkingItem::EmbedData>()->filename = newFilename;
@@ -102,6 +106,8 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 }
 
 void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
+	//DBG_FMT("added @if %1%:", condition);
+
 	itemStack.emplace(PymlWorkingItem::Type::If);
 	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition; //TODO: prepare + trim !!IMPORTANT
 }
@@ -116,6 +122,7 @@ void V2PymlParser::pushPymlWorkingSeq() {
 }
 
 bool V2PymlParser::addSeqToPymlWorkingIf() {
+	//DBG("finished if block");
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		return false;
 	}
@@ -148,6 +155,8 @@ bool V2PymlParser::addSeqToPymlWorkingIf() {
 }
 
 bool V2PymlParser::addSeqToPymlWorkingFor() {
+	//DBG("finished for block");
+
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		return false;
 	}
@@ -172,6 +181,8 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 
 
 void V2PymlParser::addCodeToPymlWorkingFor(int where, const std::string& code) {
+	//DBG_FMT("added code %1% at pos %2% in @for", code, where);
+
 	if (!stackTopIsType<PymlWorkingItem::ForData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Parser error: tried to add code to <?for ?> without a for being on top"));
 	}
@@ -210,7 +221,7 @@ void V2PymlParser::addPymlStackTop() {
 }
 
 void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collection){
-	//DBG_FMT("for in with entries %1% and %2%", entry, collection);
+	//DBG_FMT("Added @for %1% in %2%:", entry, collection);
 
 	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
@@ -299,9 +310,9 @@ void V2PymlParserFsm::init() {
 		fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);
 	}));
 	//Decrease depth
-	add(execRoot, new Action(new Condition(new Simple('}', start),
+	add(execRoot, new Action(new Condition(new Simple('}', execRoot),
 	                                        [=](char chr, FsmV2& fsm) {return fsm.getProp(bracketDepthKey) != 0;}),
-	                          [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);}));
+	                          [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) - 1);}));
 	//escape strings
 	addStringLiteralParser(execRoot, execRoot, '\"', '\\');
 	addStringLiteralParser(execRoot, execRoot, '\'', '\\');
@@ -400,7 +411,7 @@ void V2PymlParserFsm::init() {
 	// Finish import with @
 	add(importRoot, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
 	// Continue @import
-	add(importRoot, new Always(atImport));
+	add(importRoot, new Always(importRoot));
 
 	//Add more @... here
 

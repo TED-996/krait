@@ -18,8 +18,8 @@
   </head>
 
   <body>
-    <! page_url = "/db.html" !>
-    <%embed .header.html %>
+    @{ page_url = "/db.html" }
+    @import .header.html
 
     <div class="container">
 
@@ -43,7 +43,7 @@
 
         <h3> See others' messages! </h3>
 
-        <!
+        @{
         conn = sqlite3.connect(sqlite_db)
         c = conn.cursor()
 
@@ -51,18 +51,18 @@
         messages = c.fetchall()
 
         conn.close()
-        !>
+        }
 
-        <?for name, message ?in messages ?>
+        @for name, message in messages:
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <p><@ name @> says:</p>
+                    <p>@name says:</p>
                 </div>
                 <div class="panel-body">
-                    <p><@ message @></p>
+                    <p>@message@</p>
                 </div>
             </div>
-        </for>
+        @/for
 
     </div><!-- /.container -->
 

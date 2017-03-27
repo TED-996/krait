@@ -357,7 +357,7 @@ public:
 	: transition(transition), condition(condition){
 	}
 	bool isMatch(char chr, FsmV2& fsm) override {
-		return condition(chr, fsm) || transition->isMatch(chr, fsm);
+		return condition(chr, fsm) && transition->isMatch(chr, fsm);
 	}
 	size_t getNextState(FsmV2 &fsm) override {
 		return transition->getNextState(fsm);
