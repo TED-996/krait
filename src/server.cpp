@@ -8,6 +8,7 @@
 #include<boost/algorithm/string/predicate.hpp>
 #include<functional>
 #include<string.h>
+#include<memory>
 #include"utils.h"
 #include"server.h"
 #include"except.h"
@@ -15,9 +16,11 @@
 #include"path.h"
 #include"logger.h"
 #include"pymlIterator.h"
-
+#include"rawPymlParser.h"
+#include"v2PymlParser.h"
 
 #include"dbg.h"
+#include "rawPythonPymlParser.h"
 
 using namespace std;
 using namespace boost;
@@ -466,20 +469,25 @@ string Server::expandFilename(string filename) {
 			//DBG("Adding .html automatically");
 			filename += ".html";
 		}
-		if (filesystem::exists(filename + ".htm")){
+		else if (filesystem::exists(filename + ".htm")){
 			//DBG("Adding .htm automatically");
 			filename += ".htm";
 		}
-		if (filesystem::exists(filename + ".pyml")){
+		else if (filesystem::exists(filename + ".pyml")){
 			//DBG("Adding .pyml automatically");
 			filename += ".pyml";
 		}
+		else if (filesystem::exists(filename + ".py")){
+			filename += ".py";
+		}
 		
-		if (path(filename).extension() == ".html" && filesystem::exists(filesystem::change_extension(filename, ".htm"))){
+		else if (path(filename).extension() == ".html" &&
+				filesystem::exists(filesystem::change_extension(filename, ".htm"))){
 			filename = filesystem::change_extension(filename, "htm").string();
 			//DBG("Changing extension to .htm");
 		}
-		if (path(filename).extension() == ".htm" && filesystem::exists(filesystem::change_extension(filename, ".html"))){
+		else if (path(filename).extension() == ".htm" &&
+				filesystem::exists(filesystem::change_extension(filename, ".html"))){
 			filename = filesystem::change_extension(filename, "html").string();
 			//DBG("Changing extension to .html");
 		}
@@ -508,13 +516,18 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 	DBG_FMT("constructFromFilename(%1%)", filename);
 	string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
-	PymlFile::CacheInfo cacheInfo {serverCache, serverRoot};
-	if (canContainPython(filename)){
-		return pool.construct(PymlFile::SrcInfo {source, false}, cacheInfo);
+	unique_ptr<IPymlParser> parser;
+	if (canContainPython(filename)) {
+		DBG("choosing v2 pyml parser");
+		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
+	}
+	else if (ends_with(filename, ".py")){
+		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser());
 	}
 	else{
-		return pool.construct(PymlFile::SrcInfo {source, true}, cacheInfo);
+		parser = unique_ptr<IPymlParser>(new RawPymlParser());
 	}
+	return pool.construct(source.begin(), source.end(), parser);
 }
 
 void Server::onServerCacheMiss(std::string filename){

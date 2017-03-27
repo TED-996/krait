@@ -128,11 +128,19 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 	if (last == NULL){
-		return cache.get(filename)->getRootItem();
+		return cache.get(pythonEval(filename))->getRootItem();
 	}
 	else {
 		return NULL;
 	}
+}
+
+std::string PymlItemEmbed::runPyml() const {
+	return cache.get(pythonEval(filename))->runPyml();
+}
+
+bool PymlItemEmbed::isDynamic() const {
+	return cache.get(pythonEval(filename))->isDynamic();
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
@@ -221,11 +229,46 @@ public:
 	}
 
 	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(embedData.filename, *embedData.cache);
+		return pool.embedPool.construct(pythonPrepareStr(embedData.filename), *embedData.cache);
 	}
 };
 
 const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
 	GetItemVisitor visitor(pool);
 	return boost::apply_visitor(visitor, data);
+}
+
+string htmlEscape(string htmlCode) {
+	string result;
+	bool resultEmpty = true;
+
+	const char* replacements[256];
+	memzero(replacements);
+	replacements[(int)'&'] = "&amp;";
+	replacements[(int)'<'] = "&lt;";
+	replacements[(int)'>'] = "&gt;";
+	replacements[(int)'"'] = "&quot;";
+	replacements[(int)'\''] = "&#39;";
+
+	unsigned int oldIdx = 0;
+	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
+		if (replacements[(int)htmlCode[idx]] != NULL) {
+			if (resultEmpty){
+				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
+				resultEmpty = false;
+			}
+
+			result.append(htmlCode, oldIdx, idx - oldIdx);
+			result.append(replacements[(int)htmlCode[idx]]);
+			oldIdx = idx + 1;
+		}
+	}
+
+	if (resultEmpty) {
+		return htmlCode;
+	}
+	else {
+		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
+		return result;
+	}
 }

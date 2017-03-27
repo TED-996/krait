@@ -10,8 +10,7 @@ sys.path.append(krait_py_dir)
 print sys.path
 
 import krait
-
-
+krait.site_root = project_dir
 
 response = None
 
