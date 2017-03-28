@@ -18,17 +18,15 @@
   </head>
 
   <body>
-    @{ page_url = "/http.html" }
-    @import ".header.html"
+  @import-ctrl (mvc.SimpleCtrl(".header.html",{"page_url":"/http.html"}))
+
 
     <div class="container">
 
       <div class="starter-template">
         <h1>Your Request</h1>
         <p class="lead">This is an approximation of your HTTP request:</p>
-          @{
-
-          result = "{} {}{} {}\n{}\n\n{}".format(
+          <pre>@("{} {}{} {}\n{}\n\n{}".format(
           request.http_method,
           request.url,
 
@@ -36,9 +34,7 @@
           request.http_version,
           "\n".join(["{}: {}".format(key, value) for key, value in request.headers.iteritems()]),
           request.body
-
-          )}
-        <pre>@result@</pre>
+              ))@</pre>
       </div>
 
     </div><!-- /.container -->

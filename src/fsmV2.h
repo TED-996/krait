@@ -72,6 +72,7 @@ public:
 
 	void addBulkParser(size_t startState, size_t endState, size_t failState, std::string strToMatch);
 	void addStringLiteralParser(size_t startState, size_t endState, char delimiter, char escapeChr);
+	void addBlockParser(size_t startState, size_t endState, char blockStart, char blockEnd);
 
 	void consumeOne(char chr);
 	void doFinalPass();

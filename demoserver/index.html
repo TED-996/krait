@@ -22,8 +22,7 @@ import random
   <body>
 
     <div class="container">
-        @{ page_url = "/" }
-        @import ".header.html"
+        @import-ctrl (mvc.SimpleCtrl(".header.html", {"page_url": "/"}))
       @{
       randVal = random.randrange(2)
       suffixes = {
@@ -43,7 +42,7 @@ import random
       @if randVal == 0:
         @for idx in range(3):
           <div class="alert alert-info">
-            <h3> LOOK AT IT (for the @str(idx)+suffixes.get(idx,"th") time) </h3>
+            <h3> LOOK AT IT (for the @(str(idx) + suffixes.get(idx, "th")) time) </h3>
             <p> this appears 3 times but it's in the original html only once! YEAAAH demos! </p>
           </div>
         @/for
