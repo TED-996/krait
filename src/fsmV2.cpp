@@ -221,6 +221,39 @@ void FsmV2::addStringLiteralParser(size_t startState, size_t endState, char deli
 	bulkFailState[escapeState - maxState] = startState;
 }
 
+void FsmV2::addBlockParser(size_t startState, size_t endState, char blockStart, char blockEnd) {
+	if (currBulkState + 1 >= maxBulkState){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("FSM error: Out of bulk states."));
+	}
+	const std::string depthPropName("FsmV2::addBlockParser::depth");
+
+	size_t consumeState = currBulkState;
+	currBulkState++;
+
+	// Begin: set prop to 0
+	addToBulk(startState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm){
+		fsm.setProp(depthPropName, 0);
+	}));
+	// Increase depth
+	addToBulk(consumeState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm){
+		fsm.setProp(depthPropName, fsm.getProp(depthPropName) + 1);
+	}));
+	// Decrease depth
+	addToBulk(consumeState, new AndConditionFsmTransition(
+			new ActionFsmTransition(new SimpleFsmTransition(blockEnd, consumeState), [=](FsmV2& fsm){
+		fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
+	}), [=](char ch, FsmV2& fsm) {return fsm.getProp(depthPropName) != 0;}));
+	// Finish block
+	addToBulk(consumeState, new AndConditionFsmTransition(
+			new ActionFsmTransition(new SimpleFsmTransition(blockEnd, endState), [=](FsmV2& fsm){
+				fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
+			}), [=](char ch, FsmV2& fsm) {return fsm.getProp(depthPropName) == 0;}));
+	// Otherwise, continue block
+	addToBulk(consumeState, new AlwaysFsmTransition(consumeState));
+
+	bulkFailState[consumeState - maxState] = startState;
+}
+
 void FsmV2::consumeOne(char chr) {
 	execStateAction();
 
@@ -248,6 +281,7 @@ void FsmV2::consumeOne(char chr) {
 	}
 }
 
+
 void FsmV2::doFinalPass() {
 	isFinalPass = true;
 	consumeOne('\n');
@@ -261,7 +295,6 @@ void FsmV2::doFinalPass() {
 		action(*this);
 	}
 }
-
 
 void FsmV2::execStateAction() {
 	if (state >= maxBulkState){

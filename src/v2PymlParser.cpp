@@ -256,7 +256,7 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 }
 
 
-V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 50) { //TODO: tune
+V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 60) { //TODO: tune
 	parser = nullptr;
 	init();
 }
@@ -343,7 +343,7 @@ void V2PymlParserFsm::init() {
 	add(atIf, new Discard(new Whitespace(ifRoot)));
 	// Otherwise, simple eval
 	add(atIf, new Always(evalRoot, false));
-	//Quotes inside if condition
+	// Quotes inside if condition
 	addStringLiteralParser(ifRoot, ifRoot, '\"', '\\');
 	addStringLiteralParser(ifRoot, ifRoot, '\'', '\\');
 	//Finish if
@@ -417,6 +417,8 @@ void V2PymlParserFsm::init() {
 	// At import: quoted strings
 	addStringLiteralParser(importRoot, importRoot, '\"', '\\');
 	addStringLiteralParser(importRoot, importRoot, '\'', '\\');
+	// Paranthesize import code to escape spaces
+	addBlockParser(importRoot, importRoot, '(', ')');
 	// Finish at import with whitespace
 	add(importRoot, new PymlAddEmbedTransition(&parser, new OrFinal(new Whitespace(start))));
 	// TODO: ADD ORFINAL EVERYWHERE
@@ -438,6 +440,8 @@ void V2PymlParserFsm::init() {
 	// TODO: or a variety with begin and end (addBlockParser('(', ')')
 	addStringLiteralParser(importCtrlRoot, importCtrlRoot, '\"', '\\');
 	addStringLiteralParser(importCtrlRoot, importCtrlRoot, '\'', '\\');
+	// Paranthesize import-ctrl to escape spaces
+	addBlockParser(importCtrlRoot, importCtrlRoot, '(', ')');
 	// Finish import-ctrl with whitespace
 	add(importCtrlRoot, new PymlAddCtrlTransition(&parser, new OrFinal(new Whitespace(start))));
 	// Finish import-ctrl with @
@@ -470,6 +474,8 @@ void V2PymlParserFsm::init() {
 	// Escape strings
 	addStringLiteralParser(evalRawRoot, evalRawRoot, '\"', '\\');
 	addStringLiteralParser(evalRawRoot, evalRawRoot, '\'', '\\');
+	// Paranthesize code to escape spaces
+	addBlockParser(evalRawRoot, evalRawRoot, '(', ')');
 	// Continue PyEvalRaw
 	add(evalRawRoot, new Always(evalRawRoot));
 
@@ -482,6 +488,8 @@ void V2PymlParserFsm::init() {
 	// Escape strings
 	addStringLiteralParser(evalRoot, evalRoot, '\"', '\\');
 	addStringLiteralParser(evalRoot, evalRoot, '\'', '\\');
+	// Paranthesize code to escape spaces
+	addBlockParser(evalRoot, evalRoot, '(', ')');
 	// Continue PyEvalRaw
 	add(evalRoot, new Always(evalRoot));
 
