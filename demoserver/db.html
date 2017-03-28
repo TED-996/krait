@@ -18,8 +18,8 @@
   </head>
 
   <body>
-    @{ page_url = "/db.html" }
-    @import ".header.html"
+    @import-ctrl mvc.SimpleCtrl(".header.html",{"page_url":"/db.html"})
+
 
     <div class="container">
 

@@ -22,8 +22,7 @@ import random
   <body>
 
     <div class="container">
-        @{ page_url = "/" }
-        @import ".header.html"
+        @import-ctrl mvc.SimpleCtrl(".header.html",{"page_url":"/"})
       @{
       randVal = random.randrange(2)
       suffixes = {

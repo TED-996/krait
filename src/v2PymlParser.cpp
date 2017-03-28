@@ -105,6 +105,19 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 	data.items.push_back(newItem);
 }
 
+void V2PymlParser::addPymlWorkingCtrl(const std::string &ctrlCode) {
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
+	}
+	pushPymlWorkingSeq();
+
+	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, formatString("ctrl = mvc.push_ctrl((%1%))", ctrlCode));
+	addPymlWorkingEmbed("ctrl.get_view()");
+	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, "ctrl = mvc.pop_ctrl()");
+
+	addPymlStackTop();
+}
+
 void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
 	//DBG_FMT("added @if %1%:", condition);
 
@@ -112,10 +125,10 @@ void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
 	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition; //TODO: prepare + trim !!IMPORTANT
 }
 
+
 void V2PymlParser::pushPymlWorkingFor() {
 	itemStack.emplace(PymlWorkingItem::Type::For);
 }
-
 
 void V2PymlParser::pushPymlWorkingSeq() {
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
@@ -154,6 +167,7 @@ bool V2PymlParser::addSeqToPymlWorkingIf() {
 	}
 }
 
+
 bool V2PymlParser::addSeqToPymlWorkingFor() {
 	//DBG("finished for block");
 
@@ -178,7 +192,6 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 	data->loopItem = item;
 	return true;
 }
-
 
 void V2PymlParser::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	//DBG_FMT("added code %1% at pos %2% in @for", code, where);
@@ -288,6 +301,8 @@ void V2PymlParserFsm::init() {
 	const size_t atImport = 18;
 	const size_t importRoot = 19;
 
+	const size_t atImportCtrl = 20;
+	const size_t importCtrlRoot = 21;
 
 	std::string bracketDepthKey("bracketDepth");
 
@@ -399,8 +414,6 @@ void V2PymlParserFsm::init() {
 	addBulkParser(atI, atImport, evalRoot, "mport");
 	// Whitespace after @import
 	add(atImport, new Discard(new Skip(new Whitespace(importRoot))));
-	// Otherwise, simple eval
-	add(atImport, new Always(evalRoot, false));
 	// At import: quoted strings
 	addStringLiteralParser(importRoot, importRoot, '\"', '\\');
 	addStringLiteralParser(importRoot, importRoot, '\'', '\\');
@@ -413,14 +426,37 @@ void V2PymlParserFsm::init() {
 	// Continue @import
 	add(importRoot, new Always(importRoot));
 
-	//Add more @... here
+	// @import-ctrl
+	// Start parser
+	addBulkParser(atImport, atImportCtrl, evalRoot, "-ctrl");
+	// Whitespace to mark importCtrl
+	add(atImportCtrl, new Discard(new Skip(new Whitespace(importCtrlRoot))));
+	// Otherwise simple eval
+	add(atImportCtrl, new Always(evalRoot, false));
+	// At import-ctrl
+	// TODO: should parantheses wrapping be as simple as addStringLiteralParser('(')?
+	// TODO: or a variety with begin and end (addBlockParser('(', ')')
+	addStringLiteralParser(importCtrlRoot, importCtrlRoot, '\"', '\\');
+	addStringLiteralParser(importCtrlRoot, importCtrlRoot, '\'', '\\');
+	// Finish import-ctrl with whitespace
+	add(importCtrlRoot, new PymlAddCtrlTransition(&parser, new OrFinal(new Whitespace(start))));
+	// Finish import-ctrl with @
+	add(importCtrlRoot, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
+	// Continue @import-ctrl
+	add(importCtrlRoot, new Always(importCtrlRoot));
 
 
-	//Cleanup:
+	// Add more @... here
+
+	// Cleanup:
 	// @i: if not "if" or "import", it's a simple eval
 	add(atI, new Always(evalRoot, false));
 	// @/: if not if or for, simple eval (it's probably going to fail, but the fail location may be more intuitive)
 	add(atSlash, new Always(evalRoot, false));
+	// not @import, not @import-ctrl => simple eval
+	add(atImport, new Always(evalRoot, false));
+
+
 
 	// @!expr
 	add(atRoot2, new Skip(new Simple('!', evalRawRoot)));

@@ -3,7 +3,7 @@
         <nav>
             <ul class="nav nav-pills pull-right">
                 @for name, url in header_items:
-                    @{ cl = 'class="active"' if url == page_url else "" }
+                    @{ cl = 'class="active"' if url == ctrl.page_url else "" }
                     <li role="presentation" @!cl@><a href="@url@">@name@</a></li>
                 @/for
             </ul>

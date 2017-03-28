@@ -11,6 +11,7 @@ public:
 	virtual void addPymlWorkingStr(const std::string& str) = 0;
 	virtual void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) = 0;
 	virtual void addPymlWorkingEmbed(const std::string& filename) = 0;
+	virtual void addPymlWorkingCtrl(const std::string& ctrlCode) = 0;
 	virtual void pushPymlWorkingIf(const std::string& condition) = 0;
 	virtual bool addSeqToPymlWorkingIf() = 0;
 	virtual void pushPymlWorkingFor() = 0;
@@ -82,6 +83,18 @@ private:
 			PymlRootTransition::execute(fsm);
 
 			(*parser)->addPymlWorkingEmbed(fsm.getResetStored());
+		}
+	};
+
+	class PymlAddCtrlTransition : public PymlRootTransition {
+	public:
+		PymlAddCtrlTransition(IV2PymlParser **parser, FsmTransition* base)
+		: PymlRootTransition(parser, base) {}
+	public:
+		void execute(FsmV2 &fsm) override {
+			PymlRootTransition::execute(fsm);
+
+			(*parser)->addPymlWorkingCtrl(fsm.getResetStored());
 		}
 	};
 
@@ -235,6 +248,7 @@ public:
 	void addPymlWorkingStr(const std::string& str);
 	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
 	void addPymlWorkingEmbed(const std::string& filename);
+	void addPymlWorkingCtrl(const std::string& ctrlCode);
 	void pushPymlWorkingIf(const std::string& condition);
 	bool addSeqToPymlWorkingIf();
 	void pushPymlWorkingFor();
