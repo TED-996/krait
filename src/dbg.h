@@ -1,6 +1,6 @@
 #pragma once
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #define DBG_ALL
 
 #ifdef DBG_ALL
