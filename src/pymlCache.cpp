@@ -11,7 +11,7 @@ PymlCache::PymlCache(PymlCache::constructorFunction constructor,PymlCache::cache
 };
 
 const IPymlFile* PymlCache::get(std::string filename){
-	DBG_FMT("PymlCache::get() on filename %1% (len %2%)", filename, filename.length());
+	//DBG_FMT("PymlCache::get() on filename %1% (len %2%)", filename, filename.length());
 	const auto it = cacheMap.find(filename);
 	if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
 		return replaceWithNewer(filename);
@@ -38,10 +38,10 @@ IPymlFile* PymlCache::constructAddNew(std::string filename, std::time_t time){
 const IPymlFile* PymlCache::replaceWithNewer(std::string filename){
 	const auto it = cacheMap.find(filename);
 
-	DBG_FMT("testing exists with filename %1%", filename);
+	//DBG_FMT("testing exists with filename %1%", filename);
 	if (!boost::filesystem::exists(filename)){
-		DBG("except in replaceWithNewer");
-		DBG_FMT("reading anyway: %1%", readFromFile(filename));
+		//DBG("except in replaceWithNewer");
+		//DBG_FMT("reading anyway: %1%", readFromFile(filename));
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 	}
 
@@ -58,7 +58,7 @@ bool PymlCache::existsNewer(std::string filename, std::time_t time){
 	}
 
 	if (!boost::filesystem::exists(filename)){
-		DBG("except in existsNewer");
+		//DBG("except in existsNewer");
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 	}
 

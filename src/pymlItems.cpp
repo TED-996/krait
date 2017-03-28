@@ -63,7 +63,7 @@ std::string PymlItemPyEvalRaw::runPyml() const {
 
 
 std::string PymlItemPyExec::runPyml() const {
-	DBG_FMT("running pyExec: %1%", code);
+	//DBG_FMT("running pyExec: %1%", code);
 	pythonRun(code);
 	return "";
 }

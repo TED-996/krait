@@ -95,7 +95,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 	PymlWorkingItem* newItem = workingItemPool.construct(PymlWorkingItem::Type::Embed);
 
 	std::string newFilename = formatString("krait.get_full_path(%1%)", filename);
-	DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
+	//DBG_FMT("embed filename is %1%, len %2%", newFilename, newFilename.length());
 	//DBG("calling checkExists()");
 	//pathCheckExists(newFilename);
 

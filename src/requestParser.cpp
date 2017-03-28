@@ -215,30 +215,30 @@ Request RequestParser::getRequest() {
 }
 
 bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
-	DBG_FMT("Version: %1%", httpVersion);
+	//DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
-		DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
+		//DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
 		return false;
 	}
 
 	string versionPart = httpVersion.substr(strlen("HTTP/"));
-	DBG_FMT("Version part: %1%", versionPart);
+	//DBG_FMT("Version part: %1%", versionPart);
 
 	if (versionPart.size() != 3) {
-		DBG_FMT("Version fail: %1%'s part %2% doesn't have 3 characters", httpVersion, versionPart);
+		//DBG_FMT("Version fail: %1%'s part %2% doesn't have 3 characters", httpVersion, versionPart);
 		return false;
 	}
 
 	size_t idx = 0;
 	*httpMajor = stoi(versionPart, &idx, 10);
 	if (idx != 1 || versionPart[1] != '.') {
-		DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
-		        versionPart);
+		//DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
+		//        versionPart);
 		return false;
 	}
 	*httpMinor = stoi(versionPart.substr(2), &idx, 10);
 	if (idx != 1) {
-		DBG_FMT("Version fail: %1%'s part %2% doesn't end with a single digit (idx = %3%)", httpVersion, versionPart, idx);
+		//DBG_FMT("Version fail: %1%'s part %2% doesn't end with a single digit (idx = %3%)", httpVersion, versionPart, idx);
 		return false;
 	}
 
