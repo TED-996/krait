@@ -18,18 +18,8 @@
   </head>
 
   <body>
+    @import-ctrl mvc.SimpleCtrl(".header.html",{"page_url":"/db.html"})
 
-    <div class="container">
-      <div class="header clearfix">
-        <nav>
-          <ul class="nav nav-pills pull-right">
-            <li role="presentation"><a href="/">Home</a></li>
-            <li role="presentation" class="active"><a href="db.html">DB Access</a></li>
-            <li role="presentation"><a href="http.html">Your Request</a></li>
-          </ul>
-        </nav>
-        <h3 class="text-muted"><@ project_name @></h3>
-      </div>
 
     <div class="container">
 
@@ -53,7 +43,7 @@
 
         <h3> See others' messages! </h3>
 
-        <!
+        @{
         conn = sqlite3.connect(sqlite_db)
         c = conn.cursor()
 
@@ -61,18 +51,18 @@
         messages = c.fetchall()
 
         conn.close()
-        !>
+        }
 
-        <?for name, message ?in messages ?>
+        @for name, message in messages:
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <p><@ name @> says:</p>
+                    <p>@name says:</p>
                 </div>
                 <div class="panel-body">
-                    <p><@ message @></p>
+                    <p>@message@</p>
                 </div>
             </div>
-        </for>
+        @/for
 
     </div><!-- /.container -->
 

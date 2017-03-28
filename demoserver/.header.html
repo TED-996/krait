@@ -1,0 +1,13 @@
+<div class="container">
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills pull-right">
+                @for name, url in header_items:
+                    @{ cl = 'class="active"' if url == ctrl.page_url else "" }
+                    <li role="presentation" @!cl@><a href="@url@">@name@</a></li>
+                @/for
+            </ul>
+        </nav>
+        <h3 class="text-muted">@project_name@</h3>
+    </div>
+</div>

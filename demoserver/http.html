@@ -18,31 +18,23 @@
   </head>
 
   <body>
+  @import-ctrl (mvc.SimpleCtrl(".header.html",{"page_url":"/http.html"}))
 
-    <div class="container">
-      <div class="header clearfix">
-        <nav>
-          <ul class="nav nav-pills pull-right">
-            <li role="presentation"><a href="/">Home</a></li>
-            <li role="presentation"><a href="db.html">DB Access</a></li>
-            <li role="presentation" class="active"><a href="http.html">Your Request</a></li>
-          </ul>
-        </nav>
-        <h3 class="text-muted"><@ project_name @></h3>
-      </div>
 
     <div class="container">
 
       <div class="starter-template">
         <h1>Your Request</h1>
         <p class="lead">This is an approximation of your HTTP request:</p>
+          <pre>@("{} {}{} {}\n{}\n\n{}".format(
+          request.http_method,
+          request.url,
 
-        <p class="code"> <@ "{} {} {}".format(request.http_method, request.url, request.http_version) @><br>
-        <?for header, value ?in request.headers.iteritems() ?>
-            <@ header @>: <@ value @><br>
-        </for>
-        <br>
-        <@ request.body @></p>
+          "" if len(request.query) == 0 else "?" + "&".join(["{}={}".format(key, value) for key, value in request.query.iteritems()]),
+          request.http_version,
+          "\n".join(["{}: {}".format(key, value) for key, value in request.headers.iteritems()]),
+          request.body
+              ))@</pre>
       </div>
 
     </div><!-- /.container -->
