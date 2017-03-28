@@ -51,7 +51,7 @@ class Request:
             boundary = boundary[1:-1]
         boundary = "--" + boundary
         boundary_next = "\r\n" + boundary
-        print "found  multipart form data with boundary", boundary
+        # print "found  multipart form data with boundary", boundary
 
         result = []
         found_idx = 0 if self.body.startswith(boundary) else self.body.find(boundary_next)

@@ -71,9 +71,21 @@ void V2PymlParser::addPymlWorkingStr(const std::string& str) {
 	data.items.push_back(newItem);
 }
 
+bool isWhitespace(const std::string& str){
+	for (auto ch : str){
+		if (!std::isspace(ch)){
+			return false;
+		}
+	}
+	return true;
+}
+
 
 void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) {
 	//DBG_FMT("added pycode %1%", code);
+	if (code.length() == 0 || isWhitespace(code)){
+		return;
+	}
 
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
@@ -87,6 +99,10 @@ void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::s
 }
 
 void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
+	if (filename.length() == 0 || isWhitespace(filename)){
+		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("Import filename code empty."));
+	}
+
 	//DBG_FMT("added embed %1%", filename);
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
@@ -109,6 +125,11 @@ void V2PymlParser::addPymlWorkingCtrl(const std::string &ctrlCode) {
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
+
+	if (ctrlCode.length() == 0 || isWhitespace(ctrlCode)){
+		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("import-ctrl controller code empty."));
+	}
+
 	pushPymlWorkingSeq();
 
 	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, formatString("ctrl = mvc.push_ctrl((%1%))", ctrlCode));
@@ -120,6 +141,9 @@ void V2PymlParser::addPymlWorkingCtrl(const std::string &ctrlCode) {
 
 void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
 	//DBG_FMT("added @if %1%:", condition);
+	if (condition.length() == 0 || isWhitespace(condition)){
+		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("If condition code empty."));
+	}
 
 	itemStack.emplace(PymlWorkingItem::Type::If);
 	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition; //TODO: prepare + trim !!IMPORTANT
@@ -199,6 +223,9 @@ void V2PymlParser::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	if (!stackTopIsType<PymlWorkingItem::ForData>()){
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Parser error: tried to add code to <?for ?> without a for being on top"));
 	}
+	if (code.length() == 0 || isWhitespace(code)){
+		return;
+	}
 
 	PymlWorkingItem::ForData& data = getStackTop<PymlWorkingItem::ForData>();
 
@@ -235,6 +262,10 @@ void V2PymlParser::addPymlStackTop() {
 
 void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collection){
 	//DBG_FMT("Added @for %1% in %2%:", entry, collection);
+
+	if (entry.length() == 0 || isWhitespace(entry) || collection.length() == 0 || isWhitespace(collection)){
+		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
+	}
 
 	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
