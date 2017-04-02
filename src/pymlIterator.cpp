@@ -14,7 +14,12 @@ PymlIterator::PymlIterator(const IPymlItem* rootItem){
 	}
 }
 
-PymlIterator::PymlIterator(const PymlIterator& other) = delete;
+PymlIterator::PymlIterator(const PymlIterator& other)
+	: items(other.items), tmpStr(other.tmpStr), lastValuePtr(other.lastValuePtr){
+	if (other.lastValuePtr == &other.tmpStr){
+		this->lastValuePtr = &this->tmpStr;
+	}
+}
 
 const string* PymlIterator::operator*(){
 	if (items.empty()){
