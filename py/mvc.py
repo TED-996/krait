@@ -35,3 +35,11 @@ def pop_ctrl():
     else:
         curr_ctrl = ctrl_stack.pop()
         return curr_ctrl
+
+
+init_ctrl = None
+
+
+def set_init_ctrl(ctrl):
+    global init_ctrl
+    init_ctrl = ctrl
