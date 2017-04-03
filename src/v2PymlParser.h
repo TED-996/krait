@@ -125,8 +125,9 @@ private:
 
 		void execute(FsmV2 &fsm) override {
 			PymlRootTransition::execute(fsm);
-
-			(*parser)->pushPymlWorkingForIn(fsm.popStoredString(), fsm.popStoredString());
+			std::string entry = fsm.popStoredString();
+			std::string collection = fsm.popStoredString();
+			(*parser)->pushPymlWorkingForIn(entry, collection);
 			(*parser)->pushPymlWorkingSeq();
 
 			fsm.resetStored();

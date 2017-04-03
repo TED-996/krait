@@ -76,3 +76,4 @@ docs/*
 err.log
 info.log
 callgrind-out/*
+**/*.pyc
