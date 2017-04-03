@@ -522,7 +522,7 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
 	}
 	else if (ends_with(filename, ".py")){
-		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser());
+		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
 	}
 	else{
 		parser = unique_ptr<IPymlParser>(new RawPymlParser());
@@ -572,10 +572,23 @@ void Server::addDefaultHeaders(Response& response, string filename, Request& req
 
 
 string Server::getContentType(string filename) {
-	filesystem::path filePath(filename);
-	string extension = filePath.extension().string();
-	if (extension == ".pyml"){
-		extension = filePath.stem().extension().string();
+	string extension;
+
+	if (pythonVarIsNone("content_type")) {
+		filesystem::path filePath(filename);
+		extension = filePath.extension().string();
+		if (extension == ".pyml") {
+			extension = filePath.stem().extension().string();
+		}
+	}
+	else{
+		string varContentType = pythonGetGlobalStr("content_type");
+		if (!starts_with(varContentType, "ext/")){
+			return varContentType;
+		}
+		else{
+			extension = varContentType.substr(4); //strlen("ext/")
+		}
 	}
 
 	//DBG_FMT("Extension: %1%", extension);

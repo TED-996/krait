@@ -194,18 +194,27 @@ string pyErrAsString() {
 	}
 }
 
-bool pythonVarIsNone(string name){
-	DBG("in pythonVarIsNone()");
+bool pythonVarIsNone(object module, string name){
+	DBG("in pythonVarIsNone(module, name)");
 	try {
-		return object(mainModule.attr(name.c_str())).is_none();
+		return object(module.attr(name.c_str())).is_none();
 	}
 	catch (error_already_set const&) {
-		DBG("Python error in pythonSetGlobal()!");
+		DBG("Python error in pythonSetGlobal(module, name)!");
 
 		string errorString = (format("Error in pythonSetGlobal(%1%, python::object):\n%2%") % name % pyErrAsString()).str();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
+}
+
+bool pythonVarIsNone(string name){
+	return pythonVarIsNone(mainModule, name);
+}
+
+
+bool pythonVarIsNone(string moduleName, string name){
+	return pythonVarIsNone(import(bp::str(moduleName)), name);
 }
 
 
