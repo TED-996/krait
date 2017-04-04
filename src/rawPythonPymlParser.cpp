@@ -18,7 +18,7 @@ void RawPythonPymlParser::consume(std::string::iterator start, std::string::iter
 	mainExec = PymlItemPyExec(pythonPrepareStr(std::string(start, end)));
 	embedSetupExec = PymlItemPyExec("ctrl = mvc.push_ctrl(mvc.init_ctrl)");
 	embedCleanupExec = PymlItemPyExec("ctrl = mvc.pop_ctrl()");
-	viewEmbed = PymlItemEmbed("ctrl.get_view()", cache);
+	viewEmbed = PymlItemEmbed("krait.get_full_path(ctrl.get_view())", cache);
 	embedRootSeq = PymlItemSeq(std::vector<const PymlItem*>({&embedSetupExec, &viewEmbed, &embedCleanupExec}));
 	ctrlCondition = PymlItemIf("mvc.init_ctrl is not None", &embedRootSeq, nullptr);
 	rootSeq = PymlItemSeq(std::vector<const PymlItem*>({&mainExec, &ctrlCondition}));

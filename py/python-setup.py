@@ -25,7 +25,9 @@ response = None
 # otherwise this is the content-type to send to the client.
 content_type = None
 
+
 def set_content_type(raw=None, ext=None):
+    global content_type
     if raw is not None:
         content_type = raw
     elif ext is not None:

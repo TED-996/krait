@@ -575,6 +575,7 @@ string Server::getContentType(string filename) {
 	string extension;
 
 	if (pythonVarIsNone("content_type")) {
+		DBG("No content_type set");
 		filesystem::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
@@ -583,11 +584,14 @@ string Server::getContentType(string filename) {
 	}
 	else{
 		string varContentType = pythonGetGlobalStr("content_type");
+		DBG_FMT("content_type set to %1%", varContentType);
+
 		if (!starts_with(varContentType, "ext/")){
 			return varContentType;
 		}
 		else{
-			extension = varContentType.substr(4); //strlen("ext/")
+			extension = varContentType.substr(3); //strlen("ext")
+			extension[0] = '.'; // /extension to .extension
 		}
 	}
 
