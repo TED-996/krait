@@ -5,7 +5,7 @@ class DbController(object):
     def __init__(self, db_filename):
         super(DbController, self).__init__()
 
-        self.page_url = "/db.html"
+        self.page_url = "/db"
         self.messages = None
         self.load_db(db_filename)
 

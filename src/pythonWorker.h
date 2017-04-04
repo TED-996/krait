@@ -10,6 +10,7 @@ void pythonRun(std::string command);
 std::string pythonEval(std::string command);
 bool pythonTest(std::string condition);
 bool pythonVarIsNone(std::string name);
+bool pythonVarIsNone(std::string module, std::string name);
 
 void pythonSetGlobal(std::string name, std::string value);
 void pythonSetGlobal(std::string name, std::map<std::string, std::string> value);

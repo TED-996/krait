@@ -173,11 +173,11 @@ public:
 class PymlItemEmbed : public PymlItem {
 private:
 	std::string filename;
-	IPymlCache& cache;
+	IPymlCache* cache;
 
 public:
 	PymlItemEmbed(std::string filename, IPymlCache& cache)
-			: filename(filename), cache(cache){
+			: filename(filename), cache(&cache){
 	}
 
 	std::string runPyml() const override;

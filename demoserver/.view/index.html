@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+      @{ set_content_type(ext="html") }
 
     <title>Welcome to Krait!</title>
 
@@ -27,7 +28,7 @@
       </div>
 
       @if ctrl.alerts_exist == 0:
-        @for idx in range(3):
+        @for idx in range(1, 4):
           <div class="alert alert-info">
             <h3> LOOK AT IT (for the @(str(idx) + ctrl.suffixes.get(idx, "th")) time) </h3>
             <p> this appears 3 times but it's in the original html only once! YEAAAH demos! </p>

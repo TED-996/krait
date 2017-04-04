@@ -176,3 +176,4 @@ class IteratorWrapper:
 def get_full_path(filename):
     global site_root
     return os.path.join(site_root, filename)
+

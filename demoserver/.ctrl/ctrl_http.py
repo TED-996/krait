@@ -2,7 +2,7 @@ class HttpController(object):
     def __init__(self, request):
         super(HttpController, self).__init__()
 
-        self.page_url = "/http.html"
+        self.page_url = "/http"
         self.request_str = "{} {}{} {}\n{}\n\n{}".format(
             request.http_method,
             request.url,

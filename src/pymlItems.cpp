@@ -128,7 +128,7 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 	if (last == NULL){
-		return cache.get(pythonEval(filename))->getRootItem();
+		return cache->get(pythonEval(filename))->getRootItem();
 	}
 	else {
 		return NULL;
@@ -136,11 +136,11 @@ const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 }
 
 std::string PymlItemEmbed::runPyml() const {
-	return cache.get(pythonEval(filename))->runPyml();
+	return cache->get(pythonEval(filename))->runPyml();
 }
 
 bool PymlItemEmbed::isDynamic() const {
-	return cache.get(pythonEval(filename))->isDynamic();
+	return cache->get(pythonEval(filename))->isDynamic();
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
