@@ -2,11 +2,10 @@ import urllib
 import collections
 import os
 
-
 site_root = ""
 
 
-class Request:
+class Request(object):
     MultipartFormData = collections.namedtuple("MultipartFormData", ["data", "name", "filename", "content_type"])
 
     def __init__(self, http_method, url, query_string, http_version, headers, body):
@@ -20,6 +19,7 @@ class Request:
     '''
     Returns a dict in the format {"name": "value", ... }
     '''
+
     def get_post_form(self):
         return Request._get_query(self.body)
 
@@ -30,6 +30,7 @@ class Request:
         * filename: string, filename of form part
         * content_type: content type of form part
     '''
+
     def get_multipart_form(self):
         content_type_multipart = self.headers.get("content-type")
         if content_type_multipart is None:
@@ -42,7 +43,7 @@ class Request:
             return None
         boundary_field = value_fields[1].strip()
         if not boundary_field.startswith("boundary="):
-            print "Error: asked for multipart form, but the request's boundary is missing (full value '{}')"\
+            print "Error: asked for multipart form, but the request's boundary is missing (full value '{}')" \
                 .format(content_type_multipart)
             return None
 
@@ -121,14 +122,15 @@ class Request:
         return "{} {}{} {}\r\n{}\r\n{}".format(
             self.http_method,
             self.url,
-            "?" + "&".join(["{}={}".format(k, v) for k, v in self.query.iteritems()]) if self.query is not dict() else "",
+            "?" + "&".join(
+                ["{}={}".format(k, v) for k, v in self.query.iteritems()]) if self.query is not dict() else "",
             self.http_version,
             "".join(["{}: {}\r\n".format(k, v) for k, v in self.headers.iteritems()]),
             self.body
         )
 
 
-class Response:
+class Response(object):
     status_reasons = {
         200: "OK",
         302: "Found",
@@ -156,7 +158,28 @@ class Response:
         )
 
 
-class IteratorWrapper:
+class ResponseNotFound(Response):
+    def __init__(self, headers=None):
+        super(ResponseNotFound, self).__init__("HTTP/1.1", 404, headers or [],
+                                               "<html><head><title>404 Not Found</title></head>"
+                                               "<body><h1>404 Not Found</h1></body></html>")
+
+
+class ResponseRedirect(Response):
+    def __init__(self, destination, headers=None):
+        headers = headers or []
+        headers.append(("Location", destination))
+        super(ResponseRedirect, self).__init__("HTTP/1.1", 302, headers, "")
+
+
+class ResponseBadRequest(Response):
+    def __init__(self, headers=None):
+        super(ResponseBadRequest, self).__init__("HTTP/1.1", 400, headers or [],
+                                               "<html><head><title>400 Bad Request</title></head>"
+                                               "<body><h1>404 Bad Request</h1></body></html>")
+
+
+class IteratorWrapper(object):
     def __init__(self, collection):
         self.iterator = iter(collection)
         self.over = False
@@ -176,4 +199,3 @@ class IteratorWrapper:
 def get_full_path(filename):
     global site_root
     return os.path.join(site_root, filename)
-
