@@ -1,5 +1,4 @@
 #include "rawPythonPymlParser.h"
-#include "pythonWorker.h"
 
 RawPythonPymlParser::RawPythonPymlParser(IPymlCache& cache)
 	:
@@ -15,7 +14,7 @@ RawPythonPymlParser::RawPythonPymlParser(IPymlCache& cache)
 
 void RawPythonPymlParser::consume(std::string::iterator start, std::string::iterator end) {
 	//A bit tedious, but worth it.
-	mainExec = PymlItemPyExec(pythonPrepareStr(std::string(start, end)));
+	mainExec = PymlItemPyExec(PythonModule::prepareStr(std::string(start, end)));
 	embedSetupExec = PymlItemPyExec("ctrl = mvc.push_ctrl(mvc.init_ctrl)");
 	embedCleanupExec = PymlItemPyExec("ctrl = mvc.pop_ctrl()");
 	viewEmbed = PymlItemEmbed("krait.get_full_path(ctrl.get_view())", cache);

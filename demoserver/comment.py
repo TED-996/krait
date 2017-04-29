@@ -1,9 +1,11 @@
+import krait
+import sqlite3
 
-post_form = request.get_post_form()
+post_form = krait.request.get_post_form()
 name = post_form["name"]
 message = post_form["text"]
 
-response = krait.Response("HTTP/1.1", 302, [("Location", "/db")], "")
+krait.response = krait.Response("HTTP/1.1", 302, [("Location", "/db")], "")
 
 conn = sqlite3.connect(sqlite_db)
 c = conn.cursor()
