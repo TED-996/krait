@@ -12,7 +12,7 @@
 #include"utils.h"
 #include"server.h"
 #include"except.h"
-#include"pythonWorker.h"
+#include "pythonModule.h"
 #include"path.h"
 #include"logger.h"
 #include"pymlIterator.h"
@@ -65,7 +65,7 @@ Server::Server(string serverRoot, int port) :
 
 	DBG("server socket got");
 
-	pythonInit(serverRoot);
+	PythonModule::initModules(serverRoot);
 
 	DBG("python initialized");
 
@@ -334,9 +334,9 @@ void Server::serveRequest(int clientSocket, Request& request) {
 			sourceFile = getFilenameFromTarget(targetReplaced);
 		}
 
-		pythonSetGlobalRequest("request", request);
-		pythonSetGlobal("url_params", params);
-		pythonSetGlobal("resp_headers", map<string, string>());
+		PythonModule::krait.setGlobalRequest("request", request);
+		PythonModule::krait.setGlobal("url_params", params);
+		PythonModule::krait.setGlobal("extra_headers", map<string, string>());
 
 		resp = getResponseFromSource(sourceFile, request);		
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
@@ -424,12 +424,12 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	else{
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
+		map<string, string> headersMap = PythonModule::krait.getGlobalMap("extra_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
 		
 
-		if (!pythonVarIsNone("response")){
-			result = Response(pythonEval("response"));
+		if (!PythonModule::krait.checkIsNone("response")){
+			result = Response(PythonModule::krait.eval("str(response)"));
 			for (const auto& header : headers){
 				result.addHeader(header.first, header.second);
 			}
@@ -440,7 +440,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	}
 
 	addStandardCacheHeaders(result, filename, cachePragma);
-	
+
 
 	addDefaultHeaders(result, filename, request);
 	
@@ -574,7 +574,7 @@ void Server::addDefaultHeaders(Response& response, string filename, Request& req
 string Server::getContentType(string filename) {
 	string extension;
 
-	if (pythonVarIsNone("content_type")) {
+	if (PythonModule::krait.checkIsNone("content_type")) {
 		DBG("No content_type set");
 		filesystem::path filePath(filename);
 		extension = filePath.extension().string();
@@ -583,7 +583,7 @@ string Server::getContentType(string filename) {
 		}
 	}
 	else{
-		string varContentType = pythonGetGlobalStr("content_type");
+		string varContentType = PythonModule::krait.getGlobalStr("content_type");
 		DBG_FMT("content_type set to %1%", varContentType);
 
 		if (!starts_with(varContentType, "ext/")){
