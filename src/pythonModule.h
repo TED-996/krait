@@ -18,7 +18,8 @@ public:
 	static PythonModule mvc;
 
 private:
-	static bool initialized;
+	static bool pythonInitialized;
+	static bool modulesInitialized;
 	static boost::python::object requestType;
 
 //Methods
@@ -47,9 +48,10 @@ public:
 	static std::string prepareStr(std::string pyCode);
 	static std::string errAsString();
 
-	static void initPython(std::string projectDir);
+	static void initPython();
+	static void initModules(std::string projectDir);
 private:
-	static void resetPython(std::string projectDir);
+	static void resetModules(std::string projectDir);
 
 //Structs
 private:

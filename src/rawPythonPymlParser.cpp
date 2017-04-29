@@ -1,4 +1,5 @@
 #include "rawPythonPymlParser.h"
+#include "pythonModule.h"
 
 RawPythonPymlParser::RawPythonPymlParser(IPymlCache& cache)
 	:

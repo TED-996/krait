@@ -6,7 +6,7 @@
 #include"path.h"
 #include"except.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
 
 using namespace std;
@@ -19,11 +19,12 @@ PythonModule PythonModule::krait("krait");
 PythonModule PythonModule::mvc("mvc");
 
 
-bool PythonModule::initialized = false;
+bool PythonModule::pythonInitialized = false;
+bool PythonModule::modulesInitialized = false;
 bp::object PythonModule::requestType;
 
 
-static PyObject* PythonModule::StringMapToPythonObjectConverter::convert(map<string, string> const& map) {
+PyObject* PythonModule::StringMapToPythonObjectConverter::convert(map<string, string> const& map) {
 	DBG("in map<string, string>->PyObject()");
 
 	dict result;
@@ -33,7 +34,7 @@ static PyObject* PythonModule::StringMapToPythonObjectConverter::convert(map<str
 	return incref(result.ptr());
 }
 
-static PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& request) {
+PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& request) {
 	DBG("in Request->PyObject()");
 
 	object result = PythonModule::requestType(
@@ -49,19 +50,45 @@ static PyObject* PythonModule::requestToPythonObjectConverter::convert(Request c
 }
 
 
-void PythonModule::initPython(string projectDir) {
-	DBG("in initPython()");
+void PythonModule::initPython() {
+	DBG("initializing python");
+	if (pythonInitialized){
+		return;
+	}
+	try {
+		Py_Initialize();
+		bp::to_python_converter<Request, requestToPythonObjectConverter>();
+		bp::to_python_converter<map<string, string>, StringMapToPythonObjectConverter>();
 
-	Py_Initialize();
-	bp::to_python_converter<Request, requestToPythonObjectConverter>();
-	bp::to_python_converter<map<string, string>, StringMapToPythonObjectConverter>();
+		bp::object mainModule = import("__main__");
+		bp::dict mainDict = extract<bp::dict>(mainModule.attr("__dict__"));
 
+		mainModule.attr("root_dir") = bp::str(getExecRoot().string());
+
+		bp::exec_file(bp::str((getExecRoot() / "py" / "python-setup.py").string()), mainDict, mainDict);
+	}
+	catch (error_already_set const&) {
+		DBG("Python error in initPython()!");
+
+		string errorString = string("Error in initPython:\n") + errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+
+	pythonInitialized = true;
+	DBG("python initialized");
+}
+
+
+void PythonModule::initModules(string projectDir) {
+	DBG("in initModules()");
+	initPython();
 
 	try {
-		pythonReset(projectDir);
+		resetModules(projectDir);
 	}
 	catch (pythonError& err) {
-		DBG("Python error in initPython()!");
+		DBG("Python error in initModules()!");
 		if (string const* errorString = get_error_info<stringInfo>(err)) {
 			BOOST_THROW_EXCEPTION(pythonError() << stringInfo(*errorString));
 		}
@@ -69,39 +96,48 @@ void PythonModule::initPython(string projectDir) {
 }
 
 
-void PythonModule::resetPython(string projectDir) {
+
+void PythonModule::resetModules(string projectDir) {
 	DBG("in pythonReset()");
 	try {
-		if (initialized) {
+		if (modulesInitialized) {
 			PythonModule::main.clear();
 			PythonModule::krait.clear();
 			PythonModule::mvc.clear();
 		}
-
 		PythonModule::main.setGlobal("project_dir", projectDir);
-		PythonModule::main.setGlobal("root_dir", getExecRoot().string());
 
-		PythonModule::main.execfile((getExecRoot() / "py" / "python-setup.py").string());
+		PythonModule::main.execfile((getExecRoot() / "py" / "site-setup.py").string());
 
 		requestType = PythonModule::krait.moduleGlobals["Request"];
 	}
 	catch (error_already_set const&) {
-		DBG("Python error in resetPython()!");
+		DBG("Python error in resetModules()!");
 
-		string errorString = string("Error in resetPython:\n") + errAsString();
+		string errorString = string("Error in resetModules:\n") + errAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 
-	initialized = true;
+	modulesInitialized = true;
 }
 
-
-
 PythonModule::PythonModule(std::string name) {
-	this->name = name;
-	moduleObject = import(bp::str(name));
-	moduleGlobals = extract<dict>(moduleObject.attr("__dict__"));
+	DBG_FMT("PythonModule(%1%)", name);
+	initPython();
+
+	try {
+		this->name = name;
+		moduleObject = import(bp::str(name));
+		moduleGlobals = extract<dict>(moduleObject.attr("__dict__"));
+	}
+	catch (error_already_set const&) {
+		DBG_FMT("Python error in PythonModule(%1%)!", name);
+
+		string errorString = formatString("Error in PythonModule(%1%):\n%2%", name , errAsString());
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
 }
 
 void PythonModule::clear() {
@@ -111,10 +147,10 @@ void PythonModule::clear() {
 void PythonModule::run(string command) {
 	DBG("in run()");
 	try {
-		exec(bp::str(command), moduleGlobals, moduleGlobals);
+		bp::exec(bp::str(command), moduleGlobals, moduleGlobals);
 	}
 	catch (error_already_set const&) {
-		DBG("Python error in pythonRun()!");
+		DBG("Python error in run()!");
 
 		string errorString = errAsString();
 		PyErr_Clear();
@@ -122,13 +158,14 @@ void PythonModule::run(string command) {
 	}
 }
 
+
 void PythonModule::execfile(std::string filename) {
-	DBG("in run()");
+	DBG("in execfile()");
 	try {
-		exec(bp::str(filename), moduleGlobals, moduleGlobals);
+		bp::exec_file(bp::str(filename), moduleGlobals, moduleGlobals);
 	}
 	catch (error_already_set const&) {
-		DBG("Python error in pythonRun()!");
+		DBG("Python error in execfile()!");
 
 		string errorString = errAsString();
 		PyErr_Clear();
@@ -142,7 +179,7 @@ void PythonModule::execfile(std::string filename) {
 string PythonModule::eval(string command) {
 	DBG("in pythonEval()");
 	try {
-		object result = eval(bp::str(command), moduleGlobals, moduleGlobals);
+		object result = bp::eval(bp::str(command), moduleGlobals, moduleGlobals);
 		bp::str resultStr(result);
 		return extract<string>(resultStr);
 	}
@@ -158,7 +195,7 @@ string PythonModule::eval(string command) {
 
 bool PythonModule::test(std::string condition){
 	try{
-		object result = eval(bp::str(condition), moduleGlobals, moduleGlobals);
+		object result = boost::python::eval(bp::str(condition), moduleGlobals, moduleGlobals);
 		return (bool)result;
 	}
 	catch(error_already_set const&){
@@ -208,7 +245,6 @@ string PythonModule::errAsString() {
 	}
 }
 
-
 bool PythonModule::checkIsNone(string name){
 	DBG("in pythonVarIsNone(name)");
 	try {
@@ -222,6 +258,7 @@ bool PythonModule::checkIsNone(string name){
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
 
 void PythonModule::setGlobal(string name, object value) {
 	DBG("in setGlobal()");
@@ -265,7 +302,6 @@ void PythonModule::setGlobalRequest(string name, Request value) {
 	}
 }
 
-
 string PythonModule::getGlobalStr(string name) {
 	DBG("in pythonGetGlobalStr()");
 	try {
@@ -281,6 +317,7 @@ string PythonModule::getGlobalStr(string name) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
 
 map<string, string> PythonModule::getGlobalMap(string name) {
 	DBG("in getGlobalMap()");
@@ -305,7 +342,6 @@ map<string, string> PythonModule::getGlobalMap(string name) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
-
 
 //Dedent string
 string PythonModule::prepareStr(string pyCode) {

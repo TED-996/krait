@@ -65,7 +65,7 @@ Server::Server(string serverRoot, int port) :
 
 	DBG("server socket got");
 
-	PythonModule::initPython(serverRoot);
+	PythonModule::initModules(serverRoot);
 
 	DBG("python initialized");
 
@@ -336,7 +336,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("resp_headers", map<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", map<string, string>());
 
 		resp = getResponseFromSource(sourceFile, request);		
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
@@ -424,7 +424,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	else{
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		map<string, string> headersMap = PythonModule::krait.getGlobalMap("resp_headers");
+		map<string, string> headersMap = PythonModule::krait.getGlobalMap("extra_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
 		
 
@@ -440,7 +440,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	}
 
 	addStandardCacheHeaders(result, filename, cachePragma);
-	
+
 
 	addDefaultHeaders(result, filename, request);
 	

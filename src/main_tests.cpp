@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(funcs_python) {
 	try {
 		cout << "\nTesting python:" << endl;
 
-		PythonModule::initPython("/home/ted/proiect/tests/server");
+		PythonModule::initModules("/home/ted/proiect/tests/server");
 		cout << "Python inited." << endl;
 
 		PythonModule::main.run("abc = [1, '2', 3, ('a', 'b'), {'c':'d'}]");
