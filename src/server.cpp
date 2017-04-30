@@ -49,13 +49,13 @@ Server::Server(string serverRoot, int port) :
 	socketToClose = -1;
 	clientWaitingResponse = false;
 	
-	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.xml";
+	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.json";
 	if (filesystem::exists(routesFilename)){
-		this->routes = getRoutesFromFile(routesFilename.string());
+		this->routes = Route::getRoutesFromFile(routesFilename.string());
 	}
 	else{
 		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
-		this->routes = getDefaultRoutes();
+		this->routes = Route::getDefaultRoutes();
 	}
 	
 	DBG("routes got");
@@ -323,16 +323,10 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		}
 
 		map<string, string> params;
-		Route route = getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
+		const Route& route = Route::getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
 
-		string sourceFile;
-		if (route.isDefaultTarget()) {
-			sourceFile = getFilenameFromTarget (request.getUrl());
-		}
-		else {
-			string targetReplaced = replaceParams(route.getTarget(), params);
-			sourceFile = getFilenameFromTarget(targetReplaced);
-		}
+		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		string sourceFile = getFilenameFromTarget(targetReplaced);
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
