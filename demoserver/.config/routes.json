@@ -1,0 +1,7 @@
+[
+  {
+    "verb": "POST",
+    "regex": "/comment"
+  },
+  {}
+]

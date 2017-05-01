@@ -4,7 +4,7 @@ import os
 project_name = "Krait Demo"
 header_items = [
     ("Home", "/"),
-    ("DB Access", "/db.html"),
-    ("Your Request", "/http.html")
+    ("DB Access", "/db"),
+    ("Your Request", "/http")
 ]
 sqlite_db = os.path.join(project_dir, ".private", "db")

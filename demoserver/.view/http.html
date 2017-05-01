@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Your HTTP request</title>
+      @{ krait.set_content_type(ext="html") }
+
+    <!-- Bootstrap core CSS -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="../css/jumbotron-narrow.css" rel="stylesheet">
+
+    <link href="../css/http.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+  @import ".view/header.html"
+
+
+    <div class="container">
+
+      <div class="starter-template">
+        <h1>Your Request</h1>
+        <p class="lead">This is an approximation of your HTTP request:</p>
+          <pre>@ctrl.request_str@</pre>
+      </div>
+
+    </div><!-- /.container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+  </body>
+</html>

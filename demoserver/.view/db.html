@@ -6,19 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>DB Access</title>
+      @{ krait.set_content_type(ext="html") }
 
     <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="css/jumbotron-narrow.css" rel="stylesheet">
+    <link href="../css/jumbotron-narrow.css" rel="stylesheet">
 
-    <link href="css/http.css" rel="stylesheet">
+    <link href="../css/http.css" rel="stylesheet">
 
   </head>
 
   <body>
-    @import-ctrl mvc.SimpleCtrl(".header.html",{"page_url":"/db.html"})
+    @import ".view/header.html"
 
 
     <div class="container">
@@ -43,17 +44,7 @@
 
         <h3> See others' messages! </h3>
 
-        @{
-        conn = sqlite3.connect(sqlite_db)
-        c = conn.cursor()
-
-        c.execute("select * from messages")
-        messages = c.fetchall()
-
-        conn.close()
-        }
-
-        @for name, message in messages:
+        @for name, message in ctrl.messages:
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <p>@name says:</p>
@@ -70,7 +61,7 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="js/jquery.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
   </body>
 </html>

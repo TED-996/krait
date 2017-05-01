@@ -12,7 +12,7 @@
 #include"utils.h"
 #include"server.h"
 #include"except.h"
-#include"pythonWorker.h"
+#include "pythonModule.h"
 #include"path.h"
 #include"logger.h"
 #include"pymlIterator.h"
@@ -49,13 +49,13 @@ Server::Server(string serverRoot, int port) :
 	socketToClose = -1;
 	clientWaitingResponse = false;
 	
-	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.xml";
+	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.json";
 	if (filesystem::exists(routesFilename)){
-		this->routes = getRoutesFromFile(routesFilename.string());
+		this->routes = Route::getRoutesFromFile(routesFilename.string());
 	}
 	else{
 		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
-		this->routes = getDefaultRoutes();
+		this->routes = Route::getDefaultRoutes();
 	}
 	
 	DBG("routes got");
@@ -65,7 +65,7 @@ Server::Server(string serverRoot, int port) :
 
 	DBG("server socket got");
 
-	pythonInit(serverRoot);
+	PythonModule::initModules(serverRoot);
 
 	DBG("python initialized");
 
@@ -323,20 +323,14 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		}
 
 		map<string, string> params;
-		Route route = getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
+		const Route& route = Route::getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
 
-		string sourceFile;
-		if (route.isDefaultTarget()) {
-			sourceFile = getFilenameFromTarget (request.getUrl());
-		}
-		else {
-			string targetReplaced = replaceParams(route.getTarget(), params);
-			sourceFile = getFilenameFromTarget(targetReplaced);
-		}
+		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		string sourceFile = getFilenameFromTarget(targetReplaced);
 
-		pythonSetGlobalRequest("request", request);
-		pythonSetGlobal("url_params", params);
-		pythonSetGlobal("resp_headers", map<string, string>());
+		PythonModule::krait.setGlobalRequest("request", request);
+		PythonModule::krait.setGlobal("url_params", params);
+		PythonModule::krait.setGlobal("extra_headers", map<string, string>());
 
 		resp = getResponseFromSource(sourceFile, request);		
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
@@ -424,12 +418,12 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	else{
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		map<string, string> headersMap  = pythonGetGlobalMap("resp_headers");
+		map<string, string> headersMap = PythonModule::krait.getGlobalMap("extra_headers");
 		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
 		
 
-		if (!pythonVarIsNone("response")){
-			result = Response(pythonEval("response"));
+		if (!PythonModule::krait.checkIsNone("response")){
+			result = Response(PythonModule::krait.eval("str(response)"));
 			for (const auto& header : headers){
 				result.addHeader(header.first, header.second);
 			}
@@ -440,7 +434,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	}
 
 	addStandardCacheHeaders(result, filename, cachePragma);
-	
+
 
 	addDefaultHeaders(result, filename, request);
 	
@@ -522,7 +516,7 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
 	}
 	else if (ends_with(filename, ".py")){
-		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser());
+		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
 	}
 	else{
 		parser = unique_ptr<IPymlParser>(new RawPymlParser());
@@ -572,10 +566,27 @@ void Server::addDefaultHeaders(Response& response, string filename, Request& req
 
 
 string Server::getContentType(string filename) {
-	filesystem::path filePath(filename);
-	string extension = filePath.extension().string();
-	if (extension == ".pyml"){
-		extension = filePath.stem().extension().string();
+	string extension;
+
+	if (PythonModule::krait.checkIsNone("content_type")) {
+		DBG("No content_type set");
+		filesystem::path filePath(filename);
+		extension = filePath.extension().string();
+		if (extension == ".pyml") {
+			extension = filePath.stem().extension().string();
+		}
+	}
+	else{
+		string varContentType = PythonModule::krait.getGlobalStr("content_type");
+		DBG_FMT("content_type set to %1%", varContentType);
+
+		if (!starts_with(varContentType, "ext/")){
+			return varContentType;
+		}
+		else{
+			extension = varContentType.substr(3); //strlen("ext")
+			extension[0] = '.'; // /extension to .extension
+		}
 	}
 
 	//DBG_FMT("Extension: %1%", extension);

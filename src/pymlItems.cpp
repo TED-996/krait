@@ -1,8 +1,8 @@
 #include "pymlItems.h"
 
-#include"pythonWorker.h"
 #include"except.h"
 #include"utils.h"
+#include"pythonModule.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
@@ -54,23 +54,23 @@ const PymlItem* PymlItemSeq::tryCollapse() const {
 string htmlEscape(string htmlCode);
 
 std::string PymlItemPyEval::runPyml() const {
-	return htmlEscape(pythonEval(code));
+	return htmlEscape(PythonModule::main.eval(code));
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {
-	return pythonEval(code);
+	return PythonModule::main.eval(code);
 }
 
 
 std::string PymlItemPyExec::runPyml() const {
 	//DBG_FMT("running pyExec: %1%", code);
-	pythonRun(code);
+	PythonModule::main.run(code);
 	return "";
 }
 
 
 std::string PymlItemIf::runPyml() const {
-	if (pythonTest(conditionCode)){
+	if (PythonModule::main.test(conditionCode)){
 		if (itemIfTrue == NULL){
 			return "";
 		}
@@ -90,7 +90,7 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
 		return NULL;
 	}
 
-	if (pythonTest(conditionCode)){
+	if (PythonModule::main.test(conditionCode)){
 		return itemIfTrue;
 	}
 	else{
@@ -100,11 +100,11 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
 
 
 std::string PymlItemFor::runPyml() const {
-	pythonRun(initCode);
+	PythonModule::main.run(initCode);
 	string result;
-	while(pythonTest(conditionCode)){
+	while(PythonModule::main.test(conditionCode)){
 		result += loopItem->runPyml();
-		pythonRun(updateCode);
+		PythonModule::main.run(updateCode);
 	}
 	return result;
 }
@@ -112,13 +112,13 @@ std::string PymlItemFor::runPyml() const {
 
 const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 	if (last == NULL){
-		pythonRun(initCode);
+		PythonModule::main.run(initCode);
 	}
 	else{
-		pythonRun(updateCode);
+		PythonModule::main.run(updateCode);
 	}
 
-	if (pythonTest(conditionCode)){
+	if (PythonModule::main.test(conditionCode)){
 		return loopItem;
 	}
 	else{
@@ -128,7 +128,7 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 	if (last == NULL){
-		return cache.get(pythonEval(filename))->getRootItem();
+		return cache->get(PythonModule::main.eval(filename))->getRootItem();
 	}
 	else {
 		return NULL;
@@ -136,11 +136,11 @@ const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
 }
 
 std::string PymlItemEmbed::runPyml() const {
-	return cache.get(pythonEval(filename))->runPyml();
+	return cache->get(PythonModule::main.eval(filename))->runPyml();
 }
 
 bool PymlItemEmbed::isDynamic() const {
-	return cache.get(pythonEval(filename))->isDynamic();
+	return cache->get(PythonModule::main.eval(filename))->isDynamic();
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
@@ -202,15 +202,17 @@ public:
 	}
 	const PymlItem* operator()(PymlWorkingItem::PyCodeData pyCodeData){
 		if (pyCodeData.type == PymlWorkingItem::Type::PyExec){
-			return pool.pyExecPool.construct(pythonPrepareStr(pyCodeData.code));
+			return pool.pyExecPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
 		if (pyCodeData.type == PymlWorkingItem::Type::PyEval){
-			return pool.pyEvalPool.construct(pythonPrepareStr(pyCodeData.code));
+			return pool.pyEvalPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
 		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw){
-			return pool.pyEvalRawPool.construct(pythonPrepareStr(pyCodeData.code));
+			return pool.pyEvalRawPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
+		BOOST_THROW_EXCEPTION(
+				serverError()
+						<< stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
 	}
 	const PymlItem* operator()(PymlWorkingItem::IfData ifData){
 		const PymlItem* itemIfTrue = ifData.itemIfTrue->getItem(pool);
@@ -219,17 +221,18 @@ public:
 			itemIfFalse = ifData.itemIfFalse->getItem(pool);
 		}
 
-		return pool.ifExecPool.construct(pythonPrepareStr(ifData.condition), itemIfTrue, itemIfFalse);
+		return pool.ifExecPool.construct(PythonModule::prepareStr(ifData.condition), itemIfTrue, itemIfFalse);
 	}
 	const PymlItem* operator()(PymlWorkingItem::ForData forData ){
 		const PymlItem* loopItem = forData.loopItem->getItem(pool);
 		PymlItemFor* newItem = pool.forExecPool.malloc();
-		PymlItemFor* item = new(newItem) PymlItemFor(pythonPrepareStr(forData.initCode), forData.conditionCode, forData.updateCode, loopItem);
+		PymlItemFor* item = new(newItem) PymlItemFor(PythonModule::prepareStr(forData.initCode), forData.conditionCode,
+		                                             forData.updateCode, loopItem);
 		return item;
 	}
 
 	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(pythonPrepareStr(embedData.filename), *embedData.cache);
+		return pool.embedPool.construct(PythonModule::prepareStr(embedData.filename), *embedData.cache);
 	}
 };
 

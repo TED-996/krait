@@ -8,33 +8,27 @@
 
 
 class Route {
-	bool defaultRoute;
-
 	HttpVerb verb;
-	boost::regex urlRegex;
-	std::map<int, std::string> matchParameters;
-	std::string targetFilename;
+	boost::optional<boost::regex> urlRegex;
+	boost::optional<std::string> urlRaw;
+	boost::optional<std::string> target;
 
 public:
-	Route(HttpVerb verb, std::string targetFilename);
-	Route(HttpVerb verb, boost::regex urlRegex, std::map<int, std::string> matchParameters, std::string file);
-
-	bool isDefaultTarget() {
-		return targetFilename == "$default$";
-	}
-
-	std::string getTarget() {
-		return targetFilename;
-	}
+	Route(HttpVerb verb,
+	      boost::optional<boost::regex> urlRegex,
+	      boost::optional<std::string> urlRaw,
+	      boost::optional<std::string> target);
 
 
-	bool isMatch(HttpVerb verb, std::string url, std::map<std::string, std::string>& outParams);
+	const std::string& getTarget(const std::string& defaultTarget) const;
+
+
+	bool isMatch(HttpVerb verb, std::string url, std::map<std::string, std::string>& outParams) const;
 
 	static Route getRoute(boost::property_tree::ptree routePtree);
+	static std::vector<Route> getRoutesFromFile(std::string filename);
+	static std::vector<Route> getDefaultRoutes();
+	static const Route& getRouteMatch(const std::vector<Route> routes, HttpVerb verb, std::string url,
+	                                  std::map<std::string, std::string>& outParams);
 };
 
-
-std::vector<Route> getRoutesFromFile(std::string filename);
-std::vector<Route> getDefaultRoutes();
-Route& getRouteMatch(std::vector<Route> routes, HttpVerb verb, std::string url,
-                     std::map<std::string, std::string>& outParams);

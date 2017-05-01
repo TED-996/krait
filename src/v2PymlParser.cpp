@@ -261,7 +261,7 @@ void V2PymlParser::addPymlStackTop() {
 }
 
 void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collection){
-	//DBG_FMT("Added @for %1% in %2%:", entry, collection);
+	DBG_FMT("Added @for %1% in %2%:", entry, collection);
 
 	if (entry.length() == 0 || isWhitespace(entry) || collection.length() == 0 || isWhitespace(collection)){
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
