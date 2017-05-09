@@ -35,10 +35,12 @@ public:
 
 	void setGlobal(std::string name, std::string value);
 	void setGlobal(std::string name, std::map<std::string, std::string> value);
+	void setGlobal(std::string name, std::multimap<std::string, std::string> value);
 	void setGlobalRequest(std::string name, Request value);
 
 	std::string getGlobalStr(std::string name);
 	std::map<std::string, std::string> getGlobalMap(std::string name);
+	std::multimap<std::string, std::string> getGlobalTupleList(std::string name);
 
 private:
 	void setGlobal(std::string name, boost::python::object value);
@@ -62,4 +64,9 @@ private:
 	struct requestToPythonObjectConverter {
 		static PyObject* convert(Request const& request);
 	};
+
+	struct StringMultimapToPythonObjectConverter {
+		static PyObject* convert(std::multimap<std::string, std::string> const& map);
+	};
+
 };

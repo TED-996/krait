@@ -281,7 +281,7 @@ response = None
 # otherwise this is the content-type to send to the client.
 content_type = None
 
-# Extra response headers to set without overriding the entire response, as a dict
+# Extra response headers to set without overriding the entire response, as a tuple list
 extra_headers = None
 
 

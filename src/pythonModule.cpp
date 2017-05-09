@@ -27,17 +27,31 @@ bp::object PythonModule::requestType;
 PyObject* PythonModule::StringMapToPythonObjectConverter::convert(map<string, string> const& map) {
 	DBG("in map<string, string>->PyObject()");
 
-	dict result;
+	bp::dict result;
 	for (auto it : map) {
 		result[bp::str(it.first)] = bp::str(it.second);
 	}
-	return incref(result.ptr());
+	return bp::incref(result.ptr());
 }
+
+PyObject * PythonModule::StringMultimapToPythonObjectConverter::convert(
+		std::multimap<std::string, std::string> const &map) {
+
+	DBG("in multimap<string, string>->PyObject()");
+
+	bp::list result;
+	for (const auto& it : map){
+		result.append(bp::make_tuple(bp::str(it.first), bp::str(it.second)));
+	}
+
+	return bp::incref(result.ptr());
+}
+
 
 PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& request) {
 	DBG("in Request->PyObject()");
 
-	object result = PythonModule::requestType(
+	bp::object result = PythonModule::requestType(
 			bp::str(httpVerbToString(request.getVerb())),
 			bp::str(request.getUrl()),
 			bp::str(request.getQueryString()),
@@ -46,7 +60,7 @@ PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& r
 			bp::str(request.getBody())
 	);
 
-	return incref(result.ptr());
+	return bp::incref(result.ptr());
 }
 
 
@@ -59,6 +73,7 @@ void PythonModule::initPython() {
 		Py_Initialize();
 		bp::to_python_converter<Request, requestToPythonObjectConverter>();
 		bp::to_python_converter<map<string, string>, StringMapToPythonObjectConverter>();
+		bp::to_python_converter<multimap<string, string>, StringMultimapToPythonObjectConverter>();
 
 		bp::object mainModule = import("__main__");
 		bp::dict mainDict = extract<bp::dict>(mainModule.attr("__dict__"));
@@ -80,6 +95,7 @@ void PythonModule::initPython() {
 }
 
 
+
 void PythonModule::initModules(string projectDir) {
 	DBG("in initModules()");
 	initPython();
@@ -94,8 +110,6 @@ void PythonModule::initModules(string projectDir) {
 		}
 	}
 }
-
-
 
 void PythonModule::resetModules(string projectDir) {
 	DBG("in pythonReset()");
@@ -143,6 +157,7 @@ PythonModule::PythonModule(std::string name) {
 void PythonModule::clear() {
 	moduleGlobals.clear();
 }
+
 
 void PythonModule::run(string command) {
 	DBG("in run()");
@@ -207,7 +222,6 @@ bool PythonModule::test(std::string condition){
 	}
 }
 
-
 string PythonModule::errAsString() {
 	DBG("in errAsString()");
 	try {
@@ -244,6 +258,7 @@ string PythonModule::errAsString() {
 		return "We tried to get some Python error info, but we failed.";
 	}
 }
+
 
 bool PythonModule::checkIsNone(string name){
 	DBG("in pythonVarIsNone(name)");
@@ -284,6 +299,10 @@ void PythonModule::setGlobal(string name, map<string, string> value) {
 	setGlobal(name, bp::dict(value));
 }
 
+void PythonModule::setGlobal(std::string name, std::multimap<std::string, std::string> value) {
+	setGlobal(name, bp::list(value));
+}
+
 
 void PythonModule::setGlobalRequest(string name, Request value) {
 	try {
@@ -318,7 +337,6 @@ string PythonModule::getGlobalStr(string name) {
 	}
 }
 
-
 map<string, string> PythonModule::getGlobalMap(string name) {
 	DBG("in getGlobalMap()");
 	try {
@@ -342,6 +360,30 @@ map<string, string> PythonModule::getGlobalMap(string name) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
+multimap<string, string> PythonModule::getGlobalTupleList(string name) {
+	DBG("in getGlobalTupleList()");
+	try {
+		object globalObj = moduleObject.attr(name.c_str());
+		bp::list asList = extract<bp::list>(globalObj);
+		int listLen = bp::len(asList);
+
+		multimap<string, string> result;
+		for (int i = 0; i < listLen; i++) {
+			string key = extract<string>(bp::str(asList[i][0]));
+			string value = extract<string>(bp::str(asList[i][1]));
+			result.insert(make_pair(key, value));
+		}
+		return result;
+	}
+	catch (error_already_set const&) {
+		DBG("Python error in getGlobalTupleList()!");
+
+		string errorString = errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+};
 
 //Dedent string
 string PythonModule::prepareStr(string pyCode) {

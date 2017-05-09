@@ -98,7 +98,7 @@ void Server::signalStopRequested(int sig){
 	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
 	clientWaitingResponse = false;
 	if (clientWaitingResponse && socketToClose != -1){
-		respondWithObject(socketToClose,  Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+		respondWithObject(socketToClose,  Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 	}
 	if (socketToClose != -1){
 		close(socketToClose);
@@ -296,11 +296,10 @@ void Server::serveClientStart(int clientSocket) {
 	}
 	catch (rootException& ex) {
 		if (isHead){
-			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(), "", true));
+			respondWithObject(clientSocket, Response(500, "", true));
 		}
 		else{
-			respondWithObject(clientSocket, Response(1, 1, 500, unordered_map<string, string>(),
-							  "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+			respondWithObject(clientSocket, Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
@@ -312,7 +311,7 @@ void Server::serveClientStart(int clientSocket) {
 }
 
 void Server::serveRequest(int clientSocket, Request& request) {
-	Response resp(1, 1, 500, unordered_map<string, string>(), string(), true);
+	Response resp(500, "", true);
 
 	bool isHead = false;
 
@@ -330,17 +329,17 @@ void Server::serveRequest(int clientSocket, Request& request) {
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", map<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
 
 		resp = getResponseFromSource(sourceFile, request);		
 		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
 	}
 	catch (notFoundError& err) {
 		DBG_FMT("notFound: %1%", err.what());
-		resp = Response(1, 1, 404, unordered_map<string, string>(), "<html><body><h1>404 Not Found</h1></body></html>", true);
+		resp = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
 	catch (rootException& ex) {
-		resp = Response(1, 1, 500, unordered_map<string, string>(), "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
@@ -394,14 +393,13 @@ string replaceParams(string target, map<string, string> params) {
 
 
 Response Server::getResponseFromSource(string filename, Request& request) {
-	//TODO: unused request?
 	filename = expandFilename(filename);
 	
 	if (!filesystem::exists(filename)){
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	Response result(1, 1, 500, unordered_map<string, string>(), "", true);	
+	Response result(500, "", true);
 
 	bool isDynamic = getPymlIsDynamic(filename);
 	CacheController::CachePragma cachePragma = cacheController.getCacheControl(
@@ -413,13 +411,13 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 		etag = etag.substr(1, etag.length() - 2);
 	}
 	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)){
-		result = Response(1, 1, 304, unordered_map<string, string>(), "", false);
+		result = Response(304, "", false);
 	}
 	else{
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		map<string, string> headersMap = PythonModule::krait.getGlobalMap("extra_headers");
-		unordered_map<string, string> headers(headersMap.begin(), headersMap.end());
+		multimap<string, string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
+		unordered_multimap<string, string> headers(headersMap.begin(), headersMap.end());
 		
 
 		if (!PythonModule::krait.checkIsNone("response")){
