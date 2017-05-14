@@ -13,6 +13,7 @@ import krait
 krait.site_root = project_dir
 
 import mvc
+import cookie
 
 main_script_path = os.path.join(config_dir, "init.py")
 if os.path.exists(main_script_path):
