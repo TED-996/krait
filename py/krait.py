@@ -204,6 +204,7 @@ class ResponseNotFound(Response):
     """
     Response returning 404 Not Found
     """
+
     def __init__(self, headers=None):
         """
         :param headers: extra headers to send with the response, as a tuple list
@@ -217,6 +218,7 @@ class ResponseRedirect(Response):
     """
     Response returning a 302 Found redirect
     """
+
     def __init__(self, destination, headers=None):
         """
         :param destination: the URL to which to redirect the client
@@ -231,19 +233,21 @@ class ResponseBadRequest(Response):
     """
     Response returning 400 Bad Request
     """
+
     def __init__(self, headers=None):
         """
         :param headers: extra headers to send with the response, as a tuple list
         """
         super(ResponseBadRequest, self).__init__("HTTP/1.1", 400, headers or [],
-                                               "<html><head><title>400 Bad Request</title></head>"
-                                               "<body><h1>404 Bad Request</h1></body></html>")
+                                                 "<html><head><title>400 Bad Request</title></head>"
+                                                 "<body><h1>404 Bad Request</h1></body></html>")
 
 
 class IteratorWrapper(object):
     """
     Wraps an iterator in a way useful to the classic for(init; condition; increment) paradigm
     """
+
     def __init__(self, collection):
         self.iterator = iter(collection)
         self.over = False
@@ -275,7 +279,6 @@ def get_full_path(filename):
 request = None
 # An object of type krait.Response (or its subclasses); leave None for usual behavior, set to override.
 response = None
-
 
 # If this is None, get from source extension.
 # If this is "ext/.{extension}", read from mime.types;

@@ -1,6 +1,36 @@
 import threading
 
 
+class WebsocketsRequest(object):
+    """
+    Represents a Websockets request.
+    Contains additional information extracted from a Upgrade: websocket request.
+    """
+    def __init__(self, http_request):
+        self.protocols = WebsocketsRequest.extract_protocols(http_request)
+
+    @staticmethod
+    def extract_protocols(http_request):
+        if http_request.headers.get("upgrade") == "websocket":
+            protocols = http_request.headers.get("sec-websocket-protocol")
+            if protocols is not None:
+                return protocols.split(", ")
+            else:
+                return None
+        else:
+            return None
+
+
+class WebsocketsResponse(object):
+    def __init__(self, controller, protocol=None):
+        self.protocol = protocol
+        self.controller = controller
+
+
+request = None
+response = None
+
+
 class WebsocketsCtrlBase(object):
     """
     Base class responsible for handling Websockets communication.
@@ -85,11 +115,3 @@ class WebsocketsCtrlBase(object):
                 return None
             else:
                 return self._out_message_queue.pop(0)
-
-
-websockets_ctrl = None
-
-
-def set_websockets_ctrl(ctrl):
-    global websockets_ctrl
-    websockets_ctrl = ctrl
