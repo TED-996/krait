@@ -12,7 +12,7 @@ using namespace boost::property_tree;
 
 
 
-Route::Route(HttpVerb verb, boost::optional<boost::regex> urlRegex, boost::optional<std::string> urlRaw,
+Route::Route(RouteVerb verb, boost::optional<boost::regex> urlRegex, boost::optional<std::string> urlRaw,
              boost::optional<std::string> target)
 	: verb(verb), urlRegex(urlRegex), urlRaw(urlRaw), target(target){
 }
@@ -27,10 +27,10 @@ const std::string &Route::getTarget(const std::string& defaultTarget) const {
 	}
 }
 
-bool Route::isMatch(HttpVerb verb, string url, map<string, string>& outParams) const {
+bool Route::isMatch(RouteVerb verb, string url, map<string, string>& outParams) const {
 	outParams.clear();
 
-	if (this->verb != HttpVerb::ANY && verb != this->verb) {
+	if (this->verb != RouteVerb::ANY && verb != this->verb) {
 		return false;
 	}
 
@@ -49,24 +49,12 @@ bool Route::isMatch(HttpVerb verb, string url, map<string, string>& outParams) c
 }
 
 Route Route::getRoute(ptree routePtree) {
-	map<string, HttpVerb> stringVerbMapping = {
-			{string("ANY"),     HttpVerb::ANY},
-			{string("GET"),     HttpVerb::GET},
-			{string("HEAD"),    HttpVerb::HEAD},
-			{string("POST"),    HttpVerb::POST},
-			{string("PUT"),     HttpVerb::PUT},
-			{string("DELETE"),  HttpVerb::DELETE},
-			{string("CONNECT"), HttpVerb::CONNECT},
-			{string("OPTIONS"), HttpVerb::OPTIONS},
-			{string("TRACE"),   HttpVerb::TRACE}
-	};
-
 	try {
 		string verbStr = routePtree.get<string>("verb", "GET");
 		DBG_FMT("got verb %1%", verbStr);
 
-		auto verbValIt = stringVerbMapping.find(verbStr);
-		if (verbValIt == stringVerbMapping.end()) {
+		RouteVerb verb = toRouteVerb(verbStr);
+		if (verb == RouteVerb::INVALID) {
 			BOOST_THROW_EXCEPTION(
 					routeParseError() << stringInfoFromFormat("Error: HTTP verb %1% not recognized.", verbStr));
 		}
@@ -91,7 +79,7 @@ Route Route::getRoute(ptree routePtree) {
 			optionalRegex = boost::regex(regex);
 		}
 
-		return Route(verbValIt->second, optionalRegex, optionalUrl, optionalTarget);
+		return Route(verb, optionalRegex, optionalUrl, optionalTarget);
 	}
 	catch (ptree_bad_path &ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not find route parameter '%1%'.",
@@ -140,10 +128,10 @@ vector<Route> Route::getRoutesFromFile(string filename) {
 }
 
 vector<Route> Route::getDefaultRoutes(){
-	return vector<Route> {Route(HttpVerb::GET, boost::none, boost::none, boost::none)};
+	return vector<Route> {Route(RouteVerb::GET, boost::none, boost::none, boost::none)};
 }
 
-const Route& Route::getRouteMatch(const vector<Route> routes, HttpVerb verb, string url, map<string, string>& outParams) {
+const Route& Route::getRouteMatch(const vector<Route> routes, RouteVerb verb, string url, map<string, string>& outParams) {
 	for (const Route& route : routes) {
 		if (route.isMatch(verb, url, outParams)) {
 			return route;
@@ -151,5 +139,5 @@ const Route& Route::getRouteMatch(const vector<Route> routes, HttpVerb verb, str
 	}
 	BOOST_THROW_EXCEPTION(routeError() <<
 						  stringInfoFromFormat("Error: Could not match url %1% on method %2% with any route. Is there no default route?",
-											   url, httpVerbToString(verb)));
+											   url, routeVerbToString(verb)));
 }

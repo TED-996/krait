@@ -11,7 +11,7 @@ class Response {
 
 	int statusCode;
 
-	std::unordered_map<std::string, std::string> headers;
+	std::unordered_multimap<std::string, std::string> headers;
 
 	IteratorResult bodyIterator;
 	bool connClose;
@@ -20,21 +20,28 @@ class Response {
 	bool fromFullResponse;
 	
 	void parseFullResponse(std::string response);
+	boost::optional<std::string> getHeader(std::string name);
 	
 public:
-	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
+	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
 	         std::string body, bool connClose);
 	Response(std::string fullResponse);
-	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_map<std::string, std::string> headers,
+	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
 			 IteratorResult bodyIterator, bool connClose);
+	Response(int statusCode, std::string body, bool connClose);
+	Response(int statusCode, IteratorResult bodyIterator, bool connClose);
 
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;
 		this->httpMinor = httpMinor;
 	}
 
-	void setHttpCode(int statusCode) {
+	void getStatusCode(int statusCode) {
 		this->statusCode = statusCode;
+	}
+
+	int getStatusCode(){
+		return statusCode;
 	}
 
 	void setBody(std::string body, bool updateLength);

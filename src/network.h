@@ -4,6 +4,7 @@
 
 #include"request.h"
 #include"response.h"
+#include"websocketsTypes.h"
 
 
 int getServerSocket(int port, bool setListen, bool reuseAddr);
@@ -13,6 +14,10 @@ void closeSocket(int clientSocket);
 
 void printSocket(int clientSocket);
 boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs);
+
+WebsocketsFrame getWebsocketsFrame(int clientSocket);
+boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int clientSocket, int timeoutMs);
+void sendWebsocketsFrame(int clientSocket, WebsocketsFrame &frame);
 
 void respondRequestHttp10(int clientSocket);
 void respondRequest404(int clientSocket);

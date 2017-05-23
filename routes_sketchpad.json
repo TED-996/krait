@@ -1,0 +1,40 @@
+[
+  {
+    "verb": "POST",
+    "url": "/admin/user_update"
+  },
+  {
+    "verb": "POST",
+    "url": "/admin/user_update/.*",
+    "target": "/admin/user_update"
+  },
+  {
+    "verb": "POST",
+    "regex": "/admin/user_(add|create|insert)",
+    "target": "users_insert",
+    "captures": {
+      "original_name": {"capture": "$1"}
+    }
+  },
+  {
+    "regex": "/entries/.*",
+    "target": "abc"
+  },
+  {
+    "regex": "/entries/([a-zA-Z]*)/([0-9]*)",
+    "target": "entries",
+    "globals": {
+      "url_directory": {"capture": "$1"},
+      "url_entry_number": {"capture": "$2"}
+    }
+  },
+  {
+    "verb": "POST",
+    "url": "/show_players",
+    "controller": {
+      "from": "ctrl",
+      "import": "show_players",
+      "class": "ShowPlayersController"
+    }
+  }
+]

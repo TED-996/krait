@@ -46,6 +46,7 @@ class Server {
 	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
 	
 	bool canContainPython(std::string filename);
+	void startWebsocketsServer(int clientSocket, Request &request);
 
 	static void initSignals();
 

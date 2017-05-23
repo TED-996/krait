@@ -1,0 +1,277 @@
+#include <boost/uuid/sha1.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include "websocketsServer.h"
+#include "network.h"
+#include "pythonModule.h"
+#include "logger.h"
+#include "formatHelper.h"
+
+#include "dbg.h"
+
+using namespace std;
+
+WebsocketsServer::WebsocketsServer(int clientSocket) {
+	this->clientSocket = clientSocket;
+	this->closed = false;
+}
+
+boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
+	boost::optional<WebsocketsFrame> frameOptional = getWebsocketsFrameTimeout(clientSocket, timeoutMs);
+	if (!frameOptional){
+		return boost::none;
+	}
+	//DBG("frame got");
+
+	WebsocketsFrame frame = frameOptional.get();
+
+	WebsocketsMessage message;
+	message.opcode = frame.opcode;
+	message.message = frame.message;
+
+	if (frame.opcode == WebsocketsOpcode::Text || frame.opcode == WebsocketsOpcode::Binary) {
+		bool messageFinished = frame.isFin;
+
+		while (!messageFinished) {
+			frame = getWebsocketsFrame(clientSocket);
+			if (frame.opcode == WebsocketsOpcode::Ping) {
+				handlePing(frame);
+			}
+			else if (frame.opcode == WebsocketsOpcode::Pong) {
+				handlePong(frame);
+			}
+			else if (frame.opcode == WebsocketsOpcode::Close) {
+				handleClose(frame);
+				messageFinished = true;
+			}
+			else {
+				messageFinished = frame.isFin; //Don't finish the message just because of an interjected control frame.
+				message.message.append(frame.message); //Don't pollute the message with the ping message.
+			}
+		}
+	}
+	else if (frame.opcode == WebsocketsOpcode::Ping) {
+		handlePing(frame);
+	}
+	else if (frame.opcode == WebsocketsOpcode::Pong) {
+		handlePong(frame);
+	}
+	else if (frame.opcode == WebsocketsOpcode::Close) {
+		handleClose(frame);
+	}
+
+	return message;
+}
+
+void WebsocketsServer::write(WebsocketsMessage message) {
+	WebsocketsFrame frame;
+	frame.opcode = message.opcode;
+	frame.isFin = 0;
+
+	size_t maxSize = 128 * 1024; //128KB, totally arbitrary.
+	size_t msgIdx = 0;
+
+	do {
+		size_t frameLen = maxSize;
+		if (msgIdx + maxSize > message.message.length()){
+			frame.isFin = true;
+			frameLen = message.message.length() - msgIdx;
+		}
+		else{
+			frame.isFin = false;
+		}
+		frame.message.assign(message.message, msgIdx, frameLen);
+
+		sendWebsocketsFrame(clientSocket, frame);
+
+		msgIdx += frameLen;
+		frame.opcode = Continuation;
+	} while(!frame.isFin);
+}
+
+void WebsocketsServer::sendPing() {
+	WebsocketsFrame pingFrame;
+	pingFrame.opcode = WebsocketsOpcode::Ping;
+	pingFrame.isFin = true;
+	pingFrame.message = "";
+
+	sendWebsocketsFrame(clientSocket, pingFrame);
+
+	//TODO: remember that we're waiting for a ping.
+}
+
+void WebsocketsServer::sendClose() {
+	WebsocketsFrame closeFrame;
+	closeFrame.opcode = WebsocketsOpcode::Close;
+	closeFrame.isFin = true;
+	closeFrame.message = "";
+
+	sendWebsocketsFrame(clientSocket, closeFrame);
+}
+
+void WebsocketsServer::handlePing(WebsocketsFrame ping) {
+	WebsocketsFrame pongFrame;
+	pongFrame.opcode = WebsocketsOpcode::Pong;
+	pongFrame.isFin = true;
+	pongFrame.message = ping.message;
+	sendWebsocketsFrame(clientSocket, pongFrame);
+}
+
+void WebsocketsServer::handleClose(WebsocketsFrame close) {
+	if (!closed) {
+		closed = true;
+		sendClose();
+	}
+}
+
+void WebsocketsServer::handlePong(WebsocketsFrame pong) {
+	//TODO: remember that the ping is here.
+}
+
+bool WebsocketsServer::start(Request &upgradeRequest) {
+	if (!handleUpgradeRequest(upgradeRequest)){
+		return false;
+	}
+	// Request is now upgraded to a WebSockets request.
+	boost::python::object ctrlStartMethod =
+			PythonModule::websockets.evalToObject("response.controller.on_start");
+	boost::python::object inMsgEvent =
+			PythonModule::websockets.evalToObject("response.controller.on_in_message_internal");
+	boost::python::object outMsgGetter =
+			PythonModule::websockets.evalToObject("response.controller.pop_out_message");
+	boost::python::object ctrlStopMethod =
+			PythonModule::websockets.evalToObject("response.controller.on_stop");
+	boost::python::object ctrlWaitStopMethod =
+			PythonModule::websockets.evalToObject("response.controller.wait_stopped");
+
+	PythonModule::websockets.callObject(ctrlStartMethod);
+
+	while(!closed){
+		boost::optional<WebsocketsMessage> msgInOpt;
+		Py_BEGIN_ALLOW_THREADS
+			msgInOpt = this->read(8);
+		Py_END_ALLOW_THREADS
+		if (msgInOpt != boost::none){
+			//("in msg with success");
+			//DBG_FMT("MSG: %1%", msgInOpt.get().message);
+			WebsocketsMessage& msgIn = msgInOpt.get();
+			if (msgIn.opcode == WebsocketsOpcode::Text || msgIn.opcode == WebsocketsOpcode::Binary){
+				//DBG("calling inMsgEvent");
+				PythonModule::websockets.callObject(inMsgEvent, boost::python::str(msgIn.message));
+			}
+		}
+
+		boost::python::object outMsg = PythonModule::websockets.callObject(outMsgGetter);
+		if (!outMsg.is_none()){
+			string msgString = boost::python::extract<string>(outMsg);
+			//DBG_FMT("sending %1%", msgString);
+
+			Py_BEGIN_ALLOW_THREADS
+				WebsocketsMessage msg = {WebsocketsOpcode::Text, msgString};
+				this->write(msg);
+			Py_END_ALLOW_THREADS
+		}
+	}
+
+	PythonModule::websockets.callObject(ctrlStopMethod);
+	int attemptsLeft = 12; // give it 12 x 5s = 1 minute. A bit much, true.
+	while(attemptsLeft > 0 &&
+			!boost::python::extract<bool>(
+					PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(5)))){
+		Loggers::errLogger.log(formatString("[WARNING]: Websockets controller on url %1% not shutting down, "
+		                                            "retrying until timeout...", upgradeRequest.getUrl()));
+		attemptsLeft--;
+	}
+
+	if (!boost::python::extract<bool>(
+			PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(1)))) {
+		Loggers::errLogger.log(formatString("[SERIOUS WARNING]: Websockets controller on url %1% failed to shut down "
+		                                            "within the timeout. Process closing forcefully.",
+		                                    upgradeRequest.getUrl()));
+	}
+
+	return true;
+}
+
+std::string encode64(const std::string &val);
+
+bool WebsocketsServer::handleUpgradeRequest(Request &request) {
+	if (PythonModule::websockets.checkIsNone("response")){
+		respondWithObject(clientSocket, Response(400, "", true));
+		return false;
+	}
+
+	boost::optional<string> key = request.getHeader("Sec-WebSocket-Key");
+	boost::optional<string> version = request.getHeader("Sec-WebSocket-Version");
+
+	boost::optional<string> protocol = boost::none;
+
+	if (PythonModule::websockets.test("response.protocol is not None")){
+		protocol = PythonModule::websockets.eval("response.protocol");
+	}
+
+	if (!key){
+		respondWithObject(clientSocket, Response(1, 1, 400, unordered_multimap<string, string>(), "", true));
+		return false;
+	}
+	if (!version || version.get() != "13"){
+		respondWithObject(clientSocket, Response(
+				1,
+				1,
+				400,
+				unordered_multimap<string, string>{{"Sec-WebSocket-Version", "13"}},
+				"",
+				true
+		));
+		return false;
+	}
+
+
+	string magicString = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	string hashInput = key.value() + magicString;
+	boost::uuids::detail::sha1 hash;
+	hash.process_bytes(hashInput.c_str(), hashInput.length());
+	unsigned int digest[5];
+	hash.get_digest(digest);
+
+	char hashBytes[20];
+	const char* tmp = reinterpret_cast<char*>(digest);
+
+	for (int i = 0; i < 5; i++){
+		hashBytes[i*4] = tmp[i*4+3];
+		hashBytes[i*4+1] = tmp[i*4+2];
+		hashBytes[i*4+2] = tmp[i*4+1];
+		hashBytes[i*4+3] = tmp[i*4];
+	}
+
+	string outHash = encode64(string(hashBytes, 20));
+
+	unordered_multimap<string, string> outHeaders{
+			{"Sec-WebSocket-Accept", outHash},
+			{"Connection", "Upgrade"},
+			{"Upgrade", "websocket"}
+	};
+
+	if (protocol != boost::none){
+		outHeaders.insert(make_pair("Sec-WebSocket-Protocol", protocol.get()));
+	}
+
+	respondWithObject(clientSocket, Response(
+			1,
+			1,
+			101,
+			outHeaders,
+			"",
+			false
+	));
+
+	return true;
+}
+
+
+std::string encode64(const std::string &val) {
+	using namespace boost::archive::iterators;
+	using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
+	auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
+	return tmp.append((3 - val.size() % 3) % 3, '=');
+}

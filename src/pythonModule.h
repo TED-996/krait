@@ -16,6 +16,7 @@ public:
 	static PythonModule main;
 	static PythonModule krait;
 	static PythonModule mvc;
+	static PythonModule websockets;
 
 private:
 	static bool pythonInitialized;
@@ -29,16 +30,23 @@ public:
 
 	void run(std::string command);
 	void execfile(std::string filename);
-	std::string eval(std::string command);
+	std::string eval(std::string code);
+	boost::python::object evalToObject(std::string code);
 	bool test(std::string condition);
 	bool checkIsNone(std::string name);
 
+	boost::python::object callObject(boost::python::object obj, boost::python::object arg);
+	boost::python::object callObject(boost::python::object obj);
+
 	void setGlobal(std::string name, std::string value);
 	void setGlobal(std::string name, std::map<std::string, std::string> value);
+	void setGlobal(std::string name, std::multimap<std::string, std::string> value);
 	void setGlobalRequest(std::string name, Request value);
 
 	std::string getGlobalStr(std::string name);
 	std::map<std::string, std::string> getGlobalMap(std::string name);
+	std::multimap<std::string, std::string> getGlobalTupleList(std::string name);
+	boost::python::object getGlobalVariable(std::string name);
 
 private:
 	void setGlobal(std::string name, boost::python::object value);
@@ -62,4 +70,9 @@ private:
 	struct requestToPythonObjectConverter {
 		static PyObject* convert(Request const& request);
 	};
+
+	struct StringMultimapToPythonObjectConverter {
+		static PyObject* convert(std::multimap<std::string, std::string> const& map);
+	};
+
 };
