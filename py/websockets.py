@@ -1,4 +1,5 @@
 import threading
+import krait
 
 
 class WebsocketsRequest(object):
@@ -43,6 +44,7 @@ class WebsocketsCtrlBase(object):
         self._in_message_lock = threading.Lock()
         self._out_message_lock = threading.Lock()
         # noinspection PyArgumentList
+        self._exit_event = threading.Event()
         self._thread = threading.Thread(target=self.on_thread_start)
 
     def on_start(self):
@@ -115,3 +117,30 @@ class WebsocketsCtrlBase(object):
                 return None
             else:
                 return self._out_message_queue.pop(0)
+
+    def on_stop(self):
+        """
+        Sets a flag that tells the controller thread to shut down.
+        Called by Krait when the WebSockets connection is closing.
+        """
+        self._exit_event.set()
+
+    def should_stop(self):
+        """
+        Returns True if the shutdown event has been set, or False otherwise.
+        Call this periodically from the controller thread to check if you should shut down.
+        """
+        return self._exit_event.is_set()
+
+    def wait_stopped(self, timeout=None):
+        """
+        Joins the controller thread, with an optional timeout.
+        Called by Krait until the thread has shut down.
+        :return: True if the thread has shut down, or False otherwise.
+        """
+        if not self._thread.is_alive():
+            return True
+
+        self._thread.join(float(timeout))
+
+        return not self._thread.is_alive()

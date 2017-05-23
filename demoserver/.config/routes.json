@@ -1,7 +1,11 @@
 [
   {
     "verb": "POST",
-    "regex": "/comment"
+    "url": "/comment"
+  },
+  {
+    "verb": "WEBSOCKET",
+    "url": "/ws_socket"
   },
   {}
 ]

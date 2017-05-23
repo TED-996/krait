@@ -18,6 +18,7 @@
 #include"pymlIterator.h"
 #include"rawPymlParser.h"
 #include"v2PymlParser.h"
+#include"websocketsServer.h"
 
 #include"dbg.h"
 #include "rawPythonPymlParser.h"
@@ -256,7 +257,7 @@ void Server::serveClientStart(int clientSocket) {
 				break;
 			}
 			Request& request = *requestOpt;
-			
+
 			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
@@ -266,15 +267,20 @@ void Server::serveClientStart(int clientSocket) {
 			}
 
 			keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
-			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0;
-			
+			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket");
+
 			pid_t childPid = fork();
 			if (childPid == 0){
-				pids.clear(); 
+				pids.clear();
 
-				serveRequest(clientSocket, request);
+				if (request.isUpgrade("websocket")){
+					startWebsocketsServer(clientSocket, request);
+				}
+				else {
+					serveRequest(clientSocket, request);
+				}
 				clientWaitingResponse = false;
-				
+
 				Loggers::logInfo("Serving a request finished.");
 				close(clientSocket);
 				exit(0);
@@ -288,7 +294,7 @@ void Server::serveClientStart(int clientSocket) {
 				pids.erase((int)childPid);
 				Loggers::logInfo("Rejoined with forked subfork.");
 			}
-			
+
 			if (!keepAlive){
 				break;
 			}
@@ -303,8 +309,8 @@ void Server::serveClientStart(int clientSocket) {
 		}
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
-	
-	
+
+
 	close(clientSocket);
 
 	exit(0);
@@ -318,11 +324,9 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	try {
 		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
-			request.setVerb(HttpVerb::GET);
 		}
-
 		map<string, string> params;
-		const Route& route = Route::getRouteMatch(routes, request.getVerb(), request.getUrl(), params);
+		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
 
 		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
 		string sourceFile = getFilenameFromTarget(targetReplaced);
@@ -331,8 +335,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		PythonModule::krait.setGlobal("url_params", params);
 		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
 
-		resp = getResponseFromSource(sourceFile, request);		
-		//DBG_FMT("Response object for client on URL %1% done.", request.getUrl());
+		resp = getResponseFromSource(sourceFile, request);
 	}
 	catch (notFoundError& err) {
 		DBG_FMT("notFound: %1%", err.what());
@@ -346,12 +349,11 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	if (isHead) {
 		resp.setBody(string(), false);
 	}
-	
+
 	resp.setConnClose(!keepAlive);
 
 	respondWithObjectRef(clientSocket, resp);
 }
-
 
 
 std::string Server::getFilenameFromTarget (std::string target) {
@@ -394,7 +396,7 @@ string replaceParams(string target, map<string, string> params) {
 
 Response Server::getResponseFromSource(string filename, Request& request) {
 	filename = expandFilename(filename);
-	
+
 	if (!filesystem::exists(filename)){
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
@@ -407,7 +409,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	string etag;
 	if (request.headerExists("if-none-match")){
-		etag = *request.getHeader("if-none-match");
+		etag = request.getHeader("if-none-match").get();
 		etag = etag.substr(1, etag.length() - 2);
 	}
 	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)){
@@ -418,7 +420,7 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 		multimap<string, string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
 		unordered_multimap<string, string> headers(headersMap.begin(), headersMap.end());
-		
+
 
 		if (!PythonModule::krait.checkIsNone("response")){
 			result = Response(PythonModule::krait.eval("str(response)"));
@@ -435,9 +437,49 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 
 	addDefaultHeaders(result, filename, request);
-	
+
 	return result;
 }
+
+
+void Server::startWebsocketsServer(int clientSocket, Request &request) {
+	Response resp(500, "", true);
+
+	try {
+		request.setRouteVerb(RouteVerb::WEBSOCKET);
+
+		map<string, string> params;
+		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
+
+		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		string sourceFile = getFilenameFromTarget(targetReplaced);
+
+		PythonModule::krait.setGlobalRequest("request", request);
+		PythonModule::krait.setGlobal("url_params", params);
+		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
+		PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
+
+		resp = getResponseFromSource(sourceFile, request);
+	}
+	catch (notFoundError& err) {
+		DBG_FMT("notFound: %1%", err.what());
+		resp = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
+	}
+	catch (rootException& ex) {
+		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
+	}
+
+	if (resp.getStatusCode() >= 200 && resp.getStatusCode() < 300) {
+		WebsocketsServer server(clientSocket);
+		server.start(request);
+	}
+	else{
+		resp.setConnClose(!keepAlive);
+		respondWithObjectRef(clientSocket, resp);
+	}
+}
+
 
 
 bool Server::canContainPython(std::string filename){
@@ -472,7 +514,7 @@ string Server::expandFilename(string filename) {
 		else if (filesystem::exists(filename + ".py")){
 			filename += ".py";
 		}
-		
+
 		else if (path(filename).extension() == ".html" &&
 				filesystem::exists(filesystem::change_extension(filename, ".htm"))){
 			filename = filesystem::change_extension(filename, "htm").string();
@@ -488,7 +530,6 @@ string Server::expandFilename(string filename) {
 }
 
 
-
 IteratorResult Server::getPymlResultRequestCache(string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
@@ -496,13 +537,11 @@ IteratorResult Server::getPymlResultRequestCache(string filename) {
 	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
 }
 
-
 bool Server::getPymlIsDynamic(string filename){
 	interpretCacheRequest = true;
 	const IPymlFile* pymlFile = serverCache.get(filename);
 	return pymlFile->isDynamic();
 }
-
 
 PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest){
 	DBG_FMT("constructFromFilename(%1%)", filename);
@@ -522,10 +561,11 @@ PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_
 	return pool.construct(source.begin(), source.end(), parser);
 }
 
+
 void Server::onServerCacheMiss(std::string filename){
 	if (interpretCacheRequest){
 		cacheRequestPipe.pipeWrite(filename);
-		Loggers::logInfo(formatString("Cache miss on url %1%", filename));	
+		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
 	}
 }
 
@@ -551,6 +591,7 @@ bool Server::pathBlocked(string filename) {
 	}
 	return false;
 }
+
 
 void Server::addDefaultHeaders(Response& response, string filename, Request& request) {
 	if (!response.headerExists("Content-Type")) {
@@ -598,15 +639,13 @@ string Server::getContentType(string filename) {
 	}
 }
 
-
 void Server::addStandardCacheHeaders(Response& response, string filename, CacheController::CachePragma pragma){
 	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
-	
+
 	if (pragma.isStore){
 		response.addHeader("etag", "\"" + serverCache.getCacheTag(filename) + "\"");
 	}
 }
-
 
 void Server::loadContentTypeList() {
 	filesystem::path contentFilePath = getExecRoot() / "globals" / "mime.types";
@@ -633,9 +672,9 @@ void Server::loadContentTypeList() {
 			//Make it an extension (html to .html)
 			*(ptr - 1) = '.';
 			contentTypeByExtension[string(ptr - 1)] = mimeType;
-			
+
 			ptr = strtok(NULL, separators);
 		}
-		
+
 	}
 }

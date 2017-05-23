@@ -14,6 +14,7 @@ using namespace boost;
 
 
 static unordered_map<int, string> statusReasons {
+	{101, "Switching Protocols"},
 	{200, "OK"},
 	{304, "Not Modified"},
 	{400, "Bad Request"},
@@ -124,19 +125,39 @@ void Response::removeHeader(string name) {
 	}
 }
 
-void Response::setConnClose(bool connClose) {
-	this->connClose = connClose;
-	if (connClose){
-		setHeader("Connection", "close");
+bool Response::headerExists(string name) {
+	to_lower(name);
+	auto headerIt = headers.find(name);
+
+	return (headerIt != headers.end());
+}
+
+boost::optional<std::string> Response::getHeader(std::string name) {
+	to_lower(name);
+	auto headerIt = headers.find(name);
+
+	if (headerIt == headers.end()) {
+		return optional<string>();
 	}
 	else{
-		removeHeader("Connection");
+		return headerIt->second;
 	}
 }
+
+void Response::setConnClose(bool connClose) {
+	this->connClose = connClose;
+	boost::optional<std::string> header = getHeader("Connection");
+	if (header == boost::none || header.get() == "close" || header.get() == "keep-alive") {
+		if (connClose) {
+			setHeader("Connection", "close");
+		} else {
+			removeHeader("Connection");
+		}
+	}
+}
+
 string getStatusReason(int statusCode);
-
 string formatTitleCase(string str);
-
 
 string Response::getResponseHeaders() {
 	setConnClose(connClose);
@@ -159,13 +180,6 @@ string Response::getResponseHeaders() {
 	string headersAll = algorithm::join(headerStrings, "\r\n");
 
 	return statusLine + "\r\n" + headersAll + "\r\n";
-}
-
-bool Response::headerExists(string name) {
-	to_lower(name);
-	auto headerIt = headers.find(name);
-
-	return (headerIt != headers.end());
 }
 
 const std::string* Response::getBodyNext() {
