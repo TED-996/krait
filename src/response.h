@@ -20,6 +20,7 @@ class Response {
 	bool fromFullResponse;
 	
 	void parseFullResponse(std::string response);
+	boost::optional<std::string> getHeader(std::string name);
 	
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
@@ -35,8 +36,12 @@ public:
 		this->httpMinor = httpMinor;
 	}
 
-	void setHttpCode(int statusCode) {
+	void getStatusCode(int statusCode) {
 		this->statusCode = statusCode;
+	}
+
+	int getStatusCode(){
+		return statusCode;
 	}
 
 	void setBody(std::string body, bool updateLength);

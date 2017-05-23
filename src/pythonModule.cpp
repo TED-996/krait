@@ -6,7 +6,7 @@
 #include"path.h"
 #include"except.h"
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include"dbg.h"
 
 using namespace std;
@@ -17,6 +17,7 @@ namespace bp = boost::python;
 PythonModule PythonModule::main("__main__");
 PythonModule PythonModule::krait("krait");
 PythonModule PythonModule::mvc("mvc");
+PythonModule PythonModule::websockets("websockets");
 
 
 bool PythonModule::pythonInitialized = false;
@@ -191,10 +192,10 @@ void PythonModule::execfile(std::string filename) {
 }
 
 
-string PythonModule::eval(string command) {
+string PythonModule::eval(string code) {
 	DBG("in pythonEval()");
 	try {
-		object result = bp::eval(bp::str(command), moduleGlobals, moduleGlobals);
+		object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
 		bp::str resultStr(result);
 		return extract<string>(resultStr);
 	}
@@ -203,7 +204,22 @@ string PythonModule::eval(string command) {
 
 		string errorString = errAsString();
 		PyErr_Clear();
-		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(command));
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(code));
+	}
+}
+
+boost::python::object PythonModule::evalToObject(string code){
+	DBG("in pythonEvalToObject()");
+	try {
+		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
+		return result;
+	}
+	catch (error_already_set const&) {
+		DBG("Python error in pythonEval()!");
+
+		string errorString = errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(code));
 	}
 }
 
@@ -214,11 +230,41 @@ bool PythonModule::test(std::string condition){
 		return (bool)result;
 	}
 	catch(error_already_set const&){
-		DBG("Python error in pythonTest()!");
+		DBG("Python error in test()!");
 
 		string errorString = errAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(condition));
+	}
+}
+
+
+boost::python::object PythonModule::callObject(object obj) {
+	DBG("in callObject()");
+	try {
+		return obj();
+	}
+	catch(error_already_set const&){
+		DBG("Python error in callObject()!");
+
+		string errorString = errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+}
+
+
+boost::python::object PythonModule::callObject(object obj, object arg){
+	DBG("in callObject(arg)");
+	try {
+		return obj(arg);
+	}
+	catch(error_already_set const&){
+		DBG("Python error in callObject(arg)!");
+
+		string errorString = errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
 
@@ -289,7 +335,6 @@ void PythonModule::setGlobal(string name, object value) {
 	}
 }
 
-
 void PythonModule::setGlobal(string name, string value) {
 	setGlobal(name, bp::str(value));
 }
@@ -302,7 +347,6 @@ void PythonModule::setGlobal(string name, map<string, string> value) {
 void PythonModule::setGlobal(std::string name, std::multimap<std::string, std::string> value) {
 	setGlobal(name, bp::list(value));
 }
-
 
 void PythonModule::setGlobalRequest(string name, Request value) {
 	try {
@@ -354,6 +398,21 @@ map<string, string> PythonModule::getGlobalMap(string name) {
 	}
 	catch (error_already_set const&) {
 		DBG("Python error in getGlobalMap()!");
+
+		string errorString = errAsString();
+		PyErr_Clear();
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+	}
+}
+
+boost::python::object PythonModule::getGlobalVariable(std::string name) {
+	DBG("in getGlobalVariable()");
+	try {
+		object globalObj = moduleObject.attr(name.c_str());
+		return globalObj;
+	}
+	catch (error_already_set const&) {
+		DBG("Python error in getGlobalVariable()!");
 
 		string errorString = errAsString();
 		PyErr_Clear();

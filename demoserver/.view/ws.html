@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    @{ krait.set_content_type(ext="html") }
+
+    <title>Websockets Test</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/css/jumbotron-narrow.css" rel="stylesheet">
+    <link href="/css/ws.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="container">
+    @import ".view/header.html"
+
+    <div id="ticker">
+
+    </div>
+
+    <footer class="footer">
+        <p>Made with raw hearts!</p>
+    </footer>
+
+</div> <!-- /container -->
+
+<script src="/js/jquery.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/ticker.js"></script>
+<script src="/js/websocket_ticker.js"></script>
+</body>
+</html>
