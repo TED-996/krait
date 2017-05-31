@@ -76,7 +76,7 @@ int getNewClient(int listenerSocket, int timeout) {
 
 	int pollResult = poll(&pfd, 1, timeout);
 	if (pollResult == -1) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): getting new client.") << errcodeInfoDef());
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): getting new client.") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return -1;
@@ -107,7 +107,7 @@ void printSocket(int clientSocket) {
 	int readBytes;
 	while ((readBytes = read(clientSocket, data, 4095)) != 0) {
 		if (readBytes < 0) {
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): printing socket") << errcodeInfoDef());
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("read(): printing socket") << errcodeInfoDef());
 		}
 
 		printf("%s\n", data);
@@ -127,7 +127,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 
 	while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
 		if (pollResult < 0){
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): waiting for request from socket."));
+			BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
 		}
 		bytesRead = read(clientSocket, buffer, sizeof(buffer));
 		if (bytesRead == 0){
@@ -138,7 +138,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 				bytesRead = 0;
 			}
 			else{
-				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
 			}
 		}
 
@@ -148,7 +148,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 			}
 			catch(httpParseError err){
 				Loggers::logErr(formatString("Error parsing http request: %s\n", err.what()));
-				return boost::none;
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
 			}
 		}
 	}
@@ -240,7 +240,7 @@ WebsocketsFrame getWebsocketsFrame(int clientSocket) {
 				bytesRead = 0;
 			}
 			else{
-				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("Could not read Webockets frame: payload missing / partial")
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Webockets frame: payload missing / partial")
 				                                     << errcodeInfoDef());
 			}
 		}
@@ -272,7 +272,7 @@ boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int clientSocket, int
 		return getWebsocketsFrame(clientSocket);
 	}
 	else if (pollResult < 0){
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): polling for Websockets frame")
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): polling for Websockets frame")
 		                                     << errcodeInfoDef());
 	}
 	else {
@@ -333,7 +333,7 @@ void sendWebsocketsFrame(int clientSocket, WebsocketsFrame &frame){
 				bytesWritten = 0;
 			}
 			else{
-				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("Could not read Webockets frame: payload missing / partial")
+				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Webockets frame: payload missing / partial")
 				                                     << errcodeInfoDef());
 			}
 		}
@@ -395,17 +395,18 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 	while (lenLeft > 0) {
 		size_t lenCurrent = min(maxBlockSize, lenLeft);
 		//DBG_FMT("sending buffer one, %d bytes from ptr %p", lenCurrent, response);
-		if (write(clientSocket, response, lenCurrent) != (int)lenCurrent) {
+		int writeOut = write(clientSocket, response, lenCurrent);
+		if (writeOut < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK){
-				lenCurrent = 0;
+				writeOut = 0;
 				//DBG("eagain/wouldblock");
 			}
 			else{
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfoDef());
 			}
 		}
-		response += lenCurrent;
-		lenLeft -= lenCurrent;
+		response += writeOut;
+		lenLeft -= writeOut;
 	}
 }
 

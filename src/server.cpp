@@ -62,7 +62,13 @@ Server::Server(string serverRoot, int port) :
 	
 	DBG("routes got");
 
-	this->serverSocket = getServerSocket(port, false, true);
+	try {
+		this->serverSocket = getServerSocket(port, false, true);
+	}
+	catch(networkError err){
+		Loggers::errLogger.log("Could not get server socket.");
+		exit(1);
+	}
 	socketToClose = this->serverSocket;
 
 	DBG("server socket got");
@@ -100,7 +106,13 @@ void Server::signalStopRequested(int sig){
 	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
 	clientWaitingResponse = false;
 	if (clientWaitingResponse && socketToClose != -1){
+		try{
 		respondWithObject(socketToClose,  Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+		}
+		catch(networkError err){
+			Loggers::errLogger.log("Could not send final 500 Internal Server Error.");
+			exit(1);
+		}
 	}
 	if (socketToClose != -1){
 		close(socketToClose);
@@ -171,7 +183,13 @@ void Server::killChildren() {
 
 
 void Server::runServer() {
-	setSocketListen(this->serverSocket);
+	try{
+		setSocketListen(this->serverSocket);
+	}
+	catch(networkError err){
+		Loggers::errLogger.log("Could not set server to listen.");
+		exit(1);
+	}
 	Loggers::logInfo("Server listening");
 
 	while (true) {
@@ -185,7 +203,14 @@ void Server::runServer() {
 
 void Server::tryAcceptConnection() {
 	const int timeout = 100;
-	int clientSocket = getNewClient(serverSocket, timeout);
+	int clientSocket;
+	try{
+		clientSocket = getNewClient(serverSocket, timeout);
+	}
+	catch(networkError err){
+		Loggers::errLogger.log("Could not get new client.");
+		exit(1);
+	}
 
 	if (clientSocket == -1) {
 		return;
@@ -250,7 +275,9 @@ void Server::serveClientStart(int clientSocket) {
 
 	try{
 		while(true){
-			optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
+			optional<Request> requestOpt;
+
+			requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
 			Loggers::logInfo(formatString("request got"));
 			if (!requestOpt){
@@ -262,7 +289,7 @@ void Server::serveClientStart(int clientSocket) {
 			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
-			}
+			} 
 			if (request.headerExists("If-Modified-Since")){
 				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
 			}
@@ -274,15 +301,21 @@ void Server::serveClientStart(int clientSocket) {
 			if (childPid == 0){
 				pids.clear();
 
-				if (request.isUpgrade("websocket")){
-					startWebsocketsServer(clientSocket, request);
-				}
-				else {
-					serveRequest(clientSocket, request);
-				}
-				clientWaitingResponse = false;
+				try{
+					if (request.isUpgrade("websocket")){
+						startWebsocketsServer(clientSocket, request);
+					}
+					else {
+						serveRequest(clientSocket, request);
+					}
+					clientWaitingResponse = false;
 
-				Loggers::logInfo("Serving a request finished.");
+					Loggers::logInfo("Serving a request finished.");
+				}
+				catch(networkError err){
+					Loggers::errLogger.log("Could not respond to client request.");
+					exit(1);
+				}
 				close(clientSocket);
 				exit(0);
 			}
@@ -300,6 +333,9 @@ void Server::serveClientStart(int clientSocket) {
 				break;
 			}
 		}
+	}
+	catch(networkError& ex){
+		Loggers::logErr("Client disconnected.");
 	}
 	catch (rootException& ex) {
 		if (isHead){
