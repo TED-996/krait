@@ -58,6 +58,7 @@ public:
 
 	static void initPython();
 	static void initModules(std::string projectDir);
+	static void finishPython();
 private:
 	static void resetModules(std::string projectDir);
 

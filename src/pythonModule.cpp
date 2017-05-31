@@ -3,6 +3,7 @@
 #include<boost/python.hpp>
 #include<boost/format.hpp>
 #include<string>
+#include<cstdlib>
 #include"path.h"
 #include"except.h"
 
@@ -91,11 +92,29 @@ void PythonModule::initPython() {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 
+	if (atexit(PythonModule::finishPython) != 0){
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("atexit: setting finishPython at exit") << errcodeInfoDef());
+	}
+
 	pythonInitialized = true;
 	DBG("python initialized");
 }
 
 
+void PythonModule::finishPython() {
+	if (pythonInitialized){
+		try{
+			Py_Finalize();
+		}
+		catch(error_already_set const&) {
+			DBG("Python error in finishPython()!");
+
+			string errorString = string("Error in finishPython:\n") + errAsString();
+			PyErr_Clear();
+			BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
+		}
+	}
+}
 
 void PythonModule::initModules(string projectDir) {
 	DBG("in initModules()");
@@ -119,6 +138,7 @@ void PythonModule::resetModules(string projectDir) {
 			PythonModule::main.clear();
 			PythonModule::krait.clear();
 			PythonModule::mvc.clear();
+			PythonModule::websockets.clear();
 		}
 		PythonModule::main.setGlobal("project_dir", projectDir);
 
@@ -154,6 +174,7 @@ PythonModule::PythonModule(std::string name) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
 
 void PythonModule::clear() {
 	moduleGlobals.clear();
@@ -191,7 +212,6 @@ void PythonModule::execfile(std::string filename) {
 	}
 }
 
-
 string PythonModule::eval(string code) {
 	DBG("in pythonEval()");
 	try {
@@ -207,6 +227,7 @@ string PythonModule::eval(string code) {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString) << pyCodeInfo(code));
 	}
 }
+
 
 boost::python::object PythonModule::evalToObject(string code){
 	DBG("in pythonEvalToObject()");
@@ -253,7 +274,6 @@ boost::python::object PythonModule::callObject(object obj) {
 	}
 }
 
-
 boost::python::object PythonModule::callObject(object obj, object arg){
 	DBG("in callObject(arg)");
 	try {
@@ -267,6 +287,7 @@ boost::python::object PythonModule::callObject(object obj, object arg){
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 }
+
 
 string PythonModule::errAsString() {
 	DBG("in errAsString()");
@@ -320,7 +341,6 @@ bool PythonModule::checkIsNone(string name){
 	}
 }
 
-
 void PythonModule::setGlobal(string name, object value) {
 	DBG("in setGlobal()");
 	try {
@@ -335,10 +355,10 @@ void PythonModule::setGlobal(string name, object value) {
 	}
 }
 
+
 void PythonModule::setGlobal(string name, string value) {
 	setGlobal(name, bp::str(value));
 }
-
 
 void PythonModule::setGlobal(string name, map<string, string> value) {
 	setGlobal(name, bp::dict(value));
