@@ -19,9 +19,10 @@
 #include"rawPymlParser.h"
 #include"v2PymlParser.h"
 #include"websocketsServer.h"
-
-#include"dbg.h"
 #include "rawPythonPymlParser.h"
+
+#define DBG_DISABLE
+#include"dbg.h"
 
 using namespace std;
 using namespace boost;

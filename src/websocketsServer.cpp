@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "formatHelper.h"
 
+#define DBG_DISABLE
 #include "dbg.h"
 
 using namespace std;
