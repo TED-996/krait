@@ -1,6 +1,7 @@
-#include"dbg.h"
-
 #include "pymlFile.h"
+
+#define DBG_DISABLE
+#include"dbg.h"
 
 using namespace std;
 

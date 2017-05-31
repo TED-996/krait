@@ -4,7 +4,7 @@
 #include"path.h"
 #include "v2PymlParser.h"
 
-
+#define DBG_DISABLE
 #include "dbg.h"
 
 using namespace std;
