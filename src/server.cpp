@@ -73,7 +73,13 @@ Server::Server(string serverRoot, int port) :
 
 	DBG("server socket got");
 
-	PythonModule::initModules(serverRoot);
+	try {
+		PythonModule::initModules(serverRoot);
+	}
+	catch (pythonError &err){
+		Loggers::logErr(formatString("Error running init.py: %1%", err.what()));
+		exit(1);
+	}
 
 	DBG("python initialized");
 
@@ -289,7 +295,7 @@ void Server::serveClientStart(int clientSocket) {
 			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
-			} 
+			}
 			if (request.headerExists("If-Modified-Since")){
 				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
 			}
@@ -312,8 +318,12 @@ void Server::serveClientStart(int clientSocket) {
 
 					Loggers::logInfo("Serving a request finished.");
 				}
-				catch(networkError err){
+				catch(networkError &err){
 					Loggers::errLogger.log("Could not respond to client request.");
+					exit(1);
+				}
+				catch(pythonError &err){
+					Loggers::errLogger.log(formatString("Python error:\n%1%", err.what()));
 					exit(1);
 				}
 				close(clientSocket);
