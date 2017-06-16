@@ -7,13 +7,16 @@
 #include "IPymlCache.h"
 #include "pymlFile.h"
 
-class PymlCache : public IPymlCache {
+class PymlCache : public IPymlCache
+{
 private:
-	struct CacheEntry{
+	struct CacheEntry
+	{
 		std::time_t time;
 		PymlFile* item;
 		char tag[33];
 	};
+
 public:
 	//typedef PymlFile* (*constructorFunction)(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
 	//typedef void (*cacheEventFunction)(std::string filename);
@@ -30,7 +33,7 @@ private:
 
 	IPymlFile* constructAddNew(std::string filename, std::time_t time);
 	const IPymlFile* replaceWithNewer(std::string filename);
-	
+
 public:
 	PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheMiss);
 	const IPymlFile* get(std::string filename) override;
@@ -40,11 +43,11 @@ public:
 	bool checkCacheTag(std::string filename, std::string tag);
 	std::string getCacheTag(std::string filename);
 
-	void freeze(){
+	void freeze() {
 		frozen = true;
 	}
 
-	void unfreeze(){
+	void unfreeze() {
 		frozen = false;
 	}
 };

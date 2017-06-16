@@ -12,7 +12,7 @@
 namespace b = boost;
 
 
-static std::unordered_map<int, std::string> statusReasons {
+static std::unordered_map<int, std::string> statusReasons{
 	{101, "Switching Protocols"},
 	{200, "OK"},
 	{304, "Not Modified"},
@@ -26,14 +26,14 @@ static std::unordered_map<int, std::string> statusReasons {
 
 Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
                    std::string body, bool connClose)
-	: bodyIterator(body){
+	: bodyIterator(body) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->statusCode = statusCode;
 	this->fromFullResponse = false;
 	this->connClose = connClose;
 
-	for (auto it : headers){
+	for (auto it : headers) {
 		this->headers.insert(make_pair(b::to_lower_copy(it.first), it.second));
 	}
 
@@ -42,14 +42,14 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_
 
 Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
                    IteratorResult bodyIterator, bool connClose)
-	: bodyIterator(bodyIterator){
+	: bodyIterator(bodyIterator) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->statusCode = statusCode;
 	this->fromFullResponse = false;
 	this->connClose = connClose;
 
-	for (auto it : headers){
+	for (auto it : headers) {
 		this->headers.insert(make_pair(b::to_lower_copy(it.first), it.second));
 	}
 
@@ -61,17 +61,17 @@ Response::Response(int statusCode, std::string body, bool connClose)
 }
 
 Response::Response(int statusCode, IteratorResult body, bool connClose)
-		: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
+	: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
 }
 
 Response::Response(std::string fullResponse)
-	: bodyIterator(""){
+	: bodyIterator("") {
 	this->fromFullResponse = true;
 	parseFullResponse(fullResponse);
 }
 
 
-void Response::parseFullResponse(std::string response){
+void Response::parseFullResponse(std::string response) {
 	size_t statusEnd = response.find("\r\n");
 	statusLine = response.substr(0, statusEnd);
 
@@ -80,7 +80,7 @@ void Response::parseFullResponse(std::string response){
 	std::string headersStr = response.substr(statusEnd + 2, headersEnd - (statusEnd + 2));
 
 	size_t idx = 0;
-	while (idx != std::string::npos){
+	while (idx != std::string::npos) {
 		size_t nextIdx = headersStr.find("\r\n", idx + 2);
 		size_t colonIdx = headersStr.find(": ", idx);
 
@@ -97,7 +97,7 @@ void Response::parseFullResponse(std::string response){
 void Response::setBody(std::string body, bool updateLength) {
 	this->bodyIterator = IteratorResult(body);
 
-	if (updateLength){
+	if (updateLength) {
 		setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 	}
 }
@@ -119,7 +119,7 @@ void Response::removeHeader(std::string name) {
 	boost::to_lower(name);
 	auto its = headers.equal_range(name);
 
-	if (its.first != headers.end()){
+	if (its.first != headers.end()) {
 		headers.erase(its.first, its.second);
 	}
 }
@@ -138,7 +138,7 @@ boost::optional<std::string> Response::getHeader(std::string name) {
 	if (headerIt == headers.end()) {
 		return b::none;
 	}
-	else{
+	else {
 		return headerIt->second;
 	}
 }
@@ -149,7 +149,8 @@ void Response::setConnClose(bool connClose) {
 	if (header == boost::none || header.get() == "close" || header.get() == "keep-alive") {
 		if (connClose) {
 			setHeader("Connection", "close");
-		} else {
+		}
+		else {
 			removeHeader("Connection");
 		}
 	}
@@ -162,10 +163,10 @@ std::string Response::getResponseHeaders() {
 	setConnClose(connClose);
 
 	std::string statusLine;
-	if (fromFullResponse){
+	if (fromFullResponse) {
 		statusLine = this->statusLine;
 	}
-	else{
+	else {
 		statusLine = (boost::format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(statusCode)).str();
 	}
 	std::vector<std::string> headerStrings;
@@ -201,16 +202,15 @@ std::string getStatusReason(int statusCode) {
 
 
 std::string formatTitleCase(std::string str) {
-	if (str.length() != 0){
-		str[0] = (char) toupper(str[0]);
+	if (str.length() != 0) {
+		str[0] = (char)toupper(str[0]);
 	}
 	size_t idx = str.find('-');
-	while (idx != std::string::npos){
-		if (idx != str.length() - 1){
-			str[idx + 1] = (char) toupper(str[idx + 1]);
+	while (idx != std::string::npos) {
+		if (idx != str.length() - 1) {
+			str[idx + 1] = (char)toupper(str[idx + 1]);
 		}
 		idx = str.find('-', idx + 1);
 	}
 	return str;
 }
-

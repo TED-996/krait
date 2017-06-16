@@ -17,7 +17,7 @@ WebsocketsServer::WebsocketsServer(int clientSocket) {
 
 boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
 	boost::optional<WebsocketsFrame> frameOptional = getWebsocketsFrameTimeout(clientSocket, timeoutMs);
-	if (!frameOptional){
+	if (!frameOptional) {
 		return boost::none;
 	}
 	//DBG("frame got");
@@ -72,11 +72,11 @@ void WebsocketsServer::write(WebsocketsMessage message) {
 
 	do {
 		size_t frameLen = maxSize;
-		if (msgIdx + maxSize > message.message.length()){
+		if (msgIdx + maxSize > message.message.length()) {
 			frame.isFin = true;
 			frameLen = message.message.length() - msgIdx;
 		}
-		else{
+		else {
 			frame.isFin = false;
 		}
 		frame.message.assign(message.message, msgIdx, frameLen);
@@ -85,7 +85,8 @@ void WebsocketsServer::write(WebsocketsMessage message) {
 
 		msgIdx += frameLen;
 		frame.opcode = Continuation;
-	} while(!frame.isFin);
+	}
+	while (!frame.isFin);
 }
 
 void WebsocketsServer::sendPing() {
@@ -127,8 +128,8 @@ void WebsocketsServer::handlePong(WebsocketsFrame pong) {
 	//TODO: remember that the ping is here.
 }
 
-bool WebsocketsServer::start(Request &upgradeRequest) {
-	if (!handleUpgradeRequest(upgradeRequest)){
+bool WebsocketsServer::start(Request& upgradeRequest) {
+	if (!handleUpgradeRequest(upgradeRequest)) {
 		return false;
 	}
 	// Request is now upgraded to a WebSockets request.
@@ -145,23 +146,23 @@ bool WebsocketsServer::start(Request &upgradeRequest) {
 
 	PythonModule::websockets.callObject(ctrlStartMethod);
 
-	while(!closed){
+	while (!closed) {
 		boost::optional<WebsocketsMessage> msgInOpt;
 		Py_BEGIN_ALLOW_THREADS
 			msgInOpt = this->read(8);
 		Py_END_ALLOW_THREADS
-		if (msgInOpt != boost::none){
+		if (msgInOpt != boost::none) {
 			//("in msg with success");
 			//DBG_FMT("MSG: %1%", msgInOpt.get().message);
 			WebsocketsMessage& msgIn = msgInOpt.get();
-			if (msgIn.opcode == WebsocketsOpcode::Text || msgIn.opcode == WebsocketsOpcode::Binary){
+			if (msgIn.opcode == WebsocketsOpcode::Text || msgIn.opcode == WebsocketsOpcode::Binary) {
 				//DBG("calling inMsgEvent");
 				PythonModule::websockets.callObject(inMsgEvent, boost::python::str(msgIn.message));
 			}
 		}
 
 		boost::python::object outMsg = PythonModule::websockets.callObject(outMsgGetter);
-		if (!outMsg.is_none()){
+		if (!outMsg.is_none()) {
 			std::string msgString = boost::python::extract<std::string>(outMsg);
 			//DBG_FMT("sending %1%", msgString);
 
@@ -174,28 +175,28 @@ bool WebsocketsServer::start(Request &upgradeRequest) {
 
 	PythonModule::websockets.callObject(ctrlStopMethod);
 	int attemptsLeft = 12; // give it 12 x 5s = 1 minute. A bit much, true.
-	while(attemptsLeft > 0 &&
-			!boost::python::extract<bool>(
-					PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(5)))){
+	while (attemptsLeft > 0 &&
+		!boost::python::extract<bool>(
+			PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(5)))) {
 		Loggers::errLogger.log(formatString("[WARNING]: Websockets controller on url %1% not shutting down, "
-		                                            "retrying until timeout...", upgradeRequest.getUrl()));
+		                                    "retrying until timeout...", upgradeRequest.getUrl()));
 		attemptsLeft--;
 	}
 
 	if (!boost::python::extract<bool>(
-			PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(1)))) {
+		PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(1)))) {
 		Loggers::errLogger.log(formatString("[SERIOUS WARNING]: Websockets controller on url %1% failed to shut down "
-		                                            "within the timeout. Process closing forcefully.",
+		                                    "within the timeout. Process closing forcefully.",
 		                                    upgradeRequest.getUrl()));
 	}
 
 	return true;
 }
 
-std::string encode64(const std::string &val);
+std::string encode64(const std::string& val);
 
-bool WebsocketsServer::handleUpgradeRequest(Request &request) {
-	if (PythonModule::websockets.checkIsNone("response")){
+bool WebsocketsServer::handleUpgradeRequest(Request& request) {
+	if (PythonModule::websockets.checkIsNone("response")) {
 		respondWithObject(clientSocket, Response(400, "", true));
 		return false;
 	}
@@ -205,23 +206,23 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 
 	boost::optional<std::string> protocol = boost::none;
 
-	if (PythonModule::websockets.test("response.protocol is not None")){
+	if (PythonModule::websockets.test("response.protocol is not None")) {
 		protocol = PythonModule::websockets.eval("response.protocol");
 	}
 
-	if (!key){
+	if (!key) {
 		respondWithObject(clientSocket, Response(1, 1, 400, std::unordered_multimap<std::string, std::string>(), "", true));
 		return false;
 	}
-	if (!version || version.get() != "13"){
+	if (!version || version.get() != "13") {
 		respondWithObject(clientSocket, Response(
-				1,
-				1,
-				400,
-				std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
-				"",
-				true
-		));
+			                  1,
+			                  1,
+			                  400,
+			                  std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
+			                  "",
+			                  true
+		                  ));
 		return false;
 	}
 
@@ -236,39 +237,39 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 	char hashBytes[20];
 	const char* tmp = reinterpret_cast<char*>(digest);
 
-	for (int i = 0; i < 5; i++){
-		hashBytes[i*4] = tmp[i*4+3];
-		hashBytes[i*4+1] = tmp[i*4+2];
-		hashBytes[i*4+2] = tmp[i*4+1];
-		hashBytes[i*4+3] = tmp[i*4];
+	for (int i = 0; i < 5; i++) {
+		hashBytes[i * 4] = tmp[i * 4 + 3];
+		hashBytes[i * 4 + 1] = tmp[i * 4 + 2];
+		hashBytes[i * 4 + 2] = tmp[i * 4 + 1];
+		hashBytes[i * 4 + 3] = tmp[i * 4];
 	}
 
 	std::string outHash = encode64(std::string(hashBytes, 20));
 
 	std::unordered_multimap<std::string, std::string> outHeaders{
-			{"Sec-WebSocket-Accept", outHash},
-			{"Connection", "Upgrade"},
-			{"Upgrade", "websocket"}
+		{"Sec-WebSocket-Accept", outHash},
+		{"Connection", "Upgrade"},
+		{"Upgrade", "websocket"}
 	};
 
-	if (protocol != boost::none){
+	if (protocol != boost::none) {
 		outHeaders.insert(make_pair("Sec-WebSocket-Protocol", protocol.get()));
 	}
 
 	respondWithObject(clientSocket, Response(
-			1,
-			1,
-			101,
-			outHeaders,
-			"",
-			false
-	));
+		                  1,
+		                  1,
+		                  101,
+		                  outHeaders,
+		                  "",
+		                  false
+	                  ));
 
 	return true;
 }
 
 
-std::string encode64(const std::string &val) {
+std::string encode64(const std::string& val) {
 	using namespace boost::archive::iterators;
 	using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
 	auto tmp = std::string(It(std::begin(val)), It(std::end(val)));

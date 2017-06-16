@@ -23,18 +23,18 @@ int main(int argc, char* argv[]) {
 
 	bpo::options_description genericDesc("Generic options");
 	genericDesc.add_options()
-		("help,h", "Print help information");
+			("help,h", "Print help information");
 
 	bpo::options_description mainDesc("Krait options");
 	mainDesc.add_options()
-		("port,p", bpo::value<int>(&port)->required(), "Set port for server to run on")
-		("stdout", bpo::value<std::string>(&stdoutName)->default_value("stdout"), "output logs (default is \"stdout\" for standard output)")
-		("stderr", bpo::value<std::string>(&stderrName)->default_value("stderr"), "error logs (default is \"stderr\" for standard error output)");
+			("port,p", bpo::value<int>(&port)->required(), "Set port for server to run on")
+			("stdout", bpo::value<std::string>(&stdoutName)->default_value("stdout"), "output logs (default is \"stdout\" for standard output)")
+			("stderr", bpo::value<std::string>(&stderrName)->default_value("stderr"), "error logs (default is \"stderr\" for standard error output)");
 
 	bpo::options_description hiddenDesc("Hidden options");
 	hiddenDesc.add_options()
-		("site-root,r", bpo::value<std::string>(&siteRoot)->required(), "Set website root directory");
-	
+			("site-root,r", bpo::value<std::string>(&siteRoot)->required(), "Set website root directory");
+
 	bpo::positional_options_description positionalDesc;
 	positionalDesc.add("site-root", 1);
 
@@ -47,37 +47,37 @@ int main(int argc, char* argv[]) {
 
 	bpo::variables_map parsedArgs;
 
-	try{
+	try {
 		bpo::store(bpo::command_line_parser(argc, argv).options(cmdlineOptions).positional(positionalDesc).run(), parsedArgs);
 
-		if (parsedArgs.count("help") != 0){
+		if (parsedArgs.count("help") != 0) {
 			std::cout << visibleOptions << '\n';
 			return 0;
 		}
 
 		bpo::notify(parsedArgs);
 	}
-	catch(boost::program_options::required_option& e){
+	catch (boost::program_options::required_option& e) {
 		std::cerr << "Invalid arguments: missing option " << e.get_option_name() << std::endl << "Run 'krait --help' for more information" << std::endl;
-		return 10; 
+		return 10;
 	}
-	catch(boost::program_options::error& e){
+	catch (boost::program_options::error& e) {
 		std::cerr << "Invalid arguments: " << e.what() << std::endl << "Run 'krait --help' for more information" << std::endl;
-		return 10; 
-	}
-
-	if ((stdoutName != "stdout" ? 1 : 0) + (stderrName != "stderr" ? 1 : 0 == 1)){
-		std::cerr << "Invalid arguments: specifying options stdout or stderr to non-default values requires both to be specified." << std::endl <<
-			"Run 'krait --help' for more information" << std::endl;
 		return 10;
 	}
 
-	if (stdoutName != "stdout" && stderrName != "stderr"){
+	if ((stdoutName != "stdout" ? 1 : 0) + (stderrName != "stderr" ? 1 : 0 == 1)) {
+		std::cerr << "Invalid arguments: specifying options stdout or stderr to non-default values requires both to be specified." << std::endl <<
+				"Run 'krait --help' for more information" << std::endl;
+		return 10;
+	}
+
+	if (stdoutName != "stdout" && stderrName != "stderr") {
 		startSetLoggers(stdoutName, stderrName);
 	}
-	
+
 	startCommanderProcess();
-	
+
 	DBG("Pre server ctor");
 	Server server(siteRoot, port);
 	DBG("post server ctor");
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void startSetLoggers(std::string outFilename, std::string errFilename){
+void startSetLoggers(std::string outFilename, std::string errFilename) {
 	int errPipe[2];
 	int infoPipe[2];
 
@@ -119,7 +119,7 @@ void startSetLoggers(std::string outFilename, std::string errFilename){
 	close(infoPipe[0]);
 
 	Loggers::setLoggers(infoPipe[1], errPipe[1]);
-	
+
 	close(infoPipe[1]);
 	close(errPipe[1]);
 }

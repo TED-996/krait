@@ -10,47 +10,49 @@ namespace bc = boost::chrono;
 LoggerIn Loggers::infoLogger(1);
 LoggerIn Loggers::errLogger(2);
 
-void Loggers::setLoggers(int infoPipe, int errPipe){
+void Loggers::setLoggers(int infoPipe, int errPipe) {
 	setInfoLogger(infoPipe);
 	setErrLogger(errPipe);
 }
 
-void Loggers::setInfoLogger(int infoPipe){
+void Loggers::setInfoLogger(int infoPipe) {
 	/*infoLogger.~LoggerIn();
 	new(&infoLogger)LoggerIn(infoPipe);*/
 	infoLogger = LoggerIn(infoPipe);
 }
 
-void Loggers::setErrLogger(int errPipe){
+void Loggers::setErrLogger(int errPipe) {
 	/*errLogger.~LoggerIn();
 	new(&errLogger)LoggerIn(errPipe);*/
 	infoLogger = LoggerIn(errPipe);
 }
 
-void Loggers::logInfo(std::string message){
+void Loggers::logInfo(std::string message) {
 	infoLogger.log(message);
 }
 
-void Loggers::logErr(std::string message){
+void Loggers::logErr(std::string message) {
 	errLogger.log(message);
 }
 
-LoggerOut::LoggerOut(){
+LoggerOut::LoggerOut() {
 	this->pipeIn = -1;
 }
 
-LoggerOut::LoggerOut(int pipeIn) : outfile() {
+LoggerOut::LoggerOut(int pipeIn)
+	: outfile() {
 	this->pipeIn = pipeIn;
 }
 
 
-LoggerOut::LoggerOut(int pipeIn, std::string filename) : outfile(filename) {
+LoggerOut::LoggerOut(int pipeIn, std::string filename)
+	: outfile(filename) {
 	this->pipeIn = pipeIn;
 }
 
 
 bool LoggerOut::tick(int timeoutMs) {
-	if (pipeIn == -1){
+	if (pipeIn == -1) {
 		fprintf(stderr, "LoggerOut::tick(): Error, invalid FD\n");
 		return false;
 	}
@@ -101,7 +103,7 @@ bool LoggerOut::tick(int timeoutMs) {
 
 
 void LoggerOut::close() {
-	if (pipeIn != -1){
+	if (pipeIn != -1) {
 		::close(pipeIn);
 		pipeIn = -1;
 	}
@@ -117,7 +119,7 @@ LoggerIn::LoggerIn(int pipeOut) {
 
 
 void LoggerIn::log(const char* buffer, size_t size) {
-	if (pipeOut == -1){
+	if (pipeOut == -1) {
 		fprintf(stderr, "LoggerIn::log: Cannot log; invalid FD attached.\n");
 		return;
 	}
@@ -143,9 +145,9 @@ void LoggerIn::log(const boost::format fmt) {
 
 
 void LoggerIn::close() {
-	if (pipeOut != -1){
+	if (pipeOut != -1) {
 		::close(pipeOut);
-		pipeOut = -1;	
+		pipeOut = -1;
 	}
 }
 

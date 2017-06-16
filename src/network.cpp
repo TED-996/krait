@@ -34,9 +34,9 @@ int getServerSocket(int port, bool setListen, bool reuseAddr) {
 	if (sd == -1) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not create socket.") << errcodeInfoDef());
 	}
-	
+
 	int enable = (int)reuseAddr;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: coult not set reuseAddr.") << errcodeInfoDef());
 	}
 
@@ -57,7 +57,7 @@ int getServerSocket(int port, bool setListen, bool reuseAddr) {
 void setSocketListen(int sd) {
 	if (listen(sd, 1024) == -1) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("getListenSocket: could not set socket to listen") << errcodeInfo(
-		                          errno));
+			errno));
 	}
 }
 
@@ -122,34 +122,34 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 	pfd.revents = 0;
 
 	while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
-		if (pollResult < 0){
+		if (pollResult < 0) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
 		}
 		int bytesRead = read(clientSocket, buffer, sizeof(buffer));
-		if (bytesRead == 0){
+		if (bytesRead == 0) {
 			return boost::none;
 		}
 		if (bytesRead < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK){
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				bytesRead = 0;
 			}
-			else{
+			else {
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
 			}
 		}
 
-		if (bytesRead != 0){
-			try{
+		if (bytesRead != 0) {
+			try {
 				parser.consume(buffer, bytesRead);
 			}
-			catch(httpParseError err){
+			catch (httpParseError err) {
 				Loggers::logErr(formatString("Error parsing http request: %s\n", err.what()));
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
 			}
 		}
 	}
 
-	if (!parser.isFinished()){
+	if (!parser.isFinished()) {
 		return boost::none;
 	}
 
@@ -157,20 +157,20 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 }
 
 
-bool readExactly(int clientSocket, void* dst, size_t nrBytes){
-	while(nrBytes > 0){
+bool readExactly(int clientSocket, void* dst, size_t nrBytes) {
+	while (nrBytes > 0) {
 		int bytesRead = read(clientSocket, dst, nrBytes);
 		//DBG_FMT("[readExactly] Read %1% bytes, errno is %2%", bytesRead, errno);
 
-		if (bytesRead == 0){
+		if (bytesRead == 0) {
 			return false;
 		}
 
-		if (bytesRead < 0){
+		if (bytesRead < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				bytesRead = 0;
 			}
-			else{
+			else {
 				return false;
 			}
 		}
@@ -189,55 +189,55 @@ WebsocketsFrame getWebsocketsFrame(int clientSocket) {
 	uint64_t length = 0;
 	uint32_t mask[4] = {0, 0, 0, 0};
 
-	if (!readExactly(clientSocket, &firstByte, 1) || !readExactly(clientSocket, &secondByte, 1)){
+	if (!readExactly(clientSocket, &firstByte, 1) || !readExactly(clientSocket, &secondByte, 1)) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read WebSockets frame: one of first 2 bytes missing.")
-		                                     << errcodeInfoDef());
+			<< errcodeInfoDef());
 	}
-	result.isFin = (bool) (firstByte & 0x80);
-	result.opcode = (WebsocketsOpcode) (firstByte & 0xF);
-	bool isMasked = (bool) (secondByte & 0x80);
+	result.isFin = (bool)(firstByte & 0x80);
+	result.opcode = (WebsocketsOpcode)(firstByte & 0xF);
+	bool isMasked = (bool)(secondByte & 0x80);
 
-	length = (uint64_t) (secondByte & 0x7F);
-	if (length == 126){
+	length = (uint64_t)(secondByte & 0x7F);
+	if (length == 126) {
 		uint16_t lenTmp = 0;
-		if (!readExactly(clientSocket, &lenTmp, 2)){
+		if (!readExactly(clientSocket, &lenTmp, 2)) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Websockets frame: 16-bit length missing.")
-												 << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 		length = ntohs(lenTmp);
 	}
 	else if (length == 127) {
 		if (!readExactly(clientSocket, &length, 8)) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Websockets frame: 64-bit length missing.")
-			                                     << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 		length = be64toh(length);
 	}
 
-	if (isMasked){
+	if (isMasked) {
 		if (!readExactly(clientSocket, &mask[0], 1) ||
 			!readExactly(clientSocket, &mask[1], 1) ||
 			!readExactly(clientSocket, &mask[2], 1) ||
-			!readExactly(clientSocket, &mask[3], 1)){
+			!readExactly(clientSocket, &mask[3], 1)) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Websockets frame: mask missing.")
-			                                     << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 	}
 	unsigned char block[4096];
 
-	while(length > 0){
+	while (length > 0) {
 		size_t sizeToRead = sizeof(block);
-		if (length < sizeToRead){
+		if (length < sizeToRead) {
 			sizeToRead = (size_t)length;
 		}
 		int bytesRead = read(clientSocket, &block, sizeToRead);
 		if (bytesRead < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK){
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				bytesRead = 0;
 			}
-			else{
+			else {
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Webockets frame: payload missing / partial")
-				                                     << errcodeInfoDef());
+					<< errcodeInfoDef());
 			}
 		}
 
@@ -264,12 +264,12 @@ boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int clientSocket, int
 	pfd.revents = 0;
 
 	int pollResult = poll(&pfd, 1, timeoutMs);
-	if (pollResult == 1){
+	if (pollResult == 1) {
 		return getWebsocketsFrame(clientSocket);
 	}
-	else if (pollResult < 0){
+	else if (pollResult < 0) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): polling for Websockets frame")
-		                                     << errcodeInfoDef());
+			<< errcodeInfoDef());
 	}
 	else {
 		return boost::optional<WebsocketsFrame>();
@@ -277,60 +277,60 @@ boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int clientSocket, int
 }
 
 
-void sendWebsocketsFrame(int clientSocket, WebsocketsFrame &frame){
+void sendWebsocketsFrame(int clientSocket, WebsocketsFrame& frame) {
 	uint8_t firstByte = 0;
 	uint64_t msgLen = frame.message.length();
 
-	if (frame.isFin){
+	if (frame.isFin) {
 		firstByte |= 0x80;
 	}
 
 	firstByte |= (uint8_t)frame.opcode;
-	if (write(clientSocket, &firstByte, 1) != 1){
+	if (write(clientSocket, &firstByte, 1) != 1) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not write Websockets frame (first byte)")
-		                                     << errcodeInfoDef());
+			<< errcodeInfoDef());
 	}
-	if (msgLen < 126){
-		uint8_t secondByte = (uint8_t) msgLen;
-		if (write(clientSocket, &secondByte, 1) != 1){
+	if (msgLen < 126) {
+		uint8_t secondByte = (uint8_t)msgLen;
+		if (write(clientSocket, &secondByte, 1) != 1) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not write Websockets frame (length < 126)")
-			                                     << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 	}
-	else if (msgLen <= 0xFFFF){
+	else if (msgLen <= 0xFFFF) {
 		uint8_t secondByte = 126;
 		uint16_t lenWord = htons((uint16_t)msgLen);
-		if (write(clientSocket, &secondByte, 1) != 1 || write(clientSocket, &lenWord, 2) != 2){
+		if (write(clientSocket, &secondByte, 1) != 1 || write(clientSocket, &lenWord, 2) != 2) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not write Websockets frame (126 <= length <= 65535")
-			                                     << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 	}
 	else {
 		uint8_t secondByte = 126;
 		uint64_t lenQword = htobe64(msgLen);
-		if (write(clientSocket, &secondByte, 1) != 1 || write(clientSocket, &lenQword, 8) != 8){
+		if (write(clientSocket, &secondByte, 1) != 1 || write(clientSocket, &lenQword, 8) != 8) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not write Websockets frame (length > 65535")
-			                                     << errcodeInfoDef());
+				<< errcodeInfoDef());
 		}
 	}
 
 	const char* data = frame.message.c_str();
 	const size_t blockSize = 65536;
 	size_t lenLeft = frame.message.length();
-	while (lenLeft > 0){
+	while (lenLeft > 0) {
 		size_t bytesToWrite = blockSize;
-		if (lenLeft < bytesToWrite){
+		if (lenLeft < bytesToWrite) {
 			bytesToWrite = lenLeft;
 		}
 
 		int bytesWritten = write(clientSocket, data, bytesToWrite);
-		if (bytesWritten < 0){
-			if (errno == EAGAIN || errno == EWOULDBLOCK){
+		if (bytesWritten < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				bytesWritten = 0;
 			}
-			else{
+			else {
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("Could not read Webockets frame: payload missing / partial")
-				                                     << errcodeInfoDef());
+					<< errcodeInfoDef());
 			}
 		}
 		lenLeft -= bytesWritten;
@@ -363,7 +363,7 @@ void respondWithObjectRef(int clientSocket, Response& response) {
 
 	//DBG("getting first bodyNext");
 	const std::string* bodyNext = response.getBodyNext();
-	while(bodyNext != NULL){
+	while (bodyNext != NULL) {
 		//DBG_FMT("sending body: std::string ptr is %p, body is %p, len is %d", bodyNext, bodyNext->c_str(), bodyNext->length());
 
 		respondWithBuffer(clientSocket, bodyNext->c_str(), bodyNext->length());
@@ -373,7 +373,7 @@ void respondWithObjectRef(int clientSocket, Response& response) {
 	}
 }
 
-void respondWithObject(int clientSocket, Response response){
+void respondWithObject(int clientSocket, Response response) {
 	respondWithObjectRef(clientSocket, response);
 }
 
@@ -393,11 +393,11 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 		//DBG_FMT("sending buffer one, %d bytes from ptr %p", lenCurrent, response);
 		int writeOut = write(clientSocket, response, lenCurrent);
 		if (writeOut < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK){
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				writeOut = 0;
 				//DBG("eagain/wouldblock");
 			}
-			else{
+			else {
 				BOOST_THROW_EXCEPTION(networkError() << stringInfo("respondWith: could not send response.") << errcodeInfoDef());
 			}
 		}
@@ -405,7 +405,3 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 		lenLeft -= writeOut;
 	}
 }
-
-
-
-

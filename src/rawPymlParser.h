@@ -2,7 +2,8 @@
 #include "IPymlParser.h"
 #include "pymlItems.h"
 
-class RawPymlParser : public IPymlParser {
+class RawPymlParser : public IPymlParser
+{
 	PymlItemStr pymlItem;
 
 public:

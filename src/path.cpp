@@ -20,17 +20,17 @@ bf::path getExecRoot() {
 	return bf::path(exePath).parent_path();
 }
 
-bf::path getCreateDataRoot(){
+bf::path getCreateDataRoot() {
 	return getExecRoot();
 }
 
-bool pathCheckExists(std::string filename){
+bool pathCheckExists(std::string filename) {
 	struct stat data;
 	int stat_result = stat(filename.c_str(), &data);
-	if (stat_result == 0){
+	if (stat_result == 0) {
 		return true;
 	}
-	else{
+	else {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("not found: by stat on %1%", filename.c_str())
 			<< errcodeInfoDef());
 	}

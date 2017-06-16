@@ -5,7 +5,8 @@
 
 //TOOD: include Logger in this file
 
-class LoggerOut {
+class LoggerOut
+{
 	int pipeIn;
 	std::ofstream outfile;
 
@@ -13,7 +14,8 @@ public:
 	LoggerOut();
 	LoggerOut(int pipeIn);
 	LoggerOut(int pipeIn, std::string filename);
-	~LoggerOut(){
+
+	~LoggerOut() {
 		close();
 	}
 
@@ -23,17 +25,22 @@ public:
 };
 
 
-class LoggerIn {
+class LoggerIn
+{
 	int pipeOut;
 
 public:
-	LoggerIn() : pipeOut(dup(0)){
+	LoggerIn()
+		: pipeOut(dup(0)) {
 	}
 
 	explicit LoggerIn(int pipeOut);
-	LoggerIn(LoggerIn& other) : pipeOut(dup(other.pipeOut)){
+
+	LoggerIn(LoggerIn& other)
+		: pipeOut(dup(other.pipeOut)) {
 	}
-	~LoggerIn(){
+
+	~LoggerIn() {
 		close();
 	}
 
@@ -46,27 +53,29 @@ public:
 };
 
 
-class Loggers {
+class Loggers
+{
 public:
 	static LoggerIn infoLogger;
 	static LoggerIn errLogger;
 
-	static void setLoggers(int infoPipe, int errPipe);	
+	static void setLoggers(int infoPipe, int errPipe);
 	static void setInfoLogger(int infoPipe);
 	static void setErrLogger(int errPipe);
 
 	static void logInfo(std::string message);
 	static void logErr(std::string message);
 
-	static LoggerIn& getInfoLogger(){
+	static LoggerIn& getInfoLogger() {
 		return infoLogger;
 	}
-	static LoggerIn& getErrLogger(){
+
+	static LoggerIn& getErrLogger() {
 		return errLogger;
 	}
 
 private:
-	Loggers(){
+	Loggers() {
 	}
 };
 

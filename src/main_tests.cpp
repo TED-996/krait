@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(funcs_python) {
 
 		std::cout << PythonModule::main.eval("abc") << '\n';
 		std::cout << PythonModule::main.eval("True") << ' ' << PythonModule::main.test("'abc'") << ' '
-		     << PythonModule::main.test("0") << ' ' << PythonModule::main.test("False") << std::endl;
+				<< PythonModule::main.test("0") << ' ' << PythonModule::main.test("False") << std::endl;
 	}
 	catch (pythonError& err) {
 		std::cout << "caught error!" << std::endl;

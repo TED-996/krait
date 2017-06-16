@@ -3,14 +3,14 @@
 
 RawPythonPymlParser::RawPythonPymlParser(IPymlCache& cache)
 	:
-		cache(cache),
-		mainExec(""),
-		rootSeq(std::vector<const PymlItem*>()),
-		ctrlCondition("False", nullptr, nullptr),
-		embedRootSeq(std::vector<const PymlItem*>()),
-		embedSetupExec(""),
-		viewEmbed("", cache),
-		embedCleanupExec(""){
+	cache(cache),
+	mainExec(""),
+	rootSeq(std::vector<const PymlItem*>()),
+	ctrlCondition("False", nullptr, nullptr),
+	embedRootSeq(std::vector<const PymlItem*>()),
+	embedSetupExec(""),
+	viewEmbed("", cache),
+	embedCleanupExec("") {
 }
 
 void RawPythonPymlParser::consume(std::string::iterator start, std::string::iterator end) {
@@ -24,6 +24,6 @@ void RawPythonPymlParser::consume(std::string::iterator start, std::string::iter
 	rootSeq = PymlItemSeq(std::vector<const PymlItem*>({&mainExec, &ctrlCondition}));
 }
 
-const IPymlItem *RawPythonPymlParser::getParsed() {
+const IPymlItem* RawPythonPymlParser::getParsed() {
 	return &rootSeq;
 }

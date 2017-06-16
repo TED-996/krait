@@ -7,13 +7,14 @@
 #include<memory>
 #include"request.h"
 
-class PythonModule {
+class PythonModule
+{
 private:
 	std::string name;
 	boost::python::object moduleObject;
 	boost::python::dict moduleGlobals;
 
-//Statics
+	//Statics
 public:
 	static PythonModule main;
 	static PythonModule krait;
@@ -25,7 +26,7 @@ private:
 	static bool modulesInitialized;
 	static boost::python::object requestType;
 
-//Methods
+	//Methods
 public:
 	PythonModule(std::string name);
 	void clear();
@@ -53,7 +54,7 @@ public:
 private:
 	void setGlobal(std::string name, boost::python::object value);
 
-//Statics
+	//Statics
 public:
 	static std::string prepareStr(std::string pyCode);
 	static std::string errAsString();
@@ -64,18 +65,20 @@ public:
 private:
 	static void resetModules(std::string projectDir);
 
-//Structs
+	//Structs
 private:
-	struct StringMapToPythonObjectConverter{
+	struct StringMapToPythonObjectConverter
+	{
 		static PyObject* convert(std::map<std::string, std::string> const& map);
 	};
 
-	struct requestToPythonObjectConverter {
+	struct requestToPythonObjectConverter
+	{
 		static PyObject* convert(Request const& request);
 	};
 
-	struct StringMultimapToPythonObjectConverter {
+	struct StringMultimapToPythonObjectConverter
+	{
 		static PyObject* convert(std::multimap<std::string, std::string> const& map);
 	};
-
 };

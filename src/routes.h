@@ -7,7 +7,8 @@
 #include "http.h"
 
 
-class Route {
+class Route
+{
 	RouteVerb verb;
 	boost::optional<boost::regex> urlRegex;
 	boost::optional<std::string> urlRaw;
@@ -30,4 +31,3 @@ public:
 	static const Route& getRouteMatch(const std::vector<Route> routes, RouteVerb verb, std::string url,
 	                                  std::map<std::string, std::string>& outParams);
 };
-

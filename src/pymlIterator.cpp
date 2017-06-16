@@ -4,61 +4,61 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-PymlIterator::PymlIterator(const IPymlItem* rootItem){
+PymlIterator::PymlIterator(const IPymlItem* rootItem) {
 	items.push(rootItem);
 
 	lastValuePtr = rootItem->getEmbeddedString(&tmpStr);
-	if (lastValuePtr == NULL){
+	if (lastValuePtr == NULL) {
 		++(*this);
 	}
 }
 
 PymlIterator::PymlIterator(const PymlIterator& other)
-	: items(other.items), tmpStr(other.tmpStr), lastValuePtr(other.lastValuePtr){
-	if (other.lastValuePtr == &other.tmpStr){
+	: items(other.items), tmpStr(other.tmpStr), lastValuePtr(other.lastValuePtr) {
+	if (other.lastValuePtr == &other.tmpStr) {
 		this->lastValuePtr = &this->tmpStr;
 	}
 }
 
-const std::string* PymlIterator::operator*(){
-	if (items.empty()){
+const std::string* PymlIterator::operator*() {
+	if (items.empty()) {
 		return NULL;
 	}
-	
+
 	return lastValuePtr;
 }
 
-PymlIterator& PymlIterator::operator++(){
-	if (items.empty()){
+PymlIterator& PymlIterator::operator++() {
+	if (items.empty()) {
 		return *this;
 	}
 
 	const std::string* retStr = NULL;
-	while(retStr == NULL && !items.empty()){
+	while (retStr == NULL && !items.empty()) {
 		//Starting a new item.
 		const IPymlItem* lastItem = NULL;
 		const IPymlItem* nextItem = items.top()->getNext(NULL);
-		while (nextItem == NULL && !items.empty()){
+		while (nextItem == NULL && !items.empty()) {
 			lastItem = items.top();
 			items.pop();
 			//DBG("pop");
-			if (!items.empty()){
+			if (!items.empty()) {
 				nextItem = items.top()->getNext(lastItem);
 			}
 		}
 
-		if (nextItem != NULL){
+		if (nextItem != NULL) {
 			items.push(nextItem);
 			//DBG("push");
 		}
-		else{
+		else {
 			//DBG("null next...");
 		}
 
-		if (!items.empty()){
+		if (!items.empty()) {
 			retStr = items.top()->getEmbeddedString(&tmpStr);
 		}
-		else{
+		else {
 			retStr = NULL;
 		}
 	}
@@ -68,11 +68,11 @@ PymlIterator& PymlIterator::operator++(){
 	return *this;
 }
 
-bool PymlIterator::compareWith(std::string other){
+bool PymlIterator::compareWith(std::string other) {
 	const char* otherPtr = other.c_str();
 	//DBG_FMT("**this: %p", **this);
-	while(**this != NULL){
-		if (memcmp((**this)->c_str(), otherPtr, (**this)->length()) != 0){
+	while (**this != NULL) {
+		if (memcmp((**this)->c_str(), otherPtr, (**this)->length()) != 0) {
 			BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Iterator comparison failed! Expected %1%, got %2%", otherPtr, ***this));
 		}
 		otherPtr += (**this)->length();
@@ -82,7 +82,7 @@ bool PymlIterator::compareWith(std::string other){
 	}
 	//DBG("???");
 
-	if (otherPtr != other.c_str() + other.length()){
+	if (otherPtr != other.c_str() + other.length()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Iterator premature end! String %1% missing.", otherPtr));
 	}
 	//DBG("Compare finished.");

@@ -11,24 +11,24 @@ V2PymlParserFsm V2PymlParser::parserFsm;
 
 
 V2PymlParser::V2PymlParser(IPymlCache& cache)
-	: cache(cache){
+	: cache(cache) {
 	rootItem = NULL;
 	krItIndex = 0;
 }
 
 
-void V2PymlParser::consume(std::string::iterator start, std::string::iterator end){
+void V2PymlParser::consume(std::string::iterator start, std::string::iterator end) {
 	//BOOST_THROW_EXCEPTION(serverError() << stringInfo("v2 parser not implemented yet."));
 	//DBG_FMT("consuming a len of %1%", end - start);
 
-	while(itemStack.size() != 0){
+	while (itemStack.size() != 0) {
 		itemStack.pop();
 	}
 	itemStack.emplace(PymlWorkingItem::Type::Seq);
 
 	parserFsm.reset();
 	parserFsm.setParser(this);
-	while(start != end){
+	while (start != end) {
 		//DBG_FMT("In state %1%: consuming ch %2%", parserFsm.getState(), *start);
 		parserFsm.consumeOne(*start);
 		start++;
@@ -36,12 +36,12 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 
 	parserFsm.doFinalPass();
 
-	if (itemStack.size() != 1){
+	if (itemStack.size() != 1) {
 		DBG_FMT("Error unexpected end! state is %1%", parserFsm.getState());
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("Error parsing pyml file: Unexpected end, tag not closed."));
 	}
 
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		DBG_FMT("Error top not Seq! State is %1%", parserFsm.getState());
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: after consuming file, working item is not PymlWorkingItem::SeqData."));
 	}
@@ -51,14 +51,14 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 }
 
 
-const IPymlItem* V2PymlParser::getParsed(){
+const IPymlItem* V2PymlParser::getParsed() {
 	return rootItem;
 }
 
 
 void V2PymlParser::addPymlWorkingStr(const std::string& str) {
 	//DBG_FMT("added str %1%", str);
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
@@ -68,9 +68,9 @@ void V2PymlParser::addPymlWorkingStr(const std::string& str) {
 	data.items.push_back(newItem);
 }
 
-bool isWhitespace(const std::string& str){
-	for (auto ch : str){
-		if (!std::isspace(ch)){
+bool isWhitespace(const std::string& str) {
+	for (auto ch : str) {
+		if (!std::isspace(ch)) {
 			return false;
 		}
 	}
@@ -80,11 +80,11 @@ bool isWhitespace(const std::string& str){
 
 void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) {
 	//DBG_FMT("added pycode %1%", code);
-	if (code.length() == 0 || isWhitespace(code)){
+	if (code.length() == 0 || isWhitespace(code)) {
 		return;
 	}
 
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
@@ -95,13 +95,13 @@ void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::s
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
-	if (filename.length() == 0 || isWhitespace(filename)){
+void V2PymlParser::addPymlWorkingEmbed(const std::string& filename) {
+	if (filename.length() == 0 || isWhitespace(filename)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("Import filename code empty."));
 	}
 
 	//DBG_FMT("added embed %1%", filename);
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
@@ -118,12 +118,12 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string &filename) {
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::addPymlWorkingCtrl(const std::string &ctrlCode) {
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+void V2PymlParser::addPymlWorkingCtrl(const std::string& ctrlCode) {
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
 
-	if (ctrlCode.length() == 0 || isWhitespace(ctrlCode)){
+	if (ctrlCode.length() == 0 || isWhitespace(ctrlCode)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("import-ctrl controller code empty."));
 	}
 
@@ -136,9 +136,9 @@ void V2PymlParser::addPymlWorkingCtrl(const std::string &ctrlCode) {
 	addPymlStackTop();
 }
 
-void V2PymlParser::pushPymlWorkingIf(const std::string& condition){
+void V2PymlParser::pushPymlWorkingIf(const std::string& condition) {
 	//DBG_FMT("added @if %1%:", condition);
-	if (condition.length() == 0 || isWhitespace(condition)){
+	if (condition.length() == 0 || isWhitespace(condition)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("If condition code empty."));
 	}
 
@@ -157,7 +157,7 @@ void V2PymlParser::pushPymlWorkingSeq() {
 
 bool V2PymlParser::addSeqToPymlWorkingIf() {
 	//DBG("finished if block");
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		return false;
 	}
 	PymlWorkingItem& itemSrc = itemStack.top();
@@ -165,25 +165,25 @@ bool V2PymlParser::addSeqToPymlWorkingIf() {
 	*item = itemSrc;
 	itemStack.pop();
 
-	if (itemStack.empty()){
+	if (itemStack.empty()) {
 		return false;
 	}
 
 	PymlWorkingItem::IfData* data = itemStack.top().getData<PymlWorkingItem::IfData>();
-	if (data == NULL){
+	if (data == NULL) {
 		DBG_FMT("Bad item data; expected IfData, got %1%", itemStack.top().type);
 		return false;
 	}
 
-	if (data->itemIfTrue == nullptr){
+	if (data->itemIfTrue == nullptr) {
 		data->itemIfTrue = item;
 		return true;
 	}
-	else if (data->itemIfFalse == nullptr){
+	else if (data->itemIfFalse == nullptr) {
 		data->itemIfFalse = item;
 		return true;
 	}
-	else{
+	else {
 		return false;
 	}
 }
@@ -192,7 +192,7 @@ bool V2PymlParser::addSeqToPymlWorkingIf() {
 bool V2PymlParser::addSeqToPymlWorkingFor() {
 	//DBG("finished for block");
 
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		return false;
 	}
 	PymlWorkingItem& itemSrc = itemStack.top();
@@ -200,12 +200,12 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 	*item = itemSrc;
 	itemStack.pop();
 
-	if (itemStack.empty()){
+	if (itemStack.empty()) {
 		return false;
 	}
 
 	PymlWorkingItem::ForData* data = itemStack.top().getData<PymlWorkingItem::ForData>();
-	if (data == NULL){
+	if (data == NULL) {
 		DBG_FMT("Bad item data; expected ForData, got %1%", itemStack.top().type);
 		return false;
 	}
@@ -217,22 +217,22 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 void V2PymlParser::addCodeToPymlWorkingFor(int where, const std::string& code) {
 	//DBG_FMT("added code %1% at pos %2% in @for", code, where);
 
-	if (!stackTopIsType<PymlWorkingItem::ForData>()){
+	if (!stackTopIsType<PymlWorkingItem::ForData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Parser error: tried to add code to <?for ?> without a for being on top"));
 	}
-	if (code.length() == 0 || isWhitespace(code)){
+	if (code.length() == 0 || isWhitespace(code)) {
 		return;
 	}
 
 	PymlWorkingItem::ForData& data = getStackTop<PymlWorkingItem::ForData>();
 
-	if (where == 0){
+	if (where == 0) {
 		data.initCode = code;
 	}
-	else if (where == 1){
+	else if (where == 1) {
 		data.conditionCode = code;
 	}
-	else if (where == 2){
+	else if (where == 2) {
 		data.updateCode = code;
 	}
 }
@@ -243,24 +243,24 @@ void V2PymlParser::addPymlStackTop() {
 	*newItem = itemSrc;
 	itemStack.pop();
 
-	if (itemStack.empty()){
+	if (itemStack.empty()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tried reducing a stack with just one item."));
 	}
 
-	if (!stackTopIsType<PymlWorkingItem::SeqData>()){
+	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(
-				serverError() <<
-				stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
+			serverError() <<
+			stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collection){
+void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collection) {
 	DBG_FMT("Added @for %1% in %2%:", entry, collection);
 
-	if (entry.length() == 0 || isWhitespace(entry) || collection.length() == 0 || isWhitespace(collection)){
+	if (entry.length() == 0 || isWhitespace(entry) || collection.length() == 0 || isWhitespace(collection)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
 	}
 
@@ -270,10 +270,10 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 
 	//1: krIterator; 2: collection;;; 3: entry
 	std::string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
-	                   % krIterator % collection % entry).str();
+		% krIterator % collection % entry).str();
 	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
 	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
-	                     % krIterator % collection % entry).str();
+		% krIterator % collection % entry).str();
 
 	pushPymlWorkingFor();
 	addCodeToPymlWorkingFor(0, initCode);
@@ -284,7 +284,8 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 }
 
 
-V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 60) { //TODO: tune
+V2PymlParserFsm::V2PymlParserFsm()
+	: FsmV2(30, 60) { //TODO: tune
 	parser = nullptr;
 	init();
 }
@@ -341,21 +342,22 @@ void V2PymlParserFsm::init() {
 	add(atRoot, new SavepointSet(new PymlAddStr(&parser, new SavepointRevert(new Always(atRoot2, false)))));
 
 	// @{...}
-	add(atRoot2, new Skip(new Action(new Simple('{', execRoot), [=](FsmV2& fsm) {fsm.setProp(bracketDepthKey, 0);})));
+	add(atRoot2, new Skip(new Action(new Simple('{', execRoot), [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, 0); })));
 	//Finish @{...}
 	add(execRoot, new PymlAddPyCodeTransition(&parser,
-	                                           new Skip(new Condition(new Simple('}', start),
-	                                                                  [=](char chr, FsmV2& fsm) {
-	                                                                      return fsm.getProp(bracketDepthKey) == 0;})),
-	                                           PymlWorkingItem::Type::PyExec));
+	                                          new Skip(new Condition(new Simple('}', start),
+	                                                                 [=](char chr, FsmV2& fsm) {
+	                                                                return fsm.getProp(bracketDepthKey) == 0;
+                                                                })),
+	                                          PymlWorkingItem::Type::PyExec));
 	//Increase depth
 	add(execRoot, new Action(new Simple('{', execRoot), [=](FsmV2& fsm) {
-		fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);
-	}));
+	                        fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) + 1);
+                        }));
 	//Decrease depth
 	add(execRoot, new Action(new Condition(new Simple('}', execRoot),
-	                                        [=](char chr, FsmV2& fsm) {return fsm.getProp(bracketDepthKey) != 0;}),
-	                          [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) - 1);}));
+	                                       [=](char chr, FsmV2& fsm) { return fsm.getProp(bracketDepthKey) != 0; }),
+	                         [=](FsmV2& fsm) { fsm.setProp(bracketDepthKey, fsm.getProp(bracketDepthKey) - 1); }));
 	//escape strings
 	addStringLiteralParser(execRoot, execRoot, '\"', '\\');
 	addStringLiteralParser(execRoot, execRoot, '\'', '\\');
@@ -489,7 +491,6 @@ void V2PymlParserFsm::init() {
 	add(atImport, new Always(evalRoot, false));
 
 
-
 	// @!expr
 	add(atRoot2, new Skip(new Simple('!', evalRawRoot)));
 	// Finish by whitespace
@@ -521,41 +522,54 @@ void V2PymlParserFsm::init() {
 	// Continue PyEvalRaw
 	add(evalRoot, new Always(evalRoot));
 
-	addFinalActionToMany([=](FsmV2& fsm){ finalAddPymlStr();}, {
-		start, atRoot, atRoot2
-	});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-		stringInfo("Incomplete '@...'/'@!...' Python expression, most likely unfinished string literal"));},
+	addFinalActionToMany([=](FsmV2& fsm) { finalAddPymlStr(); }, {
+		                     start, atRoot, atRoot2
+	                     });
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Incomplete '@...'/'@!...' Python expression, most likely unfinished string literal"));
+                    },
 	                     {evalRoot, evalRawRoot});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-		stringInfo("Unterminated '@{ ... }' block."));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Unterminated '@{ ... }' block."));
+                    },
 	                     {execRoot});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-		stringInfo("Incomplete '@if ... :' instruction."));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Incomplete '@if ... :' instruction."));
+                    },
 	                     {ifRoot});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-	    stringInfo("Incomplete '@else:' instruction."));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Incomplete '@else:' instruction."));
+                    },
 	                     {elseRoot});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-		stringInfo("Incomplete '@for ... in ... :' instruction."));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Incomplete '@for ... in ... :' instruction."));
+                    },
 	                     {forEntry, forPreIn, forPostIn, forCollection});
-	addFinalActionToMany([=](FsmV2& fsm){ finalThrowError(pymlError() <<
-		stringInfo("Incomplete '@import ...' instruction."));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    finalThrowError(pymlError() <<
+		                    stringInfo("Incomplete '@import ...' instruction."));
+                    },
 	                     {importRoot});
-	addFinalActionToMany([=](FsmV2& fsm){ BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat(
-				"BUG IN PYML PARSER: stuck in final state %1%", fsm.getState()
-		));},
+	addFinalActionToMany([=](FsmV2& fsm) {
+	                    BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat(
+			                    "BUG IN PYML PARSER: stuck in final state %1%", fsm.getState()
+		                    ));
+                    },
 	                     {atI, atIf, atFor, atSlash, endIf, endFor, atImport});
 }
 
 void V2PymlParserFsm::finalAddPymlStr() {
 	std::string pymlStr = getResetStored();
-	if (pymlStr.length() != 0){
+	if (pymlStr.length() != 0) {
 		parser->addPymlWorkingStr(pymlStr);
 	}
 }
 
-void V2PymlParserFsm::finalThrowError(const pymlError &err) {
+void V2PymlParserFsm::finalThrowError(const pymlError& err) {
 	BOOST_THROW_EXCEPTION(err);
 }
-

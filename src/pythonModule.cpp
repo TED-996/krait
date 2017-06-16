@@ -34,13 +34,13 @@ PyObject* PythonModule::StringMapToPythonObjectConverter::convert(std::map<std::
 	return bp::incref(result.ptr());
 }
 
-PyObject * PythonModule::StringMultimapToPythonObjectConverter::convert(
-		std::multimap<std::string, std::string> const &map) {
+PyObject* PythonModule::StringMultimapToPythonObjectConverter::convert(
+	std::multimap<std::string, std::string> const& map) {
 
 	DBG("in multimap<std::string, std::string>->PyObject()");
 
 	bp::list result;
-	for (const auto& it : map){
+	for (const auto& it : map) {
 		result.append(bp::make_tuple(bp::str(it.first), bp::str(it.second)));
 	}
 
@@ -52,12 +52,12 @@ PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& r
 	DBG("in Request->PyObject()");
 
 	bp::object result = PythonModule::requestType(
-			bp::str(httpVerbToString(request.getVerb())),
-			bp::str(request.getUrl()),
-			bp::str(request.getQueryString()),
-			bp::str((b::format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
-			bp::dict(request.getHeaders()),
-			bp::str(request.getBody())
+		bp::str(httpVerbToString(request.getVerb())),
+		bp::str(request.getUrl()),
+		bp::str(request.getQueryString()),
+		bp::str((b::format("HTTP/%1%.%2%") % request.getHttpMajor() % request.getHttpMinor()).str()),
+		bp::dict(request.getHeaders()),
+		bp::str(request.getBody())
 	);
 
 	return bp::incref(result.ptr());
@@ -66,7 +66,7 @@ PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& r
 
 void PythonModule::initPython() {
 	DBG("initializing python");
-	if (pythonInitialized){
+	if (pythonInitialized) {
 		return;
 	}
 	try {
@@ -90,7 +90,7 @@ void PythonModule::initPython() {
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
 
-	if (atexit(PythonModule::finishPython) != 0){
+	if (atexit(PythonModule::finishPython) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("atexit: setting finishPython at exit") << errcodeInfoDef());
 	}
 
@@ -100,11 +100,11 @@ void PythonModule::initPython() {
 
 
 void PythonModule::finishPython() {
-	if (pythonInitialized){
-		try{
+	if (pythonInitialized) {
+		try {
 			Py_Finalize();
 		}
-		catch(bp::error_already_set const&) {
+		catch (bp::error_already_set const&) {
 			DBG("Python error in finishPython()!");
 
 			std::string errorString = std::string("Error in finishPython:\n") + errAsString();
@@ -167,7 +167,7 @@ PythonModule::PythonModule(std::string name) {
 	catch (bp::error_already_set const&) {
 		DBG_FMT("Python error in PythonModule(%1%)!", name);
 
-		std::string errorString = formatString("Error in PythonModule(%1%):\n%2%", name , errAsString());
+		std::string errorString = formatString("Error in PythonModule(%1%):\n%2%", name, errAsString());
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
@@ -205,8 +205,8 @@ void PythonModule::execfile(std::string filename) {
 		std::string errorString = errAsString();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError()
-				                      << stringInfo(errorString)
-				                      << pyCodeInfo(formatString("<see %1%>", filename)));
+			<< stringInfo(errorString)
+			<< pyCodeInfo(formatString("<see %1%>", filename)));
 	}
 }
 
@@ -227,7 +227,7 @@ std::string PythonModule::eval(std::string code) {
 }
 
 
-bp::object PythonModule::evalToObject(std::string code){
+bp::object PythonModule::evalToObject(std::string code) {
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
@@ -243,12 +243,12 @@ bp::object PythonModule::evalToObject(std::string code){
 }
 
 
-bool PythonModule::test(std::string condition){
-	try{
+bool PythonModule::test(std::string condition) {
+	try {
 		bp::object result = bp::eval(bp::str(condition), moduleGlobals, moduleGlobals);
 		return (bool)result;
 	}
-	catch(bp::error_already_set const&){
+	catch (bp::error_already_set const&) {
 		DBG("Python error in test()!");
 
 		std::string errorString = errAsString();
@@ -263,7 +263,7 @@ bp::object PythonModule::callObject(bp::object obj) {
 	try {
 		return obj();
 	}
-	catch(bp::error_already_set const&){
+	catch (bp::error_already_set const&) {
 		DBG("Python error in callObject()!");
 
 		std::string errorString = errAsString();
@@ -272,12 +272,12 @@ bp::object PythonModule::callObject(bp::object obj) {
 	}
 }
 
-bp::object PythonModule::callObject(bp::object obj, bp::object arg){
+bp::object PythonModule::callObject(bp::object obj, bp::object arg) {
 	DBG("in callObject(arg)");
 	try {
 		return obj(arg);
 	}
-	catch(bp::error_already_set const&){
+	catch (bp::error_already_set const&) {
 		DBG("Python error in callObject(arg)!");
 
 		std::string errorString = errAsString();
@@ -290,7 +290,7 @@ bp::object PythonModule::callObject(bp::object obj, bp::object arg){
 std::string PythonModule::errAsString() {
 	DBG("in errAsString()");
 	try {
-		PyObject* exception, *value, *traceback;
+		PyObject *exception, *value, *traceback;
 		bp::object formatted_list;
 		PyErr_Fetch(&exception, &value, &traceback);
 
@@ -325,7 +325,7 @@ std::string PythonModule::errAsString() {
 }
 
 
-bool PythonModule::checkIsNone(std::string name){
+bool PythonModule::checkIsNone(std::string name) {
 	DBG("in pythonVarIsNone(name)");
 	try {
 		return bp::object(moduleObject.attr(name.c_str())).is_none();
@@ -333,7 +333,7 @@ bool PythonModule::checkIsNone(std::string name){
 	catch (bp::error_already_set const&) {
 		DBG("Python error in checkIsNone(name)!");
 
-		std::string errorString = (b::format("Error in checkIsNone(%1%):\n%2%")  % name % errAsString()).str();
+		std::string errorString = (b::format("Error in checkIsNone(%1%):\n%2%") % name % errAsString()).str();
 		PyErr_Clear();
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(errorString));
 	}
@@ -374,7 +374,7 @@ void PythonModule::setGlobalRequest(std::string name, Request value) {
 		DBG("Python error in setGlobalRequest(), converting Request to PyObject");
 
 		std::string errorString = (b::format("Error in setGlobalRequest(%1%, python::bp::object):\n%2%") % name %
-		                      errAsString()).str();
+			errAsString()).str();
 
 		DBG_FMT("In catch: got errorstring %1%", errorString);
 
@@ -465,7 +465,7 @@ std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(std::st
 //Dedent std::string
 std::string PythonModule::prepareStr(std::string pyCode) {
 	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
-	if (pyCode.length() == 0 || !isspace(pyCode[0])){
+	if (pyCode.length() == 0 || !isspace(pyCode[0])) {
 		return pyCode;
 	}
 
@@ -480,30 +480,30 @@ std::string PythonModule::prepareStr(std::string pyCode) {
 	bool lineWs = true;
 	bool inIndent = true;
 
-	for (size_t i = 0; i < pyCode.length(); i++){
+	for (size_t i = 0; i < pyCode.length(); i++) {
 		char chr = pyCode[i];
-		if (chr == ' ' || chr == '\t'){
+		if (chr == ' ' || chr == '\t') {
 			indentChr = chr;
 			break;
 		}
-		else if (chr == '\r' || chr == '\n'){
+		else if (chr == '\r' || chr == '\n') {
 			continue;
 		}
-		else{
+		else {
 			break;
 		}
 	}
-	if (indentChr == '\0'){
+	if (indentChr == '\0') {
 		return pyCode;
 	}
 
-	for (size_t i = 0; i < pyCode.length(); i++){
+	for (size_t i = 0; i < pyCode.length(); i++) {
 		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n'){
-			if (!lineWs){
+		if (chr == '\r' || chr == '\n') {
+			if (!lineWs) {
 				codeLines++;
 
-				if (commonIndent == commonIndentSentinel){
+				if (commonIndent == commonIndentSentinel) {
 					commonIndent = lineIndent;
 				}
 				else if (lineIndent < commonIndent) {
@@ -517,13 +517,13 @@ std::string PythonModule::prepareStr(std::string pyCode) {
 			lineWs = true;
 			inIndent = true;
 		}
-		else if (chr == indentChr && inIndent){
+		else if (chr == indentChr && inIndent) {
 			lineIndent++;
 			//DBG("inIndentUp");
 		}
-		else{
+		else {
 			inIndent = false;
-			if (chr != ' ' && chr != '\t'){
+			if (chr != ' ' && chr != '\t') {
 				lineWs = false;
 			}
 		}
@@ -534,7 +534,8 @@ std::string PythonModule::prepareStr(std::string pyCode) {
 
 		if (commonIndent == commonIndentSentinel) {
 			commonIndent = lineIndent;
-		} else if (lineIndent < commonIndent) {
+		}
+		else if (lineIndent < commonIndent) {
 			size_t indentDiff = commonIndent - lineIndent;
 			outSize += (codeLines - 1) * indentDiff;
 			commonIndent = lineIndent;
@@ -547,14 +548,14 @@ std::string PythonModule::prepareStr(std::string pyCode) {
 
 	size_t offset = 0;
 	lineIndent = 0;
-	for (size_t i = 0; i < pyCode.length(); i++){
+	for (size_t i = 0; i < pyCode.length(); i++) {
 		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n'){
+		if (chr == '\r' || chr == '\n') {
 			lineIndent = 0;
 			result[i - offset] = pyCode[i];
 		}
-		else{
-			if (lineIndent < commonIndent){
+		else {
+			if (lineIndent < commonIndent) {
 				lineIndent++;
 				offset++;
 			}
