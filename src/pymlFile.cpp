@@ -3,8 +3,6 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-
 
 PymlFile::PymlFile(std::string::iterator sourceStart,
                    std::string::iterator sourceEnd,

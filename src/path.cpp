@@ -6,9 +6,9 @@
 #include"path.h"
 #include"except.h"
 
-using namespace boost::filesystem;
+namespace bf = boost::filesystem;
 
-path getExecRoot() {
+bf::path getExecRoot() {
 	char exePath[4096];
 	memzero(exePath);
 	ssize_t length = readlink("/proc/self/exe", exePath, sizeof(exePath));
@@ -17,10 +17,10 @@ path getExecRoot() {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("readlink(): getting exec root") << errcodeInfoDef());
 	}
 
-	return path(exePath).parent_path();
+	return bf::path(exePath).parent_path();
 }
 
-path getCreateDataRoot(){
+bf::path getCreateDataRoot(){
 	return getExecRoot();
 }
 

@@ -7,9 +7,8 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
-using namespace boost;
-using namespace boost::algorithm;
+namespace b = boost;
+namespace ba = boost::algorithm;
 
 
 RequestParser::RequestParser() {
@@ -155,8 +154,8 @@ int RequestParser::getBodyLength() {
 	}
 }
 
-void RequestParser::saveHeader(string name, string value) {
-	to_lower(name);
+void RequestParser::saveHeader(std::string name, std::string value) {
+	ba::to_lower(name);
 	auto foundName = headers.find(name);
 	if (foundName == headers.end()) {
 		headers.insert(make_pair(name, value));
@@ -179,10 +178,10 @@ void RequestParser::consume(char* data, int dataLen) {
 }
 
 
-bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor);
+bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
 
 Request RequestParser::getRequest() {
-	map<string, HttpVerb> stringVerbMapping = {
+	std::map<std::string, HttpVerb> stringVerbMapping = {
 			{"GET", HttpVerb::GET},
 			{"HEAD", HttpVerb::HEAD},
 			{"POST", HttpVerb::POST},
@@ -206,9 +205,9 @@ Request RequestParser::getRequest() {
 		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("HTTP version not recognized."));
 	}
 
-	string queryString;
+	std::string queryString;
 	size_t queryStringStart = url.find('?');
-	if (queryStringStart != string::npos){
+	if (queryStringStart != std::string::npos){
 		queryString = url.substr(queryStringStart + 1);
 		url.erase(queryStringStart);
 	}
@@ -216,14 +215,14 @@ Request RequestParser::getRequest() {
 	return Request(verb, url, queryString, httpMajor, httpMinor, headers, body);
 }
 
-bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
+bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
 	//DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
 		//DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
 		return false;
 	}
 
-	string versionPart = httpVersion.substr(strlen("HTTP/"));
+	std::string versionPart = httpVersion.substr(strlen("HTTP/"));
 	//DBG_FMT("Version part: %1%", versionPart);
 
 	if (versionPart.size() != 3) {
@@ -232,7 +231,7 @@ bool parseHttpVersion(string httpVersion, int* httpMajor, int* httpMinor) {
 	}
 
 	size_t idx = 0;
-	*httpMajor = stoi(versionPart, &idx, 10);
+	*httpMajor = std::stoi(versionPart, &idx, 10);
 	if (idx != 1 || versionPart[1] != '.') {
 		//DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
 		//        versionPart);

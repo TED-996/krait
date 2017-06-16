@@ -8,8 +8,7 @@
 #include"path.h"
 #include"except.h"
 
-using namespace std;
-namespace fs = boost::filesystem;
+namespace bf = boost::filesystem;
 
 void printUsage();
 void startKrait(int argc, char* argv[]);
@@ -19,22 +18,22 @@ int main(int argc, char* argv[]){
 	bool argsOk = false;
 
 	if (argc == 2){
-		if (string(argv[1]) == "stop"){
+		if (std::string(argv[1]) == "stop"){
 			argsOk = true;
 			sendCommandClose();
 			printf("Stop sent.\n");
 		}
-		else if (string(argv[1]) == "kill"){
+		else if (std::string(argv[1]) == "kill"){
 			argsOk = true;
 			sendCommandKill();
 			printf("Kill sent.\n");
 		}
-		else if (string(argv[1]) == "watch"){
+		else if (std::string(argv[1]) == "watch"){
 			argsOk = true;
 			watchKrait();
 		}
 	}
-	if (argc >= 2 && string(argv[1]) == "start"){
+	if (argc >= 2 && std::string(argv[1]) == "start"){
 		argsOk = true;
 		startKrait(argc - 2, argv + 2);
 	}
@@ -46,20 +45,20 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
-string getStdoutPath(){
-	string dotKrait = getCreateDotKrait();
-	return (fs::path(dotKrait) / "stdout").string();
+std::string getStdoutPath(){
+	std::string dotKrait = getCreateDotKrait();
+	return (bf::path(dotKrait) / "stdout").string();
 }
 
-string getStderrPath(){
-	string dotKrait = getCreateDotKrait();
-	return (fs::path(dotKrait) / "stderr").string();
+std::string getStderrPath(){
+	std::string dotKrait = getCreateDotKrait();
+	return (bf::path(dotKrait) / "stderr").string();
 }
 
 
 
 void startKrait(int argc, char* argv[]){
-	fs::path kraitPath = getExecRoot() / "krait";
+	bf::path kraitPath = getExecRoot() / "krait";
 
 	//The daemon way.
 	pid_t child1Pid = fork();
@@ -88,15 +87,15 @@ void startKrait(int argc, char* argv[]){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): second child failed to start.") << errcodeInfoDef());
 		}
 		if (child2Pid == 0){
-			string kraitPath = (getExecRoot() / "krait").string();
+			std::string kraitPathStr = (getExecRoot() / "krait").string();
 			const char** kraitArgs = new const char*[argc + 2];
-			kraitArgs[0] = kraitPath.c_str();
+			kraitArgs[0] = kraitPathStr.c_str();
 			for (int i = 0; i < argc; i++){
 				kraitArgs[i + 1] = argv[i];
 			}
 			kraitArgs[argc + 1] = NULL;
 			
-			if (execv(kraitPath.c_str(), (char* const*)kraitArgs) == -1){
+			if (execv(kraitPathStr.c_str(), (char* const*)kraitArgs) == -1){
 				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("exec(): could not start Krait"));
 			}
 			exit(0); //not really useful, just good practice...
@@ -115,9 +114,9 @@ void startKrait(int argc, char* argv[]){
 
 
 void watchKrait(){
-	string stdoutPath = getStdoutPath();
-	string stderrPath = getStderrPath();
-	if (!fs::exists(stdoutPath) || !fs::exists(stderrPath)){
+	std::string stdoutPath = getStdoutPath();
+	std::string stderrPath = getStderrPath();
+	if (!bf::exists(stdoutPath) || !bf::exists(stderrPath)){
 		printf("At least one of the stdout/stderr files don't exist.");
 		return;
 	}

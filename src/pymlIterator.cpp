@@ -4,8 +4,6 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-
 PymlIterator::PymlIterator(const IPymlItem* rootItem){
 	items.push(rootItem);
 
@@ -22,7 +20,7 @@ PymlIterator::PymlIterator(const PymlIterator& other)
 	}
 }
 
-const string* PymlIterator::operator*(){
+const std::string* PymlIterator::operator*(){
 	if (items.empty()){
 		return NULL;
 	}
@@ -35,7 +33,7 @@ PymlIterator& PymlIterator::operator++(){
 		return *this;
 	}
 
-	const string* retStr = NULL;
+	const std::string* retStr = NULL;
 	while(retStr == NULL && !items.empty()){
 		//Starting a new item.
 		const IPymlItem* lastItem = NULL;
@@ -70,7 +68,7 @@ PymlIterator& PymlIterator::operator++(){
 	return *this;
 }
 
-bool PymlIterator::compareWith(string other){
+bool PymlIterator::compareWith(std::string other){
 	const char* otherPtr = other.c_str();
 	//DBG_FMT("**this: %p", **this);
 	while(**this != NULL){

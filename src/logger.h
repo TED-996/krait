@@ -1,6 +1,5 @@
 #pragma once
 #include<fstream>
-#include<string>
 #include<unistd.h>
 #include<boost/format.hpp>
 
@@ -30,8 +29,9 @@ class LoggerIn {
 public:
 	LoggerIn() : pipeOut(dup(0)){
 	}
-	LoggerIn(int pipeOut);
-	LoggerIn(LoggerIn& other) : pipeOut(dup(pipeOut)){
+
+	explicit LoggerIn(int pipeOut);
+	LoggerIn(LoggerIn& other) : pipeOut(dup(other.pipeOut)){
 	}
 	~LoggerIn(){
 		close();

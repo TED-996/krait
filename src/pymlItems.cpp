@@ -8,10 +8,8 @@
 #include "dbg.h"
 
 
-using namespace std;
-
-string PymlItemSeq::runPyml() const {
-	string result;
+std::string PymlItemSeq::runPyml() const {
+	std::string result;
 	for (const PymlItem* it : items){
 		result += it->runPyml();
 	}
@@ -51,7 +49,7 @@ const PymlItem* PymlItemSeq::tryCollapse() const {
 	return (PymlItem*)this;
 }
 
-string htmlEscape(string htmlCode);
+std::string htmlEscape(std::string htmlCode);
 
 std::string PymlItemPyEval::runPyml() const {
 	return htmlEscape(PythonModule::main.eval(code));
@@ -101,7 +99,7 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
 
 std::string PymlItemFor::runPyml() const {
 	PythonModule::main.run(initCode);
-	string result;
+	std::string result;
 	while(PythonModule::main.test(conditionCode)){
 		result += loopItem->runPyml();
 		PythonModule::main.run(updateCode);
@@ -190,7 +188,7 @@ public:
 		return pool.strPool.construct(strData.str);
 	}
 	const PymlItem* operator()(PymlWorkingItem::SeqData seqData){
-		vector<const PymlItem*> items;
+		std::vector<const PymlItem*> items;
 		for (PymlWorkingItem* it : seqData.items){
 			const PymlItem* item = it->getItem(pool);
 			if (item != NULL){
@@ -241,8 +239,8 @@ const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
 	return boost::apply_visitor(visitor, data);
 }
 
-string htmlEscape(string htmlCode) {
-	string result;
+std::string htmlEscape(std::string htmlCode) {
+	std::string result;
 	bool resultEmpty = true;
 
 	const char* replacements[256];

@@ -8,35 +8,34 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-using namespace boost::algorithm;
-using namespace boost;
+namespace b = boost;
+namespace ba = boost::algorithm;
 
 
-Request::Request(HttpVerb verb, const string& url, const string& queryString, int httpMajor, int httpMinor, const map<string, string>& headers,
-                 const string& body) {
+Request::Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
+	const std::map<std::string, std::string>& headers, const std::string& body) {
 	this->verb = verb;
 	this->url = url;
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
-	this->headers = map<string, string>();
+	this->headers = std::map<std::string, std::string>();
 	for (auto p : headers){
-		this->headers[to_lower_copy(p.first)] = p.second;
+		this->headers[ba::to_lower_copy(p.first)] = p.second;
 	}
 
-	this->body = string(body);
+	this->body = std::string(body);
 	this->queryString = queryString;
 
 	this->routeVerb = toRouteVerb(verb);
 }
 
 bool Request::headerExists(std::string name){
-	const auto iterFound = headers.find(to_lower_copy(name));
+	const auto iterFound = headers.find(ba::to_lower_copy(name));
 	return (iterFound != headers.end());
 }
 
-const boost::optional<std::string> Request::getHeader(const string& name) const {
-	const auto iterFound = headers.find(to_lower_copy(name));
+const boost::optional<std::string> Request::getHeader(const std::string& name) const {
+	const auto iterFound = headers.find(ba::to_lower_copy(name));
 	if (iterFound == headers.end()) {
 		return boost::none;
 	}
@@ -51,13 +50,13 @@ bool Request::isKeepAlive() const {
 		if (it == headers.end()){
 			return false;
 		}
-		return boost::algorithm::to_lower_copy(it->second) == "keep-alive";
+		return ba::to_lower_copy(it->second) == "keep-alive";
 	}
 	else{
 		if (it == headers.end()){
 			return true;
 		}
-		return boost::algorithm::to_lower_copy(it->second) != "close";
+		return ba::to_lower_copy(it->second) != "close";
 	}
 }
 
@@ -70,16 +69,16 @@ int Request::getKeepAliveTimeout() const {
 		return INT_MAX; //will be set with a minimum.
 	}
 
-	string value = it->second;
+	std::string value = it->second;
 	if(!boost::starts_with(value, "timeout=")){
 		return 0; //other unsupported timeout types, ignore.
 	}
 
-	string secondsStr = value.substr(string("timeout=").length());
+	std::string secondsStr = value.substr(std::string("timeout=").length());
 	try{
 		return boost::lexical_cast<int>(secondsStr);
 	}
-	catch(const bad_lexical_cast&){
+	catch(const b::bad_lexical_cast&){
 		Loggers::logErr("Received non-integer as timeout seconds\n");
 		return 0; //should we throw?
 	}
@@ -90,22 +89,22 @@ bool Request::isUpgrade() {
 }
 
 
-bool Request::isUpgrade(string protocol) {
-	boost::optional<string> upgradeHeaderOpt = getHeader("upgrade");
+bool Request::isUpgrade(std::string protocol) {
+	boost::optional<std::string> upgradeHeaderOpt = getHeader("upgrade");
 	if (upgradeHeaderOpt == boost::none){
 		return false;
 	}
-	string& upgradeHeader = upgradeHeaderOpt.get();
+	std::string& upgradeHeader = upgradeHeaderOpt.get();
 	size_t valueStart = 0;
 	size_t commaIdx = upgradeHeader.find(',', 0);
-	while (commaIdx != string::npos){
+	while (commaIdx != std::string::npos){
 		if (upgradeHeader.compare(valueStart, commaIdx - valueStart, protocol) == 0){
 			return true;
 		}
 		valueStart = commaIdx + 1;
 		commaIdx = upgradeHeader.find(',', valueStart);
 	};
-	if (upgradeHeader.compare(valueStart, string::npos, protocol) == 0){
+	if (upgradeHeader.compare(valueStart, std::string::npos, protocol) == 0){
 		return true;
 	}
 	else{

@@ -10,8 +10,6 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
-
 WebsocketsServer::WebsocketsServer(int clientSocket) {
 	this->clientSocket = clientSocket;
 	this->closed = false;
@@ -67,7 +65,7 @@ boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
 void WebsocketsServer::write(WebsocketsMessage message) {
 	WebsocketsFrame frame;
 	frame.opcode = message.opcode;
-	frame.isFin = 0;
+	frame.isFin = false;
 
 	size_t maxSize = 128 * 1024; //128KB, totally arbitrary.
 	size_t msgIdx = 0;
@@ -164,7 +162,7 @@ bool WebsocketsServer::start(Request &upgradeRequest) {
 
 		boost::python::object outMsg = PythonModule::websockets.callObject(outMsgGetter);
 		if (!outMsg.is_none()){
-			string msgString = boost::python::extract<string>(outMsg);
+			std::string msgString = boost::python::extract<std::string>(outMsg);
 			//DBG_FMT("sending %1%", msgString);
 
 			Py_BEGIN_ALLOW_THREADS
@@ -202,17 +200,17 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 		return false;
 	}
 
-	boost::optional<string> key = request.getHeader("Sec-WebSocket-Key");
-	boost::optional<string> version = request.getHeader("Sec-WebSocket-Version");
+	boost::optional<std::string> key = request.getHeader("Sec-WebSocket-Key");
+	boost::optional<std::string> version = request.getHeader("Sec-WebSocket-Version");
 
-	boost::optional<string> protocol = boost::none;
+	boost::optional<std::string> protocol = boost::none;
 
 	if (PythonModule::websockets.test("response.protocol is not None")){
 		protocol = PythonModule::websockets.eval("response.protocol");
 	}
 
 	if (!key){
-		respondWithObject(clientSocket, Response(1, 1, 400, unordered_multimap<string, string>(), "", true));
+		respondWithObject(clientSocket, Response(1, 1, 400, std::unordered_multimap<std::string, std::string>(), "", true));
 		return false;
 	}
 	if (!version || version.get() != "13"){
@@ -220,7 +218,7 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 				1,
 				1,
 				400,
-				unordered_multimap<string, string>{{"Sec-WebSocket-Version", "13"}},
+				std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
 				"",
 				true
 		));
@@ -228,8 +226,8 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 	}
 
 
-	string magicString = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	string hashInput = key.value() + magicString;
+	std::string magicString = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	std::string hashInput = key.value() + magicString;
 	boost::uuids::detail::sha1 hash;
 	hash.process_bytes(hashInput.c_str(), hashInput.length());
 	unsigned int digest[5];
@@ -245,9 +243,9 @@ bool WebsocketsServer::handleUpgradeRequest(Request &request) {
 		hashBytes[i*4+3] = tmp[i*4];
 	}
 
-	string outHash = encode64(string(hashBytes, 20));
+	std::string outHash = encode64(std::string(hashBytes, 20));
 
-	unordered_multimap<string, string> outHeaders{
+	std::unordered_multimap<std::string, std::string> outHeaders{
 			{"Sec-WebSocket-Accept", outHash},
 			{"Connection", "Upgrade"},
 			{"Upgrade", "websocket"}

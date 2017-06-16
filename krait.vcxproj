@@ -40,35 +40,411 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
+    <AdditionalSourcesToCopyMapping>
+    </AdditionalSourcesToCopyMapping>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
+    <AdditionalSourcesToCopyMapping>
+    </AdditionalSourcesToCopyMapping>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
+    <AdditionalSourcesToCopyMapping>
+    </AdditionalSourcesToCopyMapping>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+  </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="src\cacheController.cpp" />
+    <ClCompile Include="src\commander.cpp" />
+    <ClCompile Include="src\fsmV2.cpp" />
+    <ClCompile Include="src\http.cpp" />
+    <ClCompile Include="src\iteratorResult.cpp" />
+    <ClCompile Include="src\logger.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\main_cmdr.cpp" />
+    <ClCompile Include="src\main_tests.cpp" />
+    <ClCompile Include="src\network.cpp" />
+    <ClCompile Include="src\path.cpp" />
+    <ClCompile Include="src\path_tests.cpp" />
+    <ClCompile Include="src\pymlCache.cpp" />
+    <ClCompile Include="src\pymlFile.cpp" />
+    <ClCompile Include="src\pymlItems.cpp" />
+    <ClCompile Include="src\pymlIterator.cpp" />
+    <ClCompile Include="src\pythonModule.cpp" />
+    <ClCompile Include="src\python_tests.cpp" />
+    <ClCompile Include="src\rawPymlParser.cpp" />
+    <ClCompile Include="src\rawPythonPymlParser.cpp" />
+    <ClCompile Include="src\regexList.cpp" />
+    <ClCompile Include="src\request.cpp" />
+    <ClCompile Include="src\requestParser.cpp" />
+    <ClCompile Include="src\response.cpp" />
+    <ClCompile Include="src\routes.cpp" />
+    <ClCompile Include="src\server.cpp" />
+    <ClCompile Include="src\stringPiper.cpp" />
+    <ClCompile Include="src\utils.cpp" />
+    <ClCompile Include="src\v2PymlParser.cpp" />
+    <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemGroup>
+    <ClInclude Include="src\cacheController.h" />
+    <ClInclude Include="src\commander.h" />
+    <ClInclude Include="src\dbg.h" />
+    <ClInclude Include="src\except.h" />
+    <ClInclude Include="src\fileCache.h" />
+    <ClInclude Include="src\formatHelper.h" />
+    <ClInclude Include="src\fsm.h" />
+    <ClInclude Include="src\fsmV2.h" />
+    <ClInclude Include="src\http.h" />
+    <ClInclude Include="src\IPymlCache.h" />
+    <ClInclude Include="src\IPymlFile.h" />
+    <ClInclude Include="src\IPymlItem.h" />
+    <ClInclude Include="src\IPymlParser.h" />
+    <ClInclude Include="src\iteratorResult.h" />
+    <ClInclude Include="src\logger.h" />
+    <ClInclude Include="src\network.h" />
+    <ClInclude Include="src\path.h" />
+    <ClInclude Include="src\pymlCache.h" />
+    <ClInclude Include="src\pymlFile.h" />
+    <ClInclude Include="src\pymlItems.h" />
+    <ClInclude Include="src\pymlIterator.h" />
+    <ClInclude Include="src\pythonModule.h" />
+    <ClInclude Include="src\rawPymlParser.h" />
+    <ClInclude Include="src\rawPythonPymlParser.h" />
+    <ClInclude Include="src\regexList.h" />
+    <ClInclude Include="src\request.h" />
+    <ClInclude Include="src\requestParser.h" />
+    <ClInclude Include="src\response.h" />
+    <ClInclude Include="src\routes.h" />
+    <ClInclude Include="src\server.h" />
+    <ClInclude Include="src\stringPiper.h" />
+    <ClInclude Include="src\utils.h" />
+    <ClInclude Include="src\v2PymlParser.h" />
+    <ClInclude Include="src\valueOrPtr.h" />
+    <ClInclude Include="src\websocketsServer.h" />
+    <ClInclude Include="src\websocketsTypes.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="demoserver\.config\cache-longterm-2.cfg">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Text</FileType>
+    </None>
+    <None Include="demoserver\.config\cache-longterm.cfg">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Text</FileType>
+    </None>
+    <None Include="demoserver\.config\cache-public.cfg">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Text</FileType>
+    </None>
+    <None Include="demoserver\.config\init.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.config\routes.json">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Text</FileType>
+    </None>
+    <None Include="demoserver\.ctrl\ctrl_db.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.ctrl\ctrl_http.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.ctrl\ctrl_index.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.ctrl\ctrl_pingpong_ws.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.ctrl\ctrl_ws.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="demoserver\.private\db">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.view\db.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.view\header.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.view\http.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.view\index.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.view\ws.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\comment.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\bootstrap-theme.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\bootstrap-theme.css.map">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>CSS</FileType>
+    </None>
+    <None Include="demoserver\css\bootstrap-theme.min.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\bootstrap-theme.min.css.map">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>CSS</FileType>
+    </None>
+    <None Include="demoserver\css\bootstrap.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\bootstrap.css.map">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>CSS</FileType>
+    </None>
+    <None Include="demoserver\css\bootstrap.min.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\bootstrap.min.css.map">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>CSS</FileType>
+    </None>
+    <None Include="demoserver\css\http.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\jumbotron-narrow.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\css\ws.css">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\db.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\fonts\glyphicons-halflings-regular.eot">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\fonts\glyphicons-halflings-regular.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\fonts\glyphicons-halflings-regular.woff">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\fonts\glyphicons-halflings-regular.woff2">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\http.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\index.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\bootstrap.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\bootstrap.min.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\jquery.min.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\npm.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\ticker.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\js\websocket_ticker.js">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\ws.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\ws_socket.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="globals\mime.types">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\cookie.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\krait.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\krait_utils.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\mvc.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\python-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\site-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+    <None Include="py\websockets.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Script</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="demoserver\fonts\glyphicons-halflings-regular.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="demoserver\.config\routes.xml">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Text</FileType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
+    <Text Include="src\CMakeLists.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
+  </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <RemotePreBuildEvent>
+      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <RemotePreBuildEvent>
+      <Command>cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <RemotePreBuildEvent>
+      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RemotePreBuildEvent>
+      <Command>cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <RemotePreBuildEvent>
+      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <RemotePreBuildEvent>
+      <Command>cmake $(RemoteProjectDir)</Command>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <RemotePreBuildEvent>
+      <Message>Generate makefile</Message>
+    </RemotePreBuildEvent>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

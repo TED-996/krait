@@ -2,7 +2,6 @@
 #include <map>
 #include"http.h"
 
-using namespace std;
 
 RouteVerb toRouteVerb(HttpVerb verb) {
 	if (verb == HttpVerb::GET){
@@ -31,7 +30,7 @@ RouteVerb toRouteVerb(HttpVerb verb) {
 	}
 }
 
-string httpVerbToString(HttpVerb value) {
+std::string httpVerbToString(HttpVerb value) {
 	const char* verbStrings[] {
 		"GET",
 		"HEAD",
@@ -43,7 +42,7 @@ string httpVerbToString(HttpVerb value) {
 		"TRACE"
 	};
 
-	return string(verbStrings[(int)value]);
+	return std::string(verbStrings[(int)value]);
 }
 
 std::string routeVerbToString(RouteVerb value) {
@@ -60,11 +59,11 @@ std::string routeVerbToString(RouteVerb value) {
 		"WEBSOCKET"
 	};
 
-	return string(verbStrings[(int)value]);
+	return std::string(verbStrings[(int)value]);
 }
 
 RouteVerb toRouteVerb(std::string str) {
-	map<string, RouteVerb> stringVerbMapping = {
+	std::map<std::string, RouteVerb> stringVerbMapping = {
 		{"GET",       RouteVerb::GET},
 		{"POST",      RouteVerb::POST},
 		{"PUT",       RouteVerb::PUT},

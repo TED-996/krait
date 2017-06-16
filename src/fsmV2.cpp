@@ -4,7 +4,6 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
 
 SimpleFsmTransition::SimpleFsmTransition(char chrToMatch, size_t nextState, bool consume)
 	: chrToMatch(chrToMatch),
@@ -126,7 +125,7 @@ void FsmV2::pushResetStoredString() {
 }
 
 std::string FsmV2::popStoredString() {
-	string result(std::move(storedStrings.front()));
+	std::string result(std::move(storedStrings.front()));
 	storedStrings.pop();
 	return result;
 }
@@ -192,7 +191,7 @@ void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, 
 
 	add(startState, new SimpleFsmTransition(strToMatch[0], currBulkState));
 
-	for (string::iterator it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); it++) {
+	for (std::string::iterator it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); ++it) {
 		addToBulk(currBulkState, new SimpleFsmTransition(*it, currBulkState + 1));
 		addToBulk(currBulkState, new AlwaysFsmTransition(failState, false));
 		bulkFailState[currBulkState - maxState] = failState;

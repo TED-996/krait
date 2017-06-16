@@ -12,7 +12,6 @@
 #include <string.h>
 #include <poll.h>
 #include <endian.h>
-#include <cstdint>
 #include "logger.h"
 #include "network.h"
 #include "utils.h"
@@ -21,8 +20,6 @@
 
 #define DBG_DISABLE
 #include "dbg.h"
-
-using namespace std;
 
 
 int getServerSocket(int port, bool setListen, bool reuseAddr) {
@@ -117,7 +114,6 @@ void printSocket(int clientSocket) {
 boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 	RequestParser parser;
 	char buffer[4096];
-	int bytesRead;
 	int pollResult;
 
 	pollfd pfd;
@@ -129,7 +125,7 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs) {
 		if (pollResult < 0){
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
 		}
-		bytesRead = read(clientSocket, buffer, sizeof(buffer));
+		int bytesRead = read(clientSocket, buffer, sizeof(buffer));
 		if (bytesRead == 0){
 			return boost::none;
 		}
@@ -361,14 +357,14 @@ void respondRequest200(int clientSocket) {
 }
 
 void respondWithObjectRef(int clientSocket, Response& response) {
-	string responseData = response.getResponseHeaders();
+	std::string responseData = response.getResponseHeaders();
 
 	respondWithBuffer(clientSocket, responseData.c_str(), responseData.length());
 
 	//DBG("getting first bodyNext");
-	const string* bodyNext = response.getBodyNext();
+	const std::string* bodyNext = response.getBodyNext();
 	while(bodyNext != NULL){
-		//DBG_FMT("sending body: string ptr is %p, body is %p, len is %d", bodyNext, bodyNext->c_str(), bodyNext->length());
+		//DBG_FMT("sending body: std::string ptr is %p, body is %p, len is %d", bodyNext, bodyNext->c_str(), bodyNext->length());
 
 		respondWithBuffer(clientSocket, bodyNext->c_str(), bodyNext->length());
 		//DBG("bodyNext sent, getting next");
@@ -393,7 +389,7 @@ void respondWithBuffer(int clientSocket, const char* response, size_t size) {
 	const size_t maxBlockSize = 65536;
 
 	while (lenLeft > 0) {
-		size_t lenCurrent = min(maxBlockSize, lenLeft);
+		size_t lenCurrent = std::min(maxBlockSize, lenLeft);
 		//DBG_FMT("sending buffer one, %d bytes from ptr %p", lenCurrent, response);
 		int writeOut = write(clientSocket, response, lenCurrent);
 		if (writeOut < 0) {

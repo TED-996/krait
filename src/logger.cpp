@@ -5,8 +5,7 @@
 #include<errno.h>
 #include"logger.h"
 
-using namespace std;
-using namespace boost::chrono;
+namespace bc = boost::chrono;
 
 LoggerIn Loggers::infoLogger(1);
 LoggerIn Loggers::errLogger(2);
@@ -28,11 +27,11 @@ void Loggers::setErrLogger(int errPipe){
 	infoLogger = LoggerIn(errPipe);
 }
 
-void Loggers::logInfo(string message){
+void Loggers::logInfo(std::string message){
 	infoLogger.log(message);
 }
 
-void Loggers::logErr(string message){
+void Loggers::logErr(std::string message){
 	errLogger.log(message);
 }
 
@@ -45,7 +44,7 @@ LoggerOut::LoggerOut(int pipeIn) : outfile() {
 }
 
 
-LoggerOut::LoggerOut(int pipeIn, string filename) : outfile(filename) {
+LoggerOut::LoggerOut(int pipeIn, std::string filename) : outfile(filename) {
 	this->pipeIn = pipeIn;
 }
 
@@ -56,8 +55,8 @@ bool LoggerOut::tick(int timeoutMs) {
 		return false;
 	}
 
-	auto start = thread_clock::now();
-	thread_clock::duration limit = milliseconds(timeoutMs);
+	auto start = bc::thread_clock::now();
+	bc::thread_clock::duration limit = bc::milliseconds(timeoutMs);
 
 	pollfd pfd;
 	pfd.fd = pipeIn;
@@ -67,7 +66,7 @@ bool LoggerOut::tick(int timeoutMs) {
 	char buffer[4096];
 	bool written = false;
 
-	while (thread_clock::now() - start < limit) {
+	while (bc::thread_clock::now() - start < limit) {
 		int pollResult = poll(&pfd, 1, timeoutMs / 10);
 		if (pollResult == -1) {
 			//Error... ignore for now.

@@ -11,8 +11,8 @@
 #include"commander.h"
 #include"utils.h"
 
-using namespace std;
-using namespace boost;
+namespace b = boost;
+namespace bf = boost::filesystem;
 
 void commanderStart(pid_t mainPid, int fifoFd);
 int openFifo(int flags, bool create);
@@ -43,10 +43,10 @@ void startCommanderProcess(){
 	}
 }
 
-string getCreateDotKrait(){
-	filesystem::path fifoNameBase = filesystem::path(getenv("HOME")) / ".krait";
-	if (!filesystem::exists(fifoNameBase)){
-		if (!filesystem::create_directory(fifoNameBase)){
+std::string getCreateDotKrait(){
+	bf::path fifoNameBase = bf::path(getenv("HOME")) / ".krait";
+	if (!bf::exists(fifoNameBase)){
+		if (!bf::create_directory(fifoNameBase)){
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating .krait directory (%1%). Check that you have appropriate rights.",
 				fifoNameBase.string())
 				<< errcodeInfoDef());
@@ -58,11 +58,11 @@ string getCreateDotKrait(){
 
 
 int openFifo(int flags, bool create){
-	filesystem::path fifoNameBase = filesystem::path(getCreateDotKrait());
+	bf::path fifoNameBase = bf::path(getCreateDotKrait());
 	const char* fifoEnd = "krait_cmdr";
-	string fifoName = (fifoNameBase / fifoEnd).string();
+	std::string fifoName = (fifoNameBase / fifoEnd).string();
 
-	if (!filesystem::exists(fifoName)){
+	if (!bf::exists(fifoName)){
 		if (create){
 			if (!mkfifo(fifoName.c_str(), 0666)){
 				BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkfifo(): creating command file (%1%)", fifoName) << errcodeInfoDef());
@@ -123,7 +123,7 @@ void commanderStart(pid_t mainPid, int fifoFd){
 			}
 			else {
 				if (!processCommand(mainPid, cmdBuffer, bytesRead)){
-					BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("Execution of command %1% failed.", string(cmdBuffer, bytesRead)));
+					BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("Execution of command %1% failed.", std::string(cmdBuffer, bytesRead)));
 				}
 			}
 		}

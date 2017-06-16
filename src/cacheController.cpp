@@ -5,9 +5,7 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-
-CacheController::CacheController(string cachePrivateFilename, string cachePublicFilename, string cacheNoStoreFilename, string cacheLongTermFilename)
+CacheController::CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheNoStoreFilename, std::string cacheLongTermFilename)
 	:
 		noStoreTargets(RegexList::fromFile(cacheNoStoreFilename)),
 		privateTargets(RegexList::fromFile(cachePrivateFilename)),
@@ -17,8 +15,8 @@ CacheController::CacheController(string cachePrivateFilename, string cachePublic
 	maxAgeLongTerm = 864000;
 }
 
-CacheController::CachePragma CacheController::getCacheControl(string targetFilename, bool defaultIsStore){
-	pair<string, bool> cacheKey = make_pair(targetFilename, defaultIsStore);
+CacheController::CachePragma CacheController::getCacheControl(std::string targetFilename, bool defaultIsStore){
+	std::pair<std::string, bool> cacheKey = make_pair(targetFilename, defaultIsStore);
 
 	const auto it = pragmaCache.find(cacheKey);
 	if (it != pragmaCache.end()){
@@ -58,8 +56,8 @@ CacheController::CachePragma CacheController::getCacheControl(string targetFilen
 	return result;
 }
 
-string CacheController::getValueFromPragma(CacheController::CachePragma pragma){
-	vector<string> result;
+std::string CacheController::getValueFromPragma(CacheController::CachePragma pragma){
+	std::vector<std::string> result;
 	if (!pragma.isCache){
 		result.push_back("no-cache");
 	}
@@ -85,7 +83,7 @@ string CacheController::getValueFromPragma(CacheController::CachePragma pragma){
 		return "";
 	}
 	else{
-		string resultStr(result[0]);
+		std::string resultStr(result[0]);
 		for (size_t i = 1; i < result.size(); i++){
 			resultStr.append(", ", 2);
 			resultStr.append(result[i]);
