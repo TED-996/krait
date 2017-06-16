@@ -24,22 +24,22 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-using namespace boost;
-using namespace boost::filesystem;
 
+namespace b = boost;
+namespace bf = boost::filesystem;
+namespace ba = boost::algorithm;
 
-unordered_set<int> Server::pids;
+std::unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
 
 
 
-Server::Server(string serverRoot, int port) :
-	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-public.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
+Server::Server(std::string serverRoot, int port) :
+	cacheController((bf::path(serverRoot) / ".config" / "cache-private.cfg").string(),
+					(bf::path(serverRoot) / ".config" / "cache-public.cfg").string(),
+					(bf::path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
+					(bf::path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
 	serverCache(
 			std::bind(&Server::constructPymlFromFilename,
 			     this,
@@ -47,12 +47,12 @@ Server::Server(string serverRoot, int port) :
 			     std::placeholders::_2,
 			     std::placeholders::_3),
 			std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
-	this->serverRoot = path(serverRoot);
+	this->serverRoot = bf::path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
 	
-	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.json";
-	if (filesystem::exists(routesFilename)){
+	bf::path routesFilename = this->serverRoot / ".config" / "routes.json";
+	if (exists(routesFilename)){
 		this->routes = Route::getRoutesFromFile(routesFilename.string());
 	}
 	else{
@@ -272,7 +272,7 @@ void Server::tryCheckStdinClosed(){
 	}
 }
 
-string replaceParams(string target, map<string, string> params);
+std::string replaceParams(std::string target, std::map<std::string, std::string> params);
 
 void Server::serveClientStart(int clientSocket) {
 	Loggers::logInfo("Serving a new client");
@@ -281,7 +281,7 @@ void Server::serveClientStart(int clientSocket) {
 
 	try{
 		while(true){
-			optional<Request> requestOpt;
+			b::optional<Request> requestOpt;
 
 			requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
@@ -300,7 +300,7 @@ void Server::serveClientStart(int clientSocket) {
 				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
 			}
 
-			keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
+			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
 			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket");
 
 			pid_t childPid = fork();
@@ -372,15 +372,15 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
 		}
-		map<string, string> params;
+		std::map<std::string, std::string> params;
 		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
 
-		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		string sourceFile = getFilenameFromTarget(targetReplaced);
+		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		std::string sourceFile = getFilenameFromTarget(targetReplaced);
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
 
 		resp = getResponseFromSource(sourceFile, request);
 	}
@@ -394,7 +394,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	}
 
 	if (isHead) {
-		resp.setBody(string(), false);
+		resp.setBody(std::string(), false);
 	}
 
 	resp.setConnClose(!keepAlive);
@@ -413,19 +413,19 @@ std::string Server::getFilenameFromTarget (std::string target) {
 }
 
 
-string replaceParams(string target, map<string, string> params) {
+std::string replaceParams(std::string target, std::map<std::string, std::string> params) {
 	auto it = target.begin();
 	auto oldIt = it;
-	string result;
+	std::string result;
 
 	while ((it = find(it, target.end(), '{')) != target.end()) {
-		result += string(oldIt, it);
+		result += std::string(oldIt, it);
 		auto endIt = find(it, target.end(), '}');
 		if (endIt == target.end()) {
 			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: unmatched paranthesis in route target %1%", target));
 		}
 
-		string paramName(it + 1, endIt);
+		std::string paramName(it + 1, endIt);
 		auto paramFound = params.find(paramName);
 		if (paramFound == params.end()) {
 			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: parameter name %1% in route target %2% not found",
@@ -435,16 +435,16 @@ string replaceParams(string target, map<string, string> params) {
 		it++;
 		oldIt = it;
 	}
-	result += string(oldIt, it);
+	result += std::string(oldIt, it);
 
 	return result;
 }
 
 
-Response Server::getResponseFromSource(string filename, Request& request) {
+Response Server::getResponseFromSource(std::string filename, Request& request) {
 	filename = expandFilename(filename);
 
-	if (!filesystem::exists(filename)){
+	if (!bf::exists(filename)){
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
@@ -452,9 +452,9 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	bool isDynamic = getPymlIsDynamic(filename);
 	CacheController::CachePragma cachePragma = cacheController.getCacheControl(
-			filesystem::relative(filename, serverRoot).string(), !isDynamic);
+			relative(filename, serverRoot).string(), !isDynamic);
 
-	string etag;
+	std::string etag;
 	if (request.headerExists("if-none-match")){
 		etag = request.getHeader("if-none-match").get();
 		etag = etag.substr(1, etag.length() - 2);
@@ -465,8 +465,8 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 	else{
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		multimap<string, string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
-		unordered_multimap<string, string> headers(headersMap.begin(), headersMap.end());
+		std::multimap<std::string, std::string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
+		std::unordered_multimap<std::string, std::string> headers(headersMap.begin(), headersMap.end());
 
 
 		if (!PythonModule::krait.checkIsNone("response")){
@@ -495,15 +495,15 @@ void Server::startWebsocketsServer(int clientSocket, Request &request) {
 	try {
 		request.setRouteVerb(RouteVerb::WEBSOCKET);
 
-		map<string, string> params;
+		std::map<std::string, std::string> params;
 		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
 
-		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		string sourceFile = getFilenameFromTarget(targetReplaced);
+		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		std::string sourceFile = getFilenameFromTarget(targetReplaced);
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
 		PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
 
 		resp = getResponseFromSource(sourceFile, request);
@@ -530,46 +530,45 @@ void Server::startWebsocketsServer(int clientSocket, Request &request) {
 
 
 bool Server::canContainPython(std::string filename){
-	return ends_with(filename, ".html") || ends_with(filename, ".htm") ||
-		ends_with(filename, ".pyml");
+	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
 }
 
 
-string Server::expandFilename(string filename) {
-	if (filesystem::is_directory(filename)) {
+std::string Server::expandFilename(std::string filename) {
+	if (bf::is_directory(filename)) {
 		//DBG("Converting to directory automatically");
-		filename = (filesystem::path(filename) / "index").string(); //Not index.html; taking care below about it
+		filename = (bf::path(filename) / "index").string(); //Not index.html; taking care below about it
 	}
 	if (pathBlocked(filename)) {
-		DBG_FMT("Blocking path %1%", filename);
+		DBG_FMT("Blocking bf::path %1%", filename);
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	if (!filesystem::exists(filename)){
-		if (filesystem::exists(filename + ".html")){
+	if (!bf::exists(filename)){
+		if (bf::exists(filename + ".html")){
 			//DBG("Adding .html automatically");
 			filename += ".html";
 		}
-		else if (filesystem::exists(filename + ".htm")){
+		else if (bf::exists(filename + ".htm")){
 			//DBG("Adding .htm automatically");
 			filename += ".htm";
 		}
-		else if (filesystem::exists(filename + ".pyml")){
+		else if (bf::exists(filename + ".pyml")){
 			//DBG("Adding .pyml automatically");
 			filename += ".pyml";
 		}
-		else if (filesystem::exists(filename + ".py")){
+		else if (bf::exists(filename + ".py")){
 			filename += ".py";
 		}
 
-		else if (path(filename).extension() == ".html" &&
-				filesystem::exists(filesystem::change_extension(filename, ".htm"))){
-			filename = filesystem::change_extension(filename, "htm").string();
+		else if (bf::path(filename).extension() == ".html" &&
+				bf::exists(bf::change_extension(filename, ".htm"))){
+			filename = bf::change_extension(filename, "htm").string();
 			//DBG("Changing extension to .htm");
 		}
-		else if (path(filename).extension() == ".htm" &&
-				filesystem::exists(filesystem::change_extension(filename, ".html"))){
-			filename = filesystem::change_extension(filename, "html").string();
+		else if (bf::path(filename).extension() == ".htm" &&
+				bf::exists(bf::change_extension(filename, ".html"))){
+			filename = bf::change_extension(filename, "html").string();
 			//DBG("Changing extension to .html");
 		}
 	}
@@ -577,14 +576,14 @@ string Server::expandFilename(string filename) {
 }
 
 
-IteratorResult Server::getPymlResultRequestCache(string filename) {
+IteratorResult Server::getPymlResultRequestCache(std::string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
 	const IPymlFile* pymlFile = serverCache.get(filename);
 	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
 }
 
-bool Server::getPymlIsDynamic(string filename){
+bool Server::getPymlIsDynamic(std::string filename){
 	interpretCacheRequest = true;
 	const IPymlFile* pymlFile = serverCache.get(filename);
 	return pymlFile->isDynamic();
@@ -592,18 +591,18 @@ bool Server::getPymlIsDynamic(string filename){
 
 PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest){
 	DBG_FMT("constructFromFilename(%1%)", filename);
-	string source = readFromFile(filename);
+	std::string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
-	unique_ptr<IPymlParser> parser;
+	std::unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
 		DBG("choosing v2 pyml parser");
-		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
+		parser = std::unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
 	}
-	else if (ends_with(filename, ".py")){
-		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
+	else if (ba::ends_with(filename, ".py")){
+		parser = std::unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
 	}
 	else{
-		parser = unique_ptr<IPymlParser>(new RawPymlParser());
+		parser = std::unique_ptr<IPymlParser>(new RawPymlParser());
 	}
 	return pool.construct(source.begin(), source.end(), parser);
 }
@@ -618,7 +617,7 @@ void Server::onServerCacheMiss(std::string filename){
 
 void Server::updateParentCaches() {
 	while(cacheRequestPipe.pipeAvailable()){
-		string filename = cacheRequestPipe.pipeRead();
+		std::string filename = cacheRequestPipe.pipeRead();
 		DBG("next cache add is in parent");
 
 		interpretCacheRequest = false;
@@ -628,8 +627,8 @@ void Server::updateParentCaches() {
 }
 
 
-bool Server::pathBlocked(string filename) {
-	boost::filesystem::path filePath(filename);
+bool Server::pathBlocked(std::string filename) {
+	bf::path filePath(filename);
 	for (auto & part : filePath) {
 		if (part.c_str()[0] == '.') {
 			DBG_FMT("BANNED because of part %1%", part.c_str());
@@ -640,7 +639,7 @@ bool Server::pathBlocked(string filename) {
 }
 
 
-void Server::addDefaultHeaders(Response& response, string filename, Request& request) {
+void Server::addDefaultHeaders(Response& response, std::string filename, Request& request) {
 	if (!response.headerExists("Content-Type")) {
 		response.setHeader("Content-Type", getContentType(filename));
 	}
@@ -651,22 +650,22 @@ void Server::addDefaultHeaders(Response& response, string filename, Request& req
 }
 
 
-string Server::getContentType(string filename) {
-	string extension;
+std::string Server::getContentType(std::string filename) {
+	std::string extension;
 
 	if (PythonModule::krait.checkIsNone("content_type")) {
 		DBG("No content_type set");
-		filesystem::path filePath(filename);
+		bf::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
 			extension = filePath.stem().extension().string();
 		}
 	}
 	else{
-		string varContentType = PythonModule::krait.getGlobalStr("content_type");
+		std::string varContentType = PythonModule::krait.getGlobalStr("content_type");
 		DBG_FMT("content_type set to %1%", varContentType);
 
-		if (!starts_with(varContentType, "ext/")){
+		if (!ba::starts_with(varContentType, "ext/")){
 			return varContentType;
 		}
 		else{
@@ -686,7 +685,7 @@ string Server::getContentType(string filename) {
 	}
 }
 
-void Server::addStandardCacheHeaders(Response& response, string filename, CacheController::CachePragma pragma){
+void Server::addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma){
 	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
 
 	if (pragma.isStore){
@@ -695,11 +694,11 @@ void Server::addStandardCacheHeaders(Response& response, string filename, CacheC
 }
 
 void Server::loadContentTypeList() {
-	filesystem::path contentFilePath = getExecRoot() / "globals" / "mime.types";
+	bf::path contentFilePath = getExecRoot() / "globals" / "mime.types";
 	std::ifstream mimeFile(contentFilePath.string());
 
 	char line[1024];
-	string mimeType;
+	std::string mimeType;
 
 	while (mimeFile.getline(line, 1023)) {
 		if (line[0] == '\0' || line[0] == '#'){
@@ -718,7 +717,7 @@ void Server::loadContentTypeList() {
 			//This SHOULD be fine.
 			//Make it an extension (html to .html)
 			*(ptr - 1) = '.';
-			contentTypeByExtension[string(ptr - 1)] = mimeType;
+			contentTypeByExtension[std::string(ptr - 1)] = mimeType;
 
 			ptr = strtok(NULL, separators);
 		}

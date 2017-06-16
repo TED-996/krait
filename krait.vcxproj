@@ -81,6 +81,9 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>
+    </NMakePreprocessorDefinitions>
+    <AdditionalOptions>-d__clang__</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
@@ -97,6 +100,9 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>
+    </NMakePreprocessorDefinitions>
+    <AdditionalOptions>-d__clang__</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
@@ -113,6 +119,9 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>
+    </NMakePreprocessorDefinitions>
+    <AdditionalOptions>-d__clang__</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>

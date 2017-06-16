@@ -13,8 +13,9 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
-using namespace boost;
+
+namespace b = boost;
+
 
 bool fdClosed(int fd){
 	char buffer[1024];
@@ -49,8 +50,8 @@ errcodeInfo errcodeInfoDef(){
 	return errcodeInfo(errno);
 }
 
-string readFromFile(string filename) {
-	std::ifstream fileIn(filename, ios::in | ios::binary);
+std::string readFromFile(std::string filename) {
+	std::ifstream fileIn(filename, std::ios::in | std::ios::binary);
 
 	if (!fileIn) {
 		DBG("except in readFromFile");
@@ -58,7 +59,7 @@ string readFromFile(string filename) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	ostringstream fileData;
+	std::ostringstream fileData;
 	fileData << fileIn.rdbuf();
 	fileIn.close();
 
@@ -66,12 +67,12 @@ string readFromFile(string filename) {
 }
 
 std::string unixTimeToString(std::time_t timeVal){
-	posix_time::ptime asPtime = posix_time::from_time_t(timeVal);
+	b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
 
-	ostringstream result;	
+	std::ostringstream result;	
 
 	static char const* const fmt = "%a, %d %b %Y %H:%M:%S GMT";
-	std::locale outLocale(std::locale::classic(), new posix_time::time_facet(fmt));
+	std::locale outLocale(std::locale::classic(), new b::posix_time::time_facet(fmt));
 	result.imbue(outLocale);
 
 	result << asPtime;
@@ -85,6 +86,6 @@ void generateTagFromStat(std::string filename, char* dest){
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("stat(): generating ETag") << errcodeInfoDef());
 	}
 
-	string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
+	std::string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
 	strcpy(dest, result.c_str());
 }

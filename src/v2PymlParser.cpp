@@ -7,9 +7,6 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
-
-
 V2PymlParserFsm V2PymlParser::parserFsm;
 
 
@@ -267,15 +264,15 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
 	}
 
-	string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
+	std::string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	boost::trim(entry);
 	boost::trim(collection);
 
 	//1: krIterator; 2: collection;;; 3: entry
-	string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
+	std::string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
 	                   % krIterator % collection % entry).str();
-	string condCode = (boost::format("not %1%.over") % krIterator).str();
-	string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
+	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
+	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
 	                     % krIterator % collection % entry).str();
 
 	pushPymlWorkingFor();
@@ -552,7 +549,7 @@ void V2PymlParserFsm::init() {
 }
 
 void V2PymlParserFsm::finalAddPymlStr() {
-	string pymlStr = getResetStored();
+	std::string pymlStr = getResetStored();
 	if (pymlStr.length() != 0){
 		parser->addPymlWorkingStr(pymlStr);
 	}

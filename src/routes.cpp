@@ -5,10 +5,8 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-using namespace boost;
-using namespace boost::property_tree;
-
+namespace b = boost;
+namespace bpt = boost::property_tree;
 
 
 
@@ -27,7 +25,7 @@ const std::string &Route::getTarget(const std::string& defaultTarget) const {
 	}
 }
 
-bool Route::isMatch(RouteVerb verb, string url, map<string, string>& outParams) const {
+bool Route::isMatch(RouteVerb verb, std::string url, std::map<std::string, std::string>& outParams) const {
 	outParams.clear();
 
 	if (this->verb != RouteVerb::ANY && verb != this->verb) {
@@ -48,9 +46,9 @@ bool Route::isMatch(RouteVerb verb, string url, map<string, string>& outParams) 
 	}
 }
 
-Route Route::getRoute(ptree routePtree) {
+Route Route::getRoute(bpt::ptree routePtree) {
 	try {
-		string verbStr = routePtree.get<string>("verb", "GET");
+		std::string verbStr = routePtree.get<std::string>("verb", "GET");
 		DBG_FMT("got verb %1%", verbStr);
 
 		RouteVerb verb = toRouteVerb(verbStr);
@@ -59,14 +57,14 @@ Route Route::getRoute(ptree routePtree) {
 					routeParseError() << stringInfoFromFormat("Error: HTTP verb %1% not recognized.", verbStr));
 		}
 
-		string target = routePtree.get<string>("target", "");
+		std::string target = routePtree.get<std::string>("target", "");
 		DBG_FMT("got target %1%", target);
 
-		string url = routePtree.get<string>("url", "");
-		string regex = routePtree.get<string>("regex", "");
+		std::string url = routePtree.get<std::string>("url", "");
+		std::string regex = routePtree.get<std::string>("regex", "");
 
-		boost::optional<string> optionalTarget = boost::none;
-		boost::optional<string> optionalUrl = boost::none;
+		boost::optional<std::string> optionalTarget = boost::none;
+		boost::optional<std::string> optionalUrl = boost::none;
 		boost::optional<boost::regex> optionalRegex = boost::none;
 
 		if (target != "") {
@@ -81,37 +79,37 @@ Route Route::getRoute(ptree routePtree) {
 
 		return Route(verb, optionalRegex, optionalUrl, optionalTarget);
 	}
-	catch (ptree_bad_path &ex) {
+	catch (bpt::ptree_bad_path &ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not find route parameter '%1%'.",
-		                                                                ex.path<string>()));
+		                                                                ex.path<std::string>()));
 	}
-	catch (ptree_bad_data &ex) {
+	catch (bpt::ptree_bad_data &ex) {
 		BOOST_THROW_EXCEPTION(routeParseError() <<
 		                                        stringInfoFromFormat(
 				                                        "Error: Could not convert data '%1%' to the expected type.",
-				                                        ex.data<string>()));
+				                                        ex.data<std::string>()));
 	}
 }
 
-vector<Route> Route::getRoutesFromFile(string filename) {
+std::vector<Route> Route::getRoutesFromFile(std::string filename) {
 	/*  <routes>
 	 *      <route>...</route>
 	 *      ...
 	 *  </routes>
 	 *
 	 */
-	ptree routesRoot;
+	bpt::ptree routesRoot;
 	try {
-		read_json(filename, routesRoot);
+		bpt::read_json(filename, routesRoot);
 	}
-	catch (json_parser_error& ex) {
+	catch (bpt::json_parser_error& ex) {
 		BOOST_THROW_EXCEPTION(
 				routeParseError() << stringInfoFromFormat("Error parsing routes file '%1%. Additional data:\n%2%",
 				filename, ex.what()));
 	}
 
-	vector<Route> results;
-	for (ptree::value_type const& rt : routesRoot) {
+	std::vector<Route> results;
+	for (bpt::ptree::value_type const& rt : routesRoot) {
 		DBG("one route");
 		if (rt.first != "") {
 			BOOST_THROW_EXCEPTION(routeParseError() <<
@@ -127,11 +125,12 @@ vector<Route> Route::getRoutesFromFile(string filename) {
 	return results;
 }
 
-vector<Route> Route::getDefaultRoutes(){
-	return vector<Route> {Route(RouteVerb::GET, boost::none, boost::none, boost::none)};
+std::vector<Route> Route::getDefaultRoutes(){
+	return std::vector<Route> {Route(RouteVerb::GET, boost::none, boost::none, boost::none)};
 }
 
-const Route& Route::getRouteMatch(const vector<Route> routes, RouteVerb verb, string url, map<string, string>& outParams) {
+const Route& Route::getRouteMatch(const std::vector<Route> routes, RouteVerb verb, std::string url,
+		std::map<std::string, std::string>& outParams) {
 	for (const Route& route : routes) {
 		if (route.isMatch(verb, url, outParams)) {
 			return route;

@@ -8,8 +8,6 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-
 StringPiper::StringPiper(){
 	int pipes[2];
 	if (pipe(pipes) == -1){
@@ -43,13 +41,13 @@ void StringPiper::closeWrite(){
 	}
 }
 
-void StringPiper::pipeWrite(string data) {
+void StringPiper::pipeWrite(std::string data) {
 	DBG_FMT("StringPiper::pipeWrite('%1%') on fd %2%", data, writeHead);
 	if (data.length() > PIPE_BUF){
 		fprintf(stderr, "[WARN] StringPiper: tried to write more than PIPE_BUF at a time; not atomic so weird errors may occur!");
 	}
 	size_t len = data.length();
-	string writeData = string((char*)&len, sizeof(len)) + data;
+	std::string writeData = std::string((char*)&len, sizeof(len)) + data;
 	
 	int writeResult = write(writeHead, writeData.c_str(), writeData.length());
 	if (writeResult != (int) writeData.length()){
@@ -57,7 +55,7 @@ void StringPiper::pipeWrite(string data) {
 	}
 }
 
-string StringPiper::pipeRead() {
+std::string StringPiper::pipeRead() {
 	DBG_FMT("StringPiper::pipeRead() on fd %d", readHead);
 	size_t length;
 	if (read(readHead, &length, sizeof(length)) != sizeof(length)){
@@ -74,8 +72,8 @@ string StringPiper::pipeRead() {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("read(): reading bulk in StringPiper::pipeRead, wanted %1% but got %2% bytes",
 			length, readResult) << errcodeInfoDef());
 	}
-	
-	string result = string(data, length);
+
+	std::string result = std::string(data, length);
 	delete[] data;
 	
 	return result;
