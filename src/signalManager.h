@@ -38,4 +38,5 @@ public:
 
 	static int waitStoppedChildren();
 	static void waitChildrenBlocking();
+	static void waitChild(int pid);
 };

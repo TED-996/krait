@@ -89,6 +89,9 @@ int main(int argc, char* argv[]) {
 	
 	server.runServer();
 
+	Loggers::logInfo("Waiting for children to shut down.");
+	SignalManager::waitChildrenBlocking();
+
 	SignalManager::unregisterAll();
 
 	Loggers::logInfo("Krait shutting down. Goodbye.");

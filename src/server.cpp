@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <sys/wait.h>
 #include <vector>
 #include <ctime>
 #include <boost/filesystem.hpp>
@@ -224,11 +223,8 @@ void Server::serveClientStart(int clientSocket) {
 			}
 			else {
 				SignalManager::addPid((int)childPid);
-				if (waitpid(childPid, NULL, 0) != childPid) {
-					BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
-				}
-				SignalManager::removePid((int)childPid);
-				Loggers::logInfo("Rejoined with forked subfork.");
+				SignalManager::waitChild((int)childPid);
+				Loggers::logInfo("Rejoined with forked request server.");
 			}
 
 			if (!keepAlive) {
