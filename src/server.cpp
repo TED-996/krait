@@ -1,25 +1,25 @@
-#include<unistd.h>
-#include<sys/wait.h>
-#include<signal.h>
-#include<vector>
-#include<ctime>
-#include<boost/filesystem.hpp>
-#include<boost/algorithm/string/trim.hpp>
-#include<boost/algorithm/string/predicate.hpp>
-#include<functional>
-#include<string.h>
-#include<memory>
-#include"utils.h"
-#include"server.h"
-#include"except.h"
+#include <unistd.h>
+#include <sys/wait.h>
+#include <vector>
+#include <ctime>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <functional>
+#include <string.h>
+#include <memory>
+#include "utils.h"
+#include "server.h"
+#include "except.h"
 #include "pythonModule.h"
-#include"path.h"
-#include"logger.h"
-#include"pymlIterator.h"
-#include"rawPymlParser.h"
-#include"v2PymlParser.h"
-#include"websocketsServer.h"
+#include "path.h"
+#include "logger.h"
+#include "pymlIterator.h"
+#include "rawPymlParser.h"
+#include "v2PymlParser.h"
+#include "websocketsServer.h"
 #include "rawPythonPymlParser.h"
+#include "signalManager.h"
 
 #define DBG_DISABLE
 #include"dbg.h"
@@ -28,11 +28,6 @@
 namespace b = boost;
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
-
-std::unordered_set<int> Server::pids;
-int Server::socketToClose;
-bool Server::clientWaitingResponse;
-
 
 Server::Server(std::string serverRoot, int port)
 	:
@@ -47,16 +42,21 @@ Server::Server(std::string serverRoot, int port)
 		          std::placeholders::_2,
 		          std::placeholders::_3),
 		std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
+
+	if (Server::instance != nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Multiple Server instances!"));
+	}
+	Server::instance = this;
+
 	this->serverRoot = bf::path(serverRoot);
 	socketToClose = -1;
-	clientWaitingResponse = false;
 
 	bf::path routesFilename = this->serverRoot / ".config" / "routes.json";
 	if (exists(routesFilename)) {
 		this->routes = Route::getRoutesFromFile(routesFilename.string());
 	}
 	else {
-		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
+		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.json\" in the server root directory.");
 		this->routes = Route::getDefaultRoutes();
 	}
 
@@ -85,76 +85,11 @@ Server::Server(std::string serverRoot, int port)
 
 	loadContentTypeList();
 
-	initSignals();
-
 	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 
 	stdinDisconnected = fdClosed(0);
-}
-
-void Server::initSignals() {
-	struct sigaction termAction;
-	struct sigaction intAction;
-
-	memzero(termAction);
-	memzero(intAction);
-
-	termAction.sa_handler = &Server::signalKillRequested;
-	intAction.sa_handler = &Server::signalStopRequested;
-
-	sigaction(SIGINT, &intAction, NULL);
-	sigaction(SIGUSR1, &intAction, NULL);
-	sigaction(SIGTERM, &termAction, NULL);
-}
-
-
-void Server::signalStopRequested(int sig) {
-	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
-	clientWaitingResponse = false;
-	if (clientWaitingResponse && socketToClose != -1) {
-		try {
-			respondWithObject(socketToClose, Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
-		}
-		catch (networkError err) {
-			Loggers::errLogger.log("Could not send final 500 Internal Server Error.");
-			exit(1);
-		}
-	}
-	if (socketToClose != -1) {
-		close(socketToClose);
-		socketToClose = -1;
-	}
-
-	for (int pid : pids) {
-		kill((pid_t)pid, SIGUSR1);
-	}
-
-	while (pids.size() != 0) {
-		tryWaitFinishedForks();
-		sleep(1);
-		DBG("not closed...");
-	}
-
-	Loggers::logInfo(formatString("Process %1% closed.", getpid()));
-	exit(0);
-}
-
-
-void Server::signalKillRequested(int sig) {
-	Loggers::logInfo(formatString("Kill requested for process %1%", getpid()));
-	//hard close
-
-	if (socketToClose != -1) {
-		close(socketToClose);
-		socketToClose = -1;
-	}
-
-	for (int pid : pids) {
-		kill((pid_t)pid, SIGTERM);
-	}
-
-	Loggers::logInfo(formatString("Process %1% killed.", getpid()));
-	exit(0);
+	
+	shutdownRequested = false;
 }
 
 
@@ -162,31 +97,7 @@ Server::~Server() {
 	if (socketToClose != -1) {
 		close(socketToClose);
 	}
-	//Try soft close
-	for (int pid : pids) {
-		kill((pid_t)pid, SIGUSR1);
-	}
-
-	while (pids.size() != 0) {
-		tryWaitFinishedForks();
-		sleep(1);
-	}
-	Loggers::logInfo("Server destructed.");
 }
-
-
-void Server::killChildren() {
-	//First try to get them to shut down graciously.
-	for (int pid : pids) {
-		kill((pid_t)pid, SIGUSR1);
-	}
-	sleep(1);
-	for (int pid : pids) {
-		kill((pid_t)pid, SIGTERM);
-	}
-	Loggers::logInfo("Chilren killed.");
-}
-
 
 void Server::runServer() {
 	try {
@@ -198,12 +109,19 @@ void Server::runServer() {
 	}
 	Loggers::logInfo("Server listening");
 
-	while (true) {
+	while (!shutdownRequested) {
 		tryAcceptConnection();
-		tryWaitFinishedForks();
+		SignalManager::waitStoppedChildren();
 		updateParentCaches();
 		tryCheckStdinClosed();
 	}
+}
+
+void Server::requestShutdown() {
+	shutdownRequested = true;
+}
+
+void Server::cleanup() {
 }
 
 
@@ -228,7 +146,7 @@ void Server::tryAcceptConnection() {
 			errcodeInfoDef());
 	}
 	if (pid == 0) {
-		pids.clear();
+		SignalManager::clearPids();
 		socketToClose = clientSocket;
 
 		closeSocket(serverSocket);
@@ -239,36 +157,13 @@ void Server::tryAcceptConnection() {
 	}
 	closeSocket(clientSocket);
 
-	pids.insert((int)pid);
+	SignalManager::addPid((int)pid);
 }
 
 
-void Server::tryWaitFinishedForks() {
-	if (pids.size() == 0) {
-		return;
-	}
-	//DBG_FMT("there are %1% pids", pids.size());
-
-	int status;
-	pid_t pid = -1;
-	while (pids.size() != 0 && (pid = waitpid(-1, &status, WNOHANG)) != 0) {
-		if (pid == -1) {
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid: waiting for child") << errcodeInfoDef());
-		}
-		if (WIFEXITED(status) || WIFSIGNALED(status)) {
-			DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
-
-			auto it = pids.find((int)pid);
-			if (it != pids.end()) {
-				pids.erase(it);
-			}
-		}
-	}
-}
-
-void Server::tryCheckStdinClosed() {
+void Server::tryCheckStdinClosed() const {
 	if (!stdinDisconnected && fdClosed(0)) {
-		kill(getpid(), SIGUSR1);
+		raise(SIGUSR1); //TODO: change to SIGUSR2 when shutdown is implemented.
 	}
 }
 
@@ -282,7 +177,6 @@ void Server::serveClientStart(int clientSocket) {
 	try {
 		while (true) {
 			b::optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
-			clientWaitingResponse = true;
 			Loggers::logInfo(formatString("request got"));
 			if (!requestOpt) {
 				Loggers::logInfo(formatString("Requests finished."));
@@ -303,7 +197,7 @@ void Server::serveClientStart(int clientSocket) {
 
 			pid_t childPid = fork();
 			if (childPid == 0) {
-				pids.clear();
+				SignalManager::clearPids();
 
 				try {
 					if (request.isUpgrade("websocket")) {
@@ -312,11 +206,10 @@ void Server::serveClientStart(int clientSocket) {
 					else {
 						serveRequest(clientSocket, request);
 					}
-					clientWaitingResponse = false;
 
 					Loggers::logInfo("Serving a request finished.");
 				}
-				catch (networkError& err) {
+				catch (networkError&) {
 					Loggers::errLogger.log("Could not respond to client request.");
 					exit(1);
 				}
@@ -328,12 +221,11 @@ void Server::serveClientStart(int clientSocket) {
 				exit(0);
 			}
 			else {
-				clientWaitingResponse = false;
-				pids.insert((int)childPid);
+				SignalManager::addPid((int)childPid);
 				if (waitpid(childPid, NULL, 0) != childPid) {
 					BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
 				}
-				pids.erase((int)childPid);
+				SignalManager::removePid((int)childPid);
 				Loggers::logInfo("Rejoined with forked subfork.");
 			}
 
@@ -342,7 +234,7 @@ void Server::serveClientStart(int clientSocket) {
 			}
 		}
 	}
-	catch (networkError& ex) {
+	catch (networkError&) {
 		Loggers::logErr("Client disconnected.");
 	}
 	catch (rootException& ex) {

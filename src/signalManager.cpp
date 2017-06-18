@@ -1,5 +1,7 @@
 ﻿#include "except.h"
 #include "signalManager.h"
+#include <sys/wait.h>
+#include "dbg.h"
 
 std::vector<std::unique_ptr<SignalHandler>> SignalManager::signals;
 std::map<int, const struct sigaction> SignalManager::oldActions;
@@ -66,6 +68,37 @@ void SignalManager::removePid(int pid) {
 void SignalManager::signalChildren(int signal) {
 	for (const auto pid : childPids) {
 		kill(pid, signal);
+	}
+}
+
+int SignalManager::waitStoppedChildren() {
+	if (childPids.size() == 0) {
+		return 0;
+	}
+	int childrenExited = 0;
+
+	int status;
+	pid_t pid = -1;
+	while (childPids.size() != 0 && (pid = waitpid(-1, &status, WNOHANG)) != 0) {
+		if (pid == -1) {
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid: waiting for child") << errcodeInfoDef());
+		}
+		if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
+
+			removePid(pid);
+			childrenExited++;
+		}
+	}
+
+	return childrenExited;
+}
+
+void SignalManager::waitChildrenBlocking() {
+	while (childPids.size() != 0) {
+		waitStoppedChildren();
+		
+		sleep(1);
 	}
 }
 

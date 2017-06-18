@@ -10,7 +10,7 @@ private:
 
 	static void handleDefaultSignal(int signal, struct sigaction oldAction);
 protected:
-	void callOldHandler(int signal, siginfo_t* info, void* ucontext);
+	void callOldHandler(int signal, siginfo_t* info, void* ucontext) const;
 public:
 	explicit SignalHandler(std::vector<int> signals);
 	virtual ~SignalHandler() = default;
@@ -38,7 +38,7 @@ class ShtudownSignalHandler : public SignalHandler
 {
 public:
 	ShtudownSignalHandler()
-		: SignalHandler(std::vector<int>{SIGUSR1, SIGINT}) {
+		: SignalHandler(std::vector<int>{SIGUSR2}) {
 	}
 
 	void handler(int signal, siginfo_t* info, void* ucontext) override;

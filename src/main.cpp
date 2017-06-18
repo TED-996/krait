@@ -10,6 +10,7 @@
 
 #define DBG_DISABLE
 #include "dbg.h"
+#include "signalManager.h"
 
 namespace bpo = boost::program_options;
 
@@ -79,11 +80,19 @@ int main(int argc, char* argv[]) {
 
 	startCommanderProcess();
 
+	SignalManager::registerSignal(std::move(std::unique_ptr<ShtudownSignalHandler>()));
+	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>()));
+	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>()));
+
 	DBG("Pre server ctor");
 	Server server(siteRoot, port);
 	DBG("post server ctor");
 
 	server.runServer();
+
+	SignalManager::unregisterAll();
+
+	Loggers::logInfo("Krait shutting down. Goodbye.");
 
 	return 0;
 }

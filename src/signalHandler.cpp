@@ -1,6 +1,8 @@
 ﻿#include "signalHandler.h"
 #include <cstring>
 #include "server.h"
+#include "signalManager.h"
+#include "logger.h"
 
 SignalHandler::SignalHandler(std::vector<int> signals) {
 	this->signals = signals;
@@ -16,7 +18,7 @@ bool SignalHandler::handlesSignal(int signal) {
 	return false;
 }
 
-void SignalHandler::callOldHandler(int signal, siginfo_t* info, void* ucontext) {
+void SignalHandler::callOldHandler(int signal, siginfo_t* info, void* ucontext) const {
 	if (oldAction.sa_flags & SA_SIGINFO) {
 		oldAction.sa_sigaction(signal, info, ucontext);
 	}
@@ -47,17 +49,42 @@ void SignalHandler::handleDefaultSignal(int signal, struct sigaction oldAction) 
 }
 
 void ShtudownSignalHandler::handler(int signal, siginfo_t* info, void* ucontext) {
+	if (Server::getInstance() != nullptr) {
+		Server::getInstance()->requestShutdown();
+	}
+
+	SignalManager::signalChildren(signal);
+
+	Loggers::logInfo(formatString("Process %1% shutting down...", getpid()));
 }
 
 void StopSignalHandler::handler(int signal, siginfo_t* info, void* ucontext) {
-	Server::instance.cleanup();
-	Server::instance.~Server();
+	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
+
+	if (Server::getInstance() != nullptr) {
+		Server::getInstance()->cleanup();
+		Server::getInstance()->~Server();
+	}
+
+	SignalManager::signalChildren(signal);
+	SignalManager::waitChildrenBlocking();
+
+	Loggers::logInfo(formatString("Process %1% stopped.", getpid()));
 
 	exit(0);
 }
 
 void KillSignalHandler::handler(int signal, siginfo_t* info, void* ucontext) {
-	Server::instance.~Server();
+	Loggers::logInfo(formatString("Force stop requested for process %1%", getpid()));
 
-	callOldHandler(signal, info, ucontext);
+	if (Server::getInstance() != nullptr) {
+		Server::getInstance()->cleanup();
+		Server::getInstance()->~Server();
+	}
+
+	SignalManager::signalChildren(signal);
+	
+	Loggers::logInfo(formatString("Process %1% force stopped.", getpid()));
+
+	exit(0);
 }

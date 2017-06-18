@@ -35,4 +35,7 @@ public:
 	}
 
 	static void signalChildren(int signal);
+
+	static int waitStoppedChildren();
+	static void waitChildrenBlocking();
 };
