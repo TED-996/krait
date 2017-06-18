@@ -8,7 +8,9 @@
 #include "server.h"
 #include "commander.h"
 
+#define DBG_DISABLE
 #include "dbg.h"
+#include "signalManager.h"
 
 namespace bpo = boost::program_options;
 
@@ -76,13 +78,20 @@ int main(int argc, char* argv[]) {
 		startSetLoggers(stdoutName, stderrName);
 	}
 
+
 	startCommanderProcess();
+	
+	SignalManager::registerSignal(std::move(std::unique_ptr<ShtudownSignalHandler>(new ShtudownSignalHandler())));
+	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>(new StopSignalHandler())));
+	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>(new KillSignalHandler())));
 
-	DBG("Pre server ctor");
 	Server server(siteRoot, port);
-	DBG("post server ctor");
-
+	
 	server.runServer();
+
+	SignalManager::unregisterAll();
+
+	Loggers::logInfo("Krait shutting down. Goodbye.");
 
 	return 0;
 }

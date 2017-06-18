@@ -130,6 +130,7 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
     <ClCompile Include="src\commander.cpp" />
     <ClCompile Include="src\fsmV2.cpp" />
@@ -156,12 +157,14 @@
     <ClCompile Include="src\response.cpp" />
     <ClCompile Include="src\routes.cpp" />
     <ClCompile Include="src\server.cpp" />
+    <ClCompile Include="src\signalManager.cpp" />
     <ClCompile Include="src\stringPiper.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\v2PymlParser.cpp" />
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
     <ClInclude Include="src\commander.h" />
     <ClInclude Include="src\dbg.h" />
@@ -192,6 +195,7 @@
     <ClInclude Include="src\response.h" />
     <ClInclude Include="src\routes.h" />
     <ClInclude Include="src\server.h" />
+    <ClInclude Include="src\signalManager.h" />
     <ClInclude Include="src\stringPiper.h" />
     <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\v2PymlParser.h" />

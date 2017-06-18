@@ -2,7 +2,6 @@
 
 #include<string>
 #include<vector>
-#include<unordered_set>
 #include<unordered_map>
 #include<boost/filesystem/path.hpp>
 #include"except.h"
@@ -17,6 +16,8 @@
 
 class Server
 {
+	static Server* instance;
+
 	boost::filesystem::path serverRoot;
 	std::vector<Route> routes;
 	int serverSocket;
@@ -28,9 +29,17 @@ class Server
 	CacheController cacheController;
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
+	int socketToClose;
+	bool stdinDisconnected;
+
+	StringPiper cacheRequestPipe;
+	bool interpretCacheRequest;
+	PymlCache serverCache;
+
+	bool shutdownRequested;
+
 	void tryAcceptConnection();
-	static void tryWaitFinishedForks();
-	void tryCheckStdinClosed();
+	void tryCheckStdinClosed() const;
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
@@ -39,7 +48,7 @@ class Server
 
 	std::string getFilenameFromTarget(std::string target);
 	std::string expandFilename(std::string filename);
-	bool pathBlocked(std::string filename);
+	static bool pathBlocked(std::string filename);
 
 	std::string getContentType(std::string filename);
 	void loadContentTypeList();
@@ -49,31 +58,24 @@ class Server
 	bool canContainPython(std::string filename);
 	void startWebsocketsServer(int clientSocket, Request& request);
 
-	static void initSignals();
-
-	static int socketToClose;
-	static bool clientWaitingResponse;
-	static void signalStopRequested(int sig);
-	static void signalKillRequested(int sig);
-	static std::unordered_set<int> pids;
-
-	StringPiper cacheRequestPipe;
-	bool interpretCacheRequest;
-	PymlCache serverCache;
-	void updateParentCaches();
-
 	PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
 	void onServerCacheMiss(std::string filename);
 
 	bool getPymlIsDynamic(std::string filename);
 	IteratorResult getPymlResultRequestCache(std::string filename);
 
-	bool stdinDisconnected;
+	void updateParentCaches();
 
 public:
 	Server(std::string serverRoot, int port);
 	~Server();
 
 	void runServer();
-	void killChildren();
+
+	void requestShutdown();
+	void cleanup();
+
+	static Server* getInstance() {
+		return instance;
+	}
 };
