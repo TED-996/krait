@@ -78,16 +78,15 @@ int main(int argc, char* argv[]) {
 		startSetLoggers(stdoutName, stderrName);
 	}
 
+
 	startCommanderProcess();
+	
+	SignalManager::registerSignal(std::move(std::unique_ptr<ShtudownSignalHandler>(new ShtudownSignalHandler())));
+	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>(new StopSignalHandler())));
+	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>(new KillSignalHandler())));
 
-	SignalManager::registerSignal(std::move(std::unique_ptr<ShtudownSignalHandler>()));
-	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>()));
-	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>()));
-
-	DBG("Pre server ctor");
 	Server server(siteRoot, port);
-	DBG("post server ctor");
-
+	
 	server.runServer();
 
 	SignalManager::unregisterAll();

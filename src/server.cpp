@@ -29,6 +29,8 @@ namespace b = boost;
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
+Server* Server::instance = nullptr;
+
 Server::Server(std::string serverRoot, int port)
 	:
 	cacheController((bf::path(serverRoot) / ".config" / "cache-private.cfg").string(),

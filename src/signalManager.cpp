@@ -1,6 +1,7 @@
 ﻿#include "except.h"
 #include "signalManager.h"
 #include <sys/wait.h>
+
 #include "dbg.h"
 
 std::vector<std::unique_ptr<SignalHandler>> SignalManager::signals;
@@ -10,6 +11,7 @@ std::list<int> SignalManager::childPids;
 
 
 void SignalManager::registerSignal(std::unique_ptr<SignalHandler>&& signal) {
+	DBG("in signal ctor");
 	std::vector<int> newSignalNumbers = signal->getSignals();
 
 	for (int signalNumber : newSignalNumbers) {
@@ -25,7 +27,9 @@ void SignalManager::registerSignal(std::unique_ptr<SignalHandler>&& signal) {
 		oldActions.insert(std::make_pair(signalNumber, oldAction));
 	}
 
-	signals.push_back(signal);
+	signals.push_back(std::move(signal));
+
+	DBG("after signal ctor");
 }
 
 void SignalManager::unregisterSignal(const std::unique_ptr<SignalHandler>& signal) {
