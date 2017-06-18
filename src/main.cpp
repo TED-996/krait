@@ -8,6 +8,7 @@
 #include "server.h"
 #include "commander.h"
 
+#define DBG_DISABLE
 #include "dbg.h"
 
 namespace bpo = boost::program_options;
