@@ -2,13 +2,13 @@
 
 
 RawPymlParser::RawPymlParser()
-	: pymlItem(""){
+	: pymlItem("") {
 }
 
 void RawPymlParser::consume(std::string::iterator start, std::string::iterator end) {
 	pymlItem = PymlItemStr(std::string(start, end));
 }
 
-const IPymlItem *RawPymlParser::getParsed() {
+const IPymlItem* RawPymlParser::getParsed() {
 	return &pymlItem;
 }

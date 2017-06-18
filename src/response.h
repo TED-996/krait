@@ -5,7 +5,8 @@
 #include <boost/optional.hpp>
 #include "iteratorResult.h"
 
-class Response {
+class Response
+{
 	int httpMajor;
 	int httpMinor;
 
@@ -15,19 +16,19 @@ class Response {
 
 	IteratorResult bodyIterator;
 	bool connClose;
-	
+
 	std::string statusLine;
 	bool fromFullResponse;
-	
+
 	void parseFullResponse(std::string response);
 	boost::optional<std::string> getHeader(std::string name);
-	
+
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
 	         std::string body, bool connClose);
 	Response(std::string fullResponse);
 	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
-			 IteratorResult bodyIterator, bool connClose);
+	         IteratorResult bodyIterator, bool connClose);
 	Response(int statusCode, std::string body, bool connClose);
 	Response(int statusCode, IteratorResult bodyIterator, bool connClose);
 
@@ -40,7 +41,7 @@ public:
 		this->statusCode = statusCode;
 	}
 
-	int getStatusCode(){
+	int getStatusCode() {
 		return statusCode;
 	}
 
@@ -49,12 +50,11 @@ public:
 	void addHeader(std::string name, std::string value);
 	void setHeader(std::string name, std::string value);
 	void removeHeader(std::string name);
-	
+
 	void setConnClose(bool connClose);
 
 	bool headerExists(std::string name);
 
 	std::string getResponseHeaders();
 	const std::string* getBodyNext();
-
 };

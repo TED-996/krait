@@ -1,7 +1,8 @@
 #pragma once
 
 template<typename T>
-class ValueOrPtr {
+class ValueOrPtr
+{
 private:
 	const T* ptr;
 	T* valuePtr;
@@ -14,25 +15,25 @@ public:
 		this->isValue = false;
 	}
 
-	ValueOrPtr(const T value){
+	ValueOrPtr(const T value) {
 		this->ptr = NULL;
 		this->valuePtr = new T(value);
 		this->isValue = true;
 	}
 
-	ValueOrPtr(const ValueOrPtr& source){
+	ValueOrPtr(const ValueOrPtr& source) {
 		this->isValue = source.isValue;
 		this->ptr = source.ptr;
 
-		if (source.isValue){
+		if (source.isValue) {
 			this->valuePtr = new T(*source.valuePtr);
 		}
-		else{
+		else {
 			this->valuePtr = NULL;
 		}
 	}
 
-	ValueOrPtr(ValueOrPtr&& source){
+	ValueOrPtr(ValueOrPtr&& source) {
 		this->isValue = source.isValue;
 		this->ptr = source.ptr;
 		this->valuePtr = source.valuePtr;
@@ -42,8 +43,8 @@ public:
 		source.ptr = NULL;
 	}
 
-	~ValueOrPtr(){
-		if (this->isValue && this->valuePtr != NULL){
+	~ValueOrPtr() {
+		if (this->isValue && this->valuePtr != NULL) {
 			delete this->valuePtr;
 		}
 		this->isValue = true;
@@ -52,10 +53,10 @@ public:
 	}
 
 	const T* get() const {
-		if (isValue){
+		if (isValue) {
 			return valuePtr;
 		}
-		else{
+		else {
 			return ptr;
 		}
 	}

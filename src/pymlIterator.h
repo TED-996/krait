@@ -2,7 +2,8 @@
 #include<stack>
 #include "pymlFile.h"
 
-class PymlIterator {
+class PymlIterator
+{
 private:
 	std::stack<const IPymlItem*> items;
 	std::string tmpStr;
@@ -17,7 +18,7 @@ public:
 
 	bool compareWith(std::string other);
 
-	bool isTmpStr(const std::string* strPtr){
+	bool isTmpStr(const std::string* strPtr) {
 		return strPtr == &tmpStr;
 	}
 };

@@ -1,6 +1,7 @@
 #pragma once
 
-enum WebsocketsOpcode {
+enum WebsocketsOpcode
+{
 	Continuation = 0,
 	Text = 1,
 	Binary = 2,
@@ -9,12 +10,14 @@ enum WebsocketsOpcode {
 	Pong = 10
 };
 
-struct WebsocketsMessage {
+struct WebsocketsMessage
+{
 	WebsocketsOpcode opcode;
 	std::string message;
 };
 
-struct WebsocketsFrame {
+struct WebsocketsFrame
+{
 	bool isFin;
 	WebsocketsOpcode opcode;
 	std::string message;

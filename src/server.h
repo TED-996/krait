@@ -15,7 +15,8 @@
 #include"cacheController.h"
 
 
-class Server {
+class Server
+{
 	boost::filesystem::path serverRoot;
 	std::vector<Route> routes;
 	int serverSocket;
@@ -39,14 +40,14 @@ class Server {
 	std::string getFilenameFromTarget(std::string target);
 	std::string expandFilename(std::string filename);
 	bool pathBlocked(std::string filename);
-	
+
 	std::string getContentType(std::string filename);
 	void loadContentTypeList();
 
 	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
-	
+
 	bool canContainPython(std::string filename);
-	void startWebsocketsServer(int clientSocket, Request &request);
+	void startWebsocketsServer(int clientSocket, Request& request);
 
 	static void initSignals();
 

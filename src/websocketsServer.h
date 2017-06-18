@@ -4,7 +4,8 @@
 #include "request.h"
 
 
-class WebsocketsServer {
+class WebsocketsServer
+{
 private:
 	int clientSocket;
 	bool closed;

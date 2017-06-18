@@ -6,7 +6,8 @@
 #include"IPymlCache.h"
 
 
-class PymlItem : public IPymlItem {
+class PymlItem : public IPymlItem
+{
 public:
 	virtual std::string runPyml() const override {
 		return "";
@@ -26,10 +27,11 @@ public:
 };
 
 
-class PymlItemStr : public PymlItem {
+class PymlItemStr : public PymlItem
+{
 	std::string str;
 public:
-	PymlItemStr(const std::string& str){
+	PymlItemStr(const std::string& str) {
 		this->str = str;
 	}
 
@@ -42,16 +44,17 @@ public:
 		return false;
 	}
 
-	const std::string* getEmbeddedString(std::string* storage) const override{
+	const std::string* getEmbeddedString(std::string* storage) const override {
 		return &str;
 	}
 };
 
 
-class PymlItemSeq : public PymlItem {
+class PymlItemSeq : public PymlItem
+{
 	std::vector<const PymlItem*> items;
 public:
-	PymlItemSeq(const std::vector<const PymlItem*>& items){
+	PymlItemSeq(const std::vector<const PymlItem*>& items) {
 		this->items = items;
 	}
 
@@ -64,12 +67,14 @@ public:
 };
 
 
-class PymlItemPyEval : public PymlItem {
+class PymlItemPyEval : public PymlItem
+{
 	std::string code;
 public:
-	PymlItemPyEval(const std::string& code){
+	PymlItemPyEval(const std::string& code) {
 		this->code = code;
 	}
+
 	std::string runPyml() const override;
 
 	bool isDynamic() const override {
@@ -83,12 +88,14 @@ public:
 };
 
 
-class PymlItemPyEvalRaw : public PymlItem {
+class PymlItemPyEvalRaw : public PymlItem
+{
 	std::string code;
 public:
-	PymlItemPyEvalRaw(const std::string& code){
+	PymlItemPyEvalRaw(const std::string& code) {
 		this->code = code;
 	}
+
 	std::string runPyml() const override;
 
 	bool isDynamic() const override {
@@ -102,20 +109,22 @@ public:
 };
 
 
-class PymlItemPyExec : public PymlItem {
+class PymlItemPyExec : public PymlItem
+{
 	std::string code;
 public:
-	PymlItemPyExec(const std::string& code){
+	PymlItemPyExec(const std::string& code) {
 		this->code = code;
 	}
+
 	std::string runPyml() const override;
 
 	bool isDynamic() const override {
 		return true;
 	}
 
-	const IPymlItem* getNext(const IPymlItem* last) const override{
-		if (last == NULL){
+	const IPymlItem* getNext(const IPymlItem* last) const override {
+		if (last == NULL) {
 			runPyml();
 		}
 		return NULL;
@@ -123,13 +132,14 @@ public:
 };
 
 
-class PymlItemIf : public PymlItem {
+class PymlItemIf : public PymlItem
+{
 	std::string conditionCode;
 	const PymlItem* itemIfTrue;
 	const PymlItem* itemIfFalse;
 
 public:
-	PymlItemIf(const std::string& conditionCode, const PymlItem* itemIfTrue, const PymlItem* itemIfFalse){
+	PymlItemIf(const std::string& conditionCode, const PymlItem* itemIfTrue, const PymlItem* itemIfFalse) {
 		this->conditionCode = conditionCode;
 		this->itemIfTrue = itemIfTrue;
 		this->itemIfFalse = itemIfFalse;
@@ -145,7 +155,8 @@ public:
 };
 
 
-class PymlItemFor : public PymlItem {
+class PymlItemFor : public PymlItem
+{
 	std::string initCode;
 	std::string conditionCode;
 	std::string updateCode;
@@ -153,7 +164,7 @@ class PymlItemFor : public PymlItem {
 	const PymlItem* loopItem;
 
 public:
-	PymlItemFor(const std::string& initCode, const std::string& conditionCode, const std::string& updateCode, const PymlItem* loopItem){
+	PymlItemFor(const std::string& initCode, const std::string& conditionCode, const std::string& updateCode, const PymlItem* loopItem) {
 		this->initCode = initCode;
 		this->conditionCode = conditionCode;
 		this->updateCode = updateCode;
@@ -170,14 +181,15 @@ public:
 };
 
 
-class PymlItemEmbed : public PymlItem {
+class PymlItemEmbed : public PymlItem
+{
 private:
 	std::string filename;
 	IPymlCache* cache;
 
 public:
 	PymlItemEmbed(std::string filename, IPymlCache& cache)
-			: filename(filename), cache(&cache){
+		: filename(filename), cache(&cache) {
 	}
 
 	std::string runPyml() const override;
@@ -188,7 +200,8 @@ public:
 };
 
 
-struct PymlItemPool {
+struct PymlItemPool
+{
 	boost::object_pool<PymlItem> itemPool;
 	boost::object_pool<PymlItemStr> strPool;
 	boost::object_pool<PymlItemSeq> seqPool;
@@ -201,32 +214,58 @@ struct PymlItemPool {
 };
 
 
-struct PymlWorkingItem {
-	enum Type { None, Str, Seq, PyEval, PyEvalRaw, PyExec, If, For, Embed };
-	struct NoneData {
+struct PymlWorkingItem
+{
+	enum Type
+	{
+		None,
+		Str,
+		Seq,
+		PyEval,
+		PyEvalRaw,
+		PyExec,
+		If,
+		For,
+		Embed
 	};
-	struct StrData {
+
+	struct NoneData
+	{
+	};
+
+	struct StrData
+	{
 		std::string str;
 	};
-	struct SeqData {
+
+	struct SeqData
+	{
 		std::vector<PymlWorkingItem*> items;
 	};
-	struct PyCodeData {
+
+	struct PyCodeData
+	{
 		Type type;
 		std::string code;
 	};
-	struct IfData {
+
+	struct IfData
+	{
 		std::string condition;
 		PymlWorkingItem* itemIfTrue;
 		PymlWorkingItem* itemIfFalse;
 	};
-	struct ForData {
+
+	struct ForData
+	{
 		std::string initCode;
 		std::string conditionCode;
 		std::string updateCode;
 		PymlWorkingItem* loopItem;
 	};
-	struct EmbedData {
+
+	struct EmbedData
+	{
 		std::string filename;
 		IPymlCache* cache;
 	};
@@ -237,11 +276,9 @@ struct PymlWorkingItem {
 	PymlWorkingItem(Type type);
 
 	template<typename T>
-	T* getData(){
+	T* getData() {
 		return boost::get<T>(&data);
 	}
 
 	const PymlItem* getItem(PymlItemPool& pool) const;
-
 };
-

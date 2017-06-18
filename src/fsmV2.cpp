@@ -4,20 +4,20 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
 
 SimpleFsmTransition::SimpleFsmTransition(char chrToMatch, size_t nextState, bool consume)
 	: chrToMatch(chrToMatch),
-	nextState(nextState),
-	consume(consume) {
+	  nextState(nextState),
+	  consume(consume) {
 }
 
 WhitespaceFsmTransition::WhitespaceFsmTransition(size_t nextState, bool consume)
 	: nextState(nextState),
-	consume(consume){
+	  consume(consume) {
 }
 
-AlwaysFsmTransition::AlwaysFsmTransition(size_t nextState, bool consume) : nextState(nextState), consume(consume) {
+AlwaysFsmTransition::AlwaysFsmTransition(size_t nextState, bool consume)
+	: nextState(nextState), consume(consume) {
 }
 
 bool ErrorFsmTransition::isMatch(char chr, FsmV2& fsm) {
@@ -25,7 +25,8 @@ bool ErrorFsmTransition::isMatch(char chr, FsmV2& fsm) {
 }
 
 
-FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates) :
+FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates)
+	:
 	maxState(nrStates),
 	maxBulkState(nrStates + nrBulkStates),
 	currBulkState(nrStates) {
@@ -38,7 +39,7 @@ FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates) :
 }
 
 void FsmV2::reset() {
-	while(!storedStrings.empty()){
+	while (!storedStrings.empty()) {
 		storedStrings.pop();
 	}
 	parserProps.clear();
@@ -50,8 +51,8 @@ void FsmV2::reset() {
 	isFinalPass = false;
 }
 
-void FsmV2::add(size_t state, FsmTransition *transition) {
-	if (state >= maxState){
+void FsmV2::add(size_t state, FsmTransition* transition) {
+	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add transition to larger than maximum."));
 	}
 
@@ -59,13 +60,13 @@ void FsmV2::add(size_t state, FsmTransition *transition) {
 }
 
 void FsmV2::addMany(std::initializer_list<std::pair<size_t, FsmTransition *>> transitions) {
-	for (const auto& transition : transitions){
+	for (const auto& transition : transitions) {
 		add(transition.first, transition.second);
 	}
 }
 
 void FsmV2::addStateAction(size_t state, FsmV2::fsmAction action) {
-	if (state >= maxState){
+	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add action to larger than maximum."));
 	}
 
@@ -73,7 +74,7 @@ void FsmV2::addStateAction(size_t state, FsmV2::fsmAction action) {
 }
 
 void FsmV2::addFinalAction(size_t state, FsmV2::fsmAction action) {
-	if (state >= maxState){
+	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add final action to larger than maximum."));
 	}
 
@@ -81,16 +82,16 @@ void FsmV2::addFinalAction(size_t state, FsmV2::fsmAction action) {
 }
 
 void FsmV2::addFinalActionToMany(fsmAction action, std::initializer_list<size_t> destinationStates) {
-	for (auto state : destinationStates){
-		if (state >= maxState){
+	for (auto state : destinationStates) {
+		if (state >= maxState) {
 			BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add final action to larger than maximum."));
 		}
 		finalActions[state].push_back(action);
 	}
 }
 
-void FsmV2::addToBulk(size_t state, FsmTransition *transition) {
-	if (state >= maxBulkState){
+void FsmV2::addToBulk(size_t state, FsmTransition* transition) {
+	if (state >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested bulk state to add transition to larger than maximum."));
 	}
 
@@ -98,7 +99,7 @@ void FsmV2::addToBulk(size_t state, FsmTransition *transition) {
 }
 
 void FsmV2::addStateActionToBulk(size_t state, FsmV2::fsmAction action) {
-	if (state >= maxBulkState){
+	if (state >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add action to larger than maximum."));
 	}
 
@@ -110,10 +111,10 @@ void FsmV2::setSavepoint(size_t offset) {
 }
 
 void FsmV2::revertSavepoint() {
-	if (savepointOffset <= workingIdx){
+	if (savepointOffset <= workingIdx) {
 		workingIdx -= savepointOffset;
 	}
-	else{
+	else {
 		savepointOffset -= workingIdx;
 		workingIdx = 0;
 
@@ -126,17 +127,17 @@ void FsmV2::pushResetStoredString() {
 }
 
 std::string FsmV2::popStoredString() {
-	string result(std::move(storedStrings.front()));
+	std::string result(std::move(storedStrings.front()));
 	storedStrings.pop();
 	return result;
 }
 
 int FsmV2::getProp(std::string key) {
 	const auto it = parserProps.find(key);
-	if (it == parserProps.end()){
+	if (it == parserProps.end()) {
 		return 0;
 	}
-	else{
+	else {
 		return it->second;
 	}
 }
@@ -146,7 +147,7 @@ void FsmV2::setProp(std::string key, int value) {
 }
 
 void FsmV2::store(char chr) {
-	if (workingIdx == workingBufferSize){
+	if (workingIdx == workingBufferSize) {
 		backBuffer.append(workingBuffer, workingIdx);
 		workingIdx = 0;
 	}
@@ -180,19 +181,19 @@ void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, 
 	if (currBulkState + strToMatch.length() - 1 >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("FSM error: Out of bulk states."));
 	}
-	if (strToMatch.length() == 0){
+	if (strToMatch.length() == 0) {
 		add(startState, new AlwaysFsmTransition(endState, false));
 		return;
 	}
 
-	if (strToMatch.length() == 1){
+	if (strToMatch.length() == 1) {
 		add(startState, new SimpleFsmTransition(strToMatch[0], endState));
 		add(startState, new AlwaysFsmTransition(failState, false));
 	}
 
 	add(startState, new SimpleFsmTransition(strToMatch[0], currBulkState));
 
-	for (string::iterator it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); it++) {
+	for (std::string::iterator it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); ++it) {
 		addToBulk(currBulkState, new SimpleFsmTransition(*it, currBulkState + 1));
 		addToBulk(currBulkState, new AlwaysFsmTransition(failState, false));
 		bulkFailState[currBulkState - maxState] = failState;
@@ -205,7 +206,7 @@ void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, 
 }
 
 void FsmV2::addStringLiteralParser(size_t startState, size_t endState, char delimiter, char escapeChr) {
-	if (currBulkState + 2 >= maxBulkState){
+	if (currBulkState + 2 >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("FSM error: Out of bulk states."));
 	}
 
@@ -224,7 +225,7 @@ void FsmV2::addStringLiteralParser(size_t startState, size_t endState, char deli
 }
 
 void FsmV2::addBlockParser(size_t startState, size_t endState, char blockStart, char blockEnd) {
-	if (currBulkState + 1 >= maxBulkState){
+	if (currBulkState + 1 >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("FSM error: Out of bulk states."));
 	}
 	const std::string depthPropName("FsmV2::addBlockParser::depth");
@@ -233,23 +234,23 @@ void FsmV2::addBlockParser(size_t startState, size_t endState, char blockStart, 
 	currBulkState++;
 
 	// Begin: set prop to 0
-	addToBulk(startState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm){
-		fsm.setProp(depthPropName, 0);
-	}));
+	addToBulk(startState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm) {
+	                                             fsm.setProp(depthPropName, 0);
+                                             }));
 	// Increase depth
-	addToBulk(consumeState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm){
-		fsm.setProp(depthPropName, fsm.getProp(depthPropName) + 1);
-	}));
+	addToBulk(consumeState, new ActionFsmTransition(new SimpleFsmTransition(blockStart, consumeState), [=](FsmV2& fsm) {
+	                                               fsm.setProp(depthPropName, fsm.getProp(depthPropName) + 1);
+                                               }));
 	// Decrease depth
 	addToBulk(consumeState, new AndConditionFsmTransition(
-			new ActionFsmTransition(new SimpleFsmTransition(blockEnd, consumeState), [=](FsmV2& fsm){
-		fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
-	}), [=](char ch, FsmV2& fsm) {return fsm.getProp(depthPropName) != 0;}));
+		          new ActionFsmTransition(new SimpleFsmTransition(blockEnd, consumeState), [=](FsmV2& fsm) {
+	                                  fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
+                                  }), [=](char ch, FsmV2& fsm) { return fsm.getProp(depthPropName) != 0; }));
 	// Finish block
 	addToBulk(consumeState, new AndConditionFsmTransition(
-			new ActionFsmTransition(new SimpleFsmTransition(blockEnd, endState), [=](FsmV2& fsm){
-				fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
-			}), [=](char ch, FsmV2& fsm) {return fsm.getProp(depthPropName) == 0;}));
+		          new ActionFsmTransition(new SimpleFsmTransition(blockEnd, endState), [=](FsmV2& fsm) {
+	                                  fsm.setProp(depthPropName, fsm.getProp(depthPropName) - 1);
+                                  }), [=](char ch, FsmV2& fsm) { return fsm.getProp(depthPropName) == 0; }));
 	// Otherwise, continue block
 	addToBulk(consumeState, new AlwaysFsmTransition(consumeState));
 
@@ -261,15 +262,15 @@ void FsmV2::consumeOne(char chr) {
 
 	bool consumed = false;
 	skipThis = false;
-	while(!consumed){
+	while (!consumed) {
 		consumed = true;
 		size_t idx;
 		size_t len = transitions[state].size();
-		for (idx = 0; idx < len && !transitions[state][idx]->isMatch(chr, *this); idx++){
+		for (idx = 0; idx < len && !transitions[state][idx]->isMatch(chr, *this); idx++) {
 		}
 
 		//if there was a match
-		if (idx < len){
+		if (idx < len) {
 			const auto& found = transitions[state][idx];
 			found->execute(*this);
 			state = found->getNextState(*this);
@@ -278,7 +279,7 @@ void FsmV2::consumeOne(char chr) {
 		}
 	}
 
-	if (!skipThis && !isFinalPass){
+	if (!skipThis && !isFinalPass) {
 		store(chr);
 	}
 }
@@ -289,20 +290,20 @@ void FsmV2::doFinalPass() {
 	consumeOne('\n');
 
 	size_t actionState = state;
-	if (state > maxState){
+	if (state > maxState) {
 		actionState = bulkFailState[state - maxState];
 	}
 
-	for (const auto& action : finalActions[actionState]){
+	for (const auto& action : finalActions[actionState]) {
 		action(*this);
 	}
 }
 
 void FsmV2::execStateAction() {
-	if (state >= maxBulkState){
+	if (state >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Invalid state in FSM: %1%", state));
 	}
-	for (const auto& it : stateActions[state]){
+	for (const auto& it : stateActions[state]) {
 		it(*this);
 	}
 }

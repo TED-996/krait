@@ -8,7 +8,8 @@
 #include "pymlItems.h"
 
 
-class PymlFile : public IPymlFile {
+class PymlFile : public IPymlFile
+{
 private:
 	const IPymlItem* rootItem;
 	std::unique_ptr<IPymlParser> parser;
@@ -17,14 +18,14 @@ public:
 	PymlFile(std::string::iterator sourceStart,
 	         std::string::iterator sourceEnd,
 	         std::unique_ptr<IPymlParser>& parser);
-	
+
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;
-	
+
 	bool isDynamic() const;
 	std::string runPyml() const;
 
-	const IPymlItem* getRootItem() const{
-		return (IPymlItem*) rootItem;
+	const IPymlItem* getRootItem() const {
+		return (IPymlItem*)rootItem;
 	}
 };

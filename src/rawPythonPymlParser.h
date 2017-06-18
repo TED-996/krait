@@ -2,7 +2,8 @@
 #include "IPymlParser.h"
 #include "pymlItems.h"
 
-class RawPythonPymlParser : public IPymlParser {
+class RawPythonPymlParser : public IPymlParser
+{
 	IPymlCache& cache;
 	PymlItemPyExec mainExec;
 	PymlItemSeq rootSeq;
@@ -15,5 +16,5 @@ public:
 	RawPythonPymlParser(IPymlCache& cache);
 	void consume(std::string::iterator start, std::string::iterator end) override;
 
-	const IPymlItem *getParsed() override;
+	const IPymlItem* getParsed() override;
 };

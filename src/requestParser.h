@@ -4,7 +4,8 @@
 #include"request.h"
 
 
-class RequestParser {
+class RequestParser
+{
 	int state;
 	std::string workingBackBuffer;
 	char workingStr[65536];

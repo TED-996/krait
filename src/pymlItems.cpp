@@ -8,19 +8,17 @@
 #include "dbg.h"
 
 
-using namespace std;
-
-string PymlItemSeq::runPyml() const {
-	string result;
-	for (const PymlItem* it : items){
+std::string PymlItemSeq::runPyml() const {
+	std::string result;
+	for (const PymlItem* it : items) {
 		result += it->runPyml();
 	}
 	return result;
 }
 
 bool PymlItemSeq::isDynamic() const {
-	for (auto it: items){
-		if (it->isDynamic()){
+	for (auto it: items) {
+		if (it->isDynamic()) {
 			return true;
 		}
 	}
@@ -28,12 +26,12 @@ bool PymlItemSeq::isDynamic() const {
 }
 
 const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
-	if (last == NULL && items.size() != 0){
+	if (last == NULL && items.size() != 0) {
 		return items[0];
 	}
 
-	for (int i = 0; i < (int)items.size(); i++){
-		if (items[i] == last && i + 1 < (int)items.size()){
+	for (int i = 0; i < (int)items.size(); i++) {
+		if (items[i] == last && i + 1 < (int)items.size()) {
 			return items[i + 1];
 		}
 	}
@@ -42,16 +40,16 @@ const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 }
 
 const PymlItem* PymlItemSeq::tryCollapse() const {
-	if (items.size() == 0){
+	if (items.size() == 0) {
 		return NULL;
 	}
-	if (items.size() == 1){
+	if (items.size() == 1) {
 		return items[0];
 	}
 	return (PymlItem*)this;
 }
 
-string htmlEscape(string htmlCode);
+std::string htmlEscape(std::string htmlCode);
 
 std::string PymlItemPyEval::runPyml() const {
 	return htmlEscape(PythonModule::main.eval(code));
@@ -70,14 +68,14 @@ std::string PymlItemPyExec::runPyml() const {
 
 
 std::string PymlItemIf::runPyml() const {
-	if (PythonModule::main.test(conditionCode)){
-		if (itemIfTrue == NULL){
+	if (PythonModule::main.test(conditionCode)) {
+		if (itemIfTrue == NULL) {
 			return "";
 		}
 		return itemIfTrue->runPyml();
 	}
-	else{
-		if (itemIfFalse == NULL){
+	else {
+		if (itemIfFalse == NULL) {
 			return "";
 		}
 		return itemIfFalse->runPyml();
@@ -85,15 +83,15 @@ std::string PymlItemIf::runPyml() const {
 }
 
 
-const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
-	if (last != NULL){
+const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
+	if (last != NULL) {
 		return NULL;
 	}
 
-	if (PythonModule::main.test(conditionCode)){
+	if (PythonModule::main.test(conditionCode)) {
 		return itemIfTrue;
 	}
-	else{
+	else {
 		return itemIfFalse;
 	}
 }
@@ -101,8 +99,8 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const{
 
 std::string PymlItemFor::runPyml() const {
 	PythonModule::main.run(initCode);
-	string result;
-	while(PythonModule::main.test(conditionCode)){
+	std::string result;
+	while (PythonModule::main.test(conditionCode)) {
 		result += loopItem->runPyml();
 		PythonModule::main.run(updateCode);
 	}
@@ -110,24 +108,24 @@ std::string PymlItemFor::runPyml() const {
 }
 
 
-const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const{
-	if (last == NULL){
+const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
+	if (last == NULL) {
 		PythonModule::main.run(initCode);
 	}
-	else{
+	else {
 		PythonModule::main.run(updateCode);
 	}
 
-	if (PythonModule::main.test(conditionCode)){
+	if (PythonModule::main.test(conditionCode)) {
 		return loopItem;
 	}
-	else{
+	else {
 		return NULL;
 	}
 }
 
-const IPymlItem* PymlItemEmbed::getNext(const IPymlItem *last) const {
-	if (last == NULL){
+const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
+	if (last == NULL) {
 		return cache->get(PythonModule::main.eval(filename))->getRootItem();
 	}
 	else {
@@ -144,86 +142,92 @@ bool PymlItemEmbed::isDynamic() const {
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
-		: data(NoneData()){
+	: data(NoneData()) {
 	//DBG_FMT("In PymlWorkingItem constructor; type = %1%", (int)type);
 	this->type = type;
-	if (type == Type::None){
+	if (type == Type::None) {
 	}
-	else if (type == Type::Str){
+	else if (type == Type::Str) {
 		data = StrData();
 	}
-	else if (type == Type::Seq){
+	else if (type == Type::Seq) {
 		data = SeqData();
 	}
-	else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec){
+	else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec) {
 		PyCodeData dataTmp;
 		dataTmp.type = type;
 		data = dataTmp;
 	}
-	else if (type == Type::If){
+	else if (type == Type::If) {
 		data = IfData();
 	}
-	else if (type == Type::For ){
+	else if (type == Type::For) {
 		data = ForData();
 	}
-	else if (type == Type::Embed){
+	else if (type == Type::Embed) {
 		data = EmbedData();
 	}
-	else{
+	else {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
 	}
 }
 
 
-class GetItemVisitor : public boost::static_visitor<const PymlItem*>{
+class GetItemVisitor : public boost::static_visitor<const PymlItem*>
+{
 	PymlItemPool& pool;
 public:
 	GetItemVisitor(PymlItemPool& pool)
-			: pool(pool){
+		: pool(pool) {
 	}
 
-	const PymlItem* operator()(PymlWorkingItem::NoneData data){
+	const PymlItem* operator()(PymlWorkingItem::NoneData data) {
 		(void)data; //Silence the warning.
 		return pool.itemPool.construct();
 	}
-	const PymlItem* operator()(PymlWorkingItem::StrData strData){
+
+	const PymlItem* operator()(PymlWorkingItem::StrData strData) {
 		return pool.strPool.construct(strData.str);
 	}
-	const PymlItem* operator()(PymlWorkingItem::SeqData seqData){
-		vector<const PymlItem*> items;
-		for (PymlWorkingItem* it : seqData.items){
+
+	const PymlItem* operator()(PymlWorkingItem::SeqData seqData) {
+		std::vector<const PymlItem*> items;
+		for (PymlWorkingItem* it : seqData.items) {
 			const PymlItem* item = it->getItem(pool);
-			if (item != NULL){
+			if (item != NULL) {
 				items.push_back(item);
 			}
 		}
 		const PymlItemSeq* result = pool.seqPool.construct(items);
 		return result->tryCollapse();
 	}
-	const PymlItem* operator()(PymlWorkingItem::PyCodeData pyCodeData){
-		if (pyCodeData.type == PymlWorkingItem::Type::PyExec){
+
+	const PymlItem* operator()(PymlWorkingItem::PyCodeData pyCodeData) {
+		if (pyCodeData.type == PymlWorkingItem::Type::PyExec) {
 			return pool.pyExecPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEval){
+		if (pyCodeData.type == PymlWorkingItem::Type::PyEval) {
 			return pool.pyEvalPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw){
+		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw) {
 			return pool.pyEvalRawPool.construct(PythonModule::prepareStr(pyCodeData.code));
 		}
 		BOOST_THROW_EXCEPTION(
-				serverError()
-						<< stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
+			serverError()
+			<< stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
 	}
-	const PymlItem* operator()(PymlWorkingItem::IfData ifData){
+
+	const PymlItem* operator()(PymlWorkingItem::IfData ifData) {
 		const PymlItem* itemIfTrue = ifData.itemIfTrue->getItem(pool);
 		const PymlItem* itemIfFalse = NULL;
-		if (ifData.itemIfFalse != NULL){
+		if (ifData.itemIfFalse != NULL) {
 			itemIfFalse = ifData.itemIfFalse->getItem(pool);
 		}
 
 		return pool.ifExecPool.construct(PythonModule::prepareStr(ifData.condition), itemIfTrue, itemIfFalse);
 	}
-	const PymlItem* operator()(PymlWorkingItem::ForData forData ){
+
+	const PymlItem* operator()(PymlWorkingItem::ForData forData) {
 		const PymlItem* loopItem = forData.loopItem->getItem(pool);
 		PymlItemFor* newItem = pool.forExecPool.malloc();
 		PymlItemFor* item = new(newItem) PymlItemFor(PythonModule::prepareStr(forData.initCode), forData.conditionCode,
@@ -241,8 +245,8 @@ const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
 	return boost::apply_visitor(visitor, data);
 }
 
-string htmlEscape(string htmlCode) {
-	string result;
+std::string htmlEscape(std::string htmlCode) {
+	std::string result;
 	bool resultEmpty = true;
 
 	const char* replacements[256];
@@ -256,7 +260,7 @@ string htmlEscape(string htmlCode) {
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
 		if (replacements[(int)htmlCode[idx]] != NULL) {
-			if (resultEmpty){
+			if (resultEmpty) {
 				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
 				resultEmpty = false;
 			}

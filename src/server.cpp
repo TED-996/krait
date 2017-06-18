@@ -24,48 +24,48 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
-using namespace boost;
-using namespace boost::filesystem;
 
+namespace b = boost;
+namespace bf = boost::filesystem;
+namespace ba = boost::algorithm;
 
-unordered_set<int> Server::pids;
+std::unordered_set<int> Server::pids;
 int Server::socketToClose;
 bool Server::clientWaitingResponse;
 
 
-
-Server::Server(string serverRoot, int port) :
-	cacheController((path(serverRoot) / ".config" / "cache-private.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-public.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
-					(path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
+Server::Server(std::string serverRoot, int port)
+	:
+	cacheController((bf::path(serverRoot) / ".config" / "cache-private.cfg").string(),
+	                (bf::path(serverRoot) / ".config" / "cache-public.cfg").string(),
+	                (bf::path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
+	                (bf::path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
 	serverCache(
-			std::bind(&Server::constructPymlFromFilename,
-			     this,
-			     std::placeholders::_1,
-			     std::placeholders::_2,
-			     std::placeholders::_3),
-			std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
-	this->serverRoot = path(serverRoot);
+		std::bind(&Server::constructPymlFromFilename,
+		          this,
+		          std::placeholders::_1,
+		          std::placeholders::_2,
+		          std::placeholders::_3),
+		std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
+	this->serverRoot = bf::path(serverRoot);
 	socketToClose = -1;
 	clientWaitingResponse = false;
-	
-	filesystem::path routesFilename = this->serverRoot / ".config" / "routes.json";
-	if (filesystem::exists(routesFilename)){
+
+	bf::path routesFilename = this->serverRoot / ".config" / "routes.json";
+	if (exists(routesFilename)) {
 		this->routes = Route::getRoutesFromFile(routesFilename.string());
 	}
-	else{
+	else {
 		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.xml\" in the server root directory.");
 		this->routes = Route::getDefaultRoutes();
 	}
-	
+
 	DBG("routes got");
 
 	try {
 		this->serverSocket = getServerSocket(port, false, true);
 	}
-	catch(networkError err){
+	catch (networkError err) {
 		Loggers::errLogger.log("Could not get server socket.");
 		exit(1);
 	}
@@ -76,7 +76,7 @@ Server::Server(string serverRoot, int port) :
 	try {
 		PythonModule::initModules(serverRoot);
 	}
-	catch (pythonError &err){
+	catch (pythonError& err) {
 		Loggers::logErr(formatString("Error running init.py: %1%", err.what()));
 		exit(1);
 	}
@@ -92,7 +92,7 @@ Server::Server(string serverRoot, int port) :
 	stdinDisconnected = fdClosed(0);
 }
 
-void Server::initSignals(){
+void Server::initSignals() {
 	struct sigaction termAction;
 	struct sigaction intAction;
 
@@ -108,24 +108,24 @@ void Server::initSignals(){
 }
 
 
-void Server::signalStopRequested(int sig){
+void Server::signalStopRequested(int sig) {
 	Loggers::logInfo(formatString("Stop requested for process %1%", getpid()));
 	clientWaitingResponse = false;
-	if (clientWaitingResponse && socketToClose != -1){
-		try{
-		respondWithObject(socketToClose,  Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+	if (clientWaitingResponse && socketToClose != -1) {
+		try {
+			respondWithObject(socketToClose, Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
-		catch(networkError err){
+		catch (networkError err) {
 			Loggers::errLogger.log("Could not send final 500 Internal Server Error.");
 			exit(1);
 		}
 	}
-	if (socketToClose != -1){
+	if (socketToClose != -1) {
 		close(socketToClose);
 		socketToClose = -1;
 	}
 
-	for (int pid : pids){
+	for (int pid : pids) {
 		kill((pid_t)pid, SIGUSR1);
 	}
 
@@ -135,21 +135,21 @@ void Server::signalStopRequested(int sig){
 		DBG("not closed...");
 	}
 
-	Loggers::logInfo(formatString("Process %1% closed.", getpid()));	
+	Loggers::logInfo(formatString("Process %1% closed.", getpid()));
 	exit(0);
 }
 
 
-void Server::signalKillRequested(int sig){
+void Server::signalKillRequested(int sig) {
 	Loggers::logInfo(formatString("Kill requested for process %1%", getpid()));
 	//hard close
 
-	if (socketToClose != -1){
+	if (socketToClose != -1) {
 		close(socketToClose);
 		socketToClose = -1;
 	}
 
-	for (int pid : pids){
+	for (int pid : pids) {
 		kill((pid_t)pid, SIGTERM);
 	}
 
@@ -159,11 +159,11 @@ void Server::signalKillRequested(int sig){
 
 
 Server::~Server() {
-	if (socketToClose != -1){
+	if (socketToClose != -1) {
 		close(socketToClose);
 	}
 	//Try soft close
-	for (int pid : pids){
+	for (int pid : pids) {
 		kill((pid_t)pid, SIGUSR1);
 	}
 
@@ -177,7 +177,7 @@ Server::~Server() {
 
 void Server::killChildren() {
 	//First try to get them to shut down graciously.
-	for (int pid : pids){
+	for (int pid : pids) {
 		kill((pid_t)pid, SIGUSR1);
 	}
 	sleep(1);
@@ -189,10 +189,10 @@ void Server::killChildren() {
 
 
 void Server::runServer() {
-	try{
+	try {
 		setSocketListen(this->serverSocket);
 	}
-	catch(networkError err){
+	catch (networkError err) {
 		Loggers::errLogger.log("Could not set server to listen.");
 		exit(1);
 	}
@@ -209,11 +209,11 @@ void Server::runServer() {
 
 void Server::tryAcceptConnection() {
 	const int timeout = 100;
-	int clientSocket;
-	try{
+	int clientSocket = -1;
+	try {
 		clientSocket = getNewClient(serverSocket, timeout);
 	}
-	catch(networkError err){
+	catch (networkError err) {
 		Loggers::errLogger.log("Could not get new client.");
 		exit(1);
 	}
@@ -225,12 +225,12 @@ void Server::tryAcceptConnection() {
 	pid_t pid = fork();
 	if (pid == -1) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): creating process to serve socket. Is the system out of resources?") <<
-		                      errcodeInfoDef());
+			errcodeInfoDef());
 	}
 	if (pid == 0) {
 		pids.clear();
 		socketToClose = clientSocket;
-		
+
 		closeSocket(serverSocket);
 		cacheRequestPipe.closeRead();
 
@@ -250,43 +250,41 @@ void Server::tryWaitFinishedForks() {
 	//DBG_FMT("there are %1% pids", pids.size());
 
 	int status;
-	pid_t pid;
+	pid_t pid = -1;
 	while (pids.size() != 0 && (pid = waitpid(-1, &status, WNOHANG)) != 0) {
-		if (pid == -1){
+		if (pid == -1) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid: waiting for child") << errcodeInfoDef());
 		}
 		if (WIFEXITED(status) || WIFSIGNALED(status)) {
 			DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
-			
+
 			auto it = pids.find((int)pid);
-			if (it != pids.end()){
+			if (it != pids.end()) {
 				pids.erase(it);
 			}
 		}
 	}
 }
 
-void Server::tryCheckStdinClosed(){
-	if (!stdinDisconnected && fdClosed(0)){
+void Server::tryCheckStdinClosed() {
+	if (!stdinDisconnected && fdClosed(0)) {
 		kill(getpid(), SIGUSR1);
 	}
 }
 
-string replaceParams(string target, map<string, string> params);
+std::string replaceParams(std::string target, std::map<std::string, std::string> params);
 
 void Server::serveClientStart(int clientSocket) {
 	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
 	keepAliveTimeoutSec = maxKeepAliveSec;
 
-	try{
-		while(true){
-			optional<Request> requestOpt;
-
-			requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
+	try {
+		while (true) {
+			b::optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
 			clientWaitingResponse = true;
 			Loggers::logInfo(formatString("request got"));
-			if (!requestOpt){
+			if (!requestOpt) {
 				Loggers::logInfo(formatString("Requests finished."));
 				break;
 			}
@@ -296,19 +294,19 @@ void Server::serveClientStart(int clientSocket) {
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
 			}
-			if (request.headerExists("If-Modified-Since")){
+			if (request.headerExists("If-Modified-Since")) {
 				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
 			}
 
-			keepAliveTimeoutSec = min(maxKeepAliveSec, request.getKeepAliveTimeout());
+			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
 			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket");
 
 			pid_t childPid = fork();
-			if (childPid == 0){
+			if (childPid == 0) {
 				pids.clear();
 
-				try{
-					if (request.isUpgrade("websocket")){
+				try {
+					if (request.isUpgrade("websocket")) {
 						startWebsocketsServer(clientSocket, request);
 					}
 					else {
@@ -318,40 +316,40 @@ void Server::serveClientStart(int clientSocket) {
 
 					Loggers::logInfo("Serving a request finished.");
 				}
-				catch(networkError &err){
+				catch (networkError& err) {
 					Loggers::errLogger.log("Could not respond to client request.");
 					exit(1);
 				}
-				catch(pythonError &err){
+				catch (pythonError& err) {
 					Loggers::errLogger.log(formatString("Python error:\n%1%", err.what()));
 					exit(1);
 				}
 				close(clientSocket);
 				exit(0);
 			}
-			else{
+			else {
 				clientWaitingResponse = false;
 				pids.insert((int)childPid);
-				if (waitpid(childPid, NULL, 0) != childPid){
+				if (waitpid(childPid, NULL, 0) != childPid) {
 					BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
 				}
 				pids.erase((int)childPid);
 				Loggers::logInfo("Rejoined with forked subfork.");
 			}
 
-			if (!keepAlive){
+			if (!keepAlive) {
 				break;
 			}
 		}
 	}
-	catch(networkError& ex){
+	catch (networkError& ex) {
 		Loggers::logErr("Client disconnected.");
 	}
 	catch (rootException& ex) {
-		if (isHead){
+		if (isHead) {
 			respondWithObject(clientSocket, Response(500, "", true));
 		}
-		else{
+		else {
 			respondWithObject(clientSocket, Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
@@ -372,15 +370,15 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
 		}
-		map<string, string> params;
+		std::map<std::string, std::string> params;
 		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
 
-		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		string sourceFile = getFilenameFromTarget(targetReplaced);
+		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		std::string sourceFile = getFilenameFromTarget(targetReplaced);
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
 
 		resp = getResponseFromSource(sourceFile, request);
 	}
@@ -394,7 +392,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	}
 
 	if (isHead) {
-		resp.setBody(string(), false);
+		resp.setBody(std::string(), false);
 	}
 
 	resp.setConnClose(!keepAlive);
@@ -403,7 +401,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 }
 
 
-std::string Server::getFilenameFromTarget (std::string target) {
+std::string Server::getFilenameFromTarget(std::string target) {
 	if (target[0] == '/') {
 		return (serverRoot / target.substr(1)).string();
 	}
@@ -413,38 +411,38 @@ std::string Server::getFilenameFromTarget (std::string target) {
 }
 
 
-string replaceParams(string target, map<string, string> params) {
+std::string replaceParams(std::string target, std::map<std::string, std::string> params) {
 	auto it = target.begin();
 	auto oldIt = it;
-	string result;
+	std::string result;
 
 	while ((it = find(it, target.end(), '{')) != target.end()) {
-		result += string(oldIt, it);
+		result += std::string(oldIt, it);
 		auto endIt = find(it, target.end(), '}');
 		if (endIt == target.end()) {
 			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: unmatched paranthesis in route target %1%", target));
 		}
 
-		string paramName(it + 1, endIt);
+		std::string paramName(it + 1, endIt);
 		auto paramFound = params.find(paramName);
 		if (paramFound == params.end()) {
 			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: parameter name %1% in route target %2% not found",
-			                      paramName, target));
+				paramName, target));
 		}
 		result += paramFound->second;
-		it++;
+		++it;
 		oldIt = it;
 	}
-	result += string(oldIt, it);
+	result += std::string(oldIt, it);
 
 	return result;
 }
 
 
-Response Server::getResponseFromSource(string filename, Request& request) {
+Response Server::getResponseFromSource(std::string filename, Request& request) {
 	filename = expandFilename(filename);
 
-	if (!filesystem::exists(filename)){
+	if (!bf::exists(filename)) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
@@ -452,26 +450,26 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 
 	bool isDynamic = getPymlIsDynamic(filename);
 	CacheController::CachePragma cachePragma = cacheController.getCacheControl(
-			filesystem::relative(filename, serverRoot).string(), !isDynamic);
+		relative(filename, serverRoot).string(), !isDynamic);
 
-	string etag;
-	if (request.headerExists("if-none-match")){
+	std::string etag;
+	if (request.headerExists("if-none-match")) {
 		etag = request.getHeader("if-none-match").get();
 		etag = etag.substr(1, etag.length() - 2);
 	}
-	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)){
+	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)) {
 		result = Response(304, "", false);
 	}
-	else{
+	else {
 		IteratorResult pymlResult = getPymlResultRequestCache(filename);
 
-		multimap<string, string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
-		unordered_multimap<string, string> headers(headersMap.begin(), headersMap.end());
+		std::multimap<std::string, std::string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
+		std::unordered_multimap<std::string, std::string> headers(headersMap.begin(), headersMap.end());
 
 
-		if (!PythonModule::krait.checkIsNone("response")){
+		if (!PythonModule::krait.checkIsNone("response")) {
 			result = Response(PythonModule::krait.eval("str(response)"));
-			for (const auto& header : headers){
+			for (const auto& header : headers) {
 				result.addHeader(header.first, header.second);
 			}
 		}
@@ -489,27 +487,27 @@ Response Server::getResponseFromSource(string filename, Request& request) {
 }
 
 
-void Server::startWebsocketsServer(int clientSocket, Request &request) {
+void Server::startWebsocketsServer(int clientSocket, Request& request) {
 	Response resp(500, "", true);
 
 	try {
 		request.setRouteVerb(RouteVerb::WEBSOCKET);
 
-		map<string, string> params;
+		std::map<std::string, std::string> params;
 		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
 
-		string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		string sourceFile = getFilenameFromTarget(targetReplaced);
+		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		std::string sourceFile = getFilenameFromTarget(targetReplaced);
 
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", multimap<string, string>());
+		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
 		PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
 
 		resp = getResponseFromSource(sourceFile, request);
 	}
-	catch (notFoundError& err) {
-		DBG_FMT("notFound: %1%", err.what());
+	catch (notFoundError& ex) {
+		DBG_FMT("notFound: %1%", ex.what());
 		resp = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
 	catch (rootException& ex) {
@@ -521,55 +519,53 @@ void Server::startWebsocketsServer(int clientSocket, Request &request) {
 		WebsocketsServer server(clientSocket);
 		server.start(request);
 	}
-	else{
+	else {
 		resp.setConnClose(!keepAlive);
 		respondWithObjectRef(clientSocket, resp);
 	}
 }
 
 
-
-bool Server::canContainPython(std::string filename){
-	return ends_with(filename, ".html") || ends_with(filename, ".htm") ||
-		ends_with(filename, ".pyml");
+bool Server::canContainPython(std::string filename) {
+	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
 }
 
 
-string Server::expandFilename(string filename) {
-	if (filesystem::is_directory(filename)) {
+std::string Server::expandFilename(std::string filename) {
+	if (bf::is_directory(filename)) {
 		//DBG("Converting to directory automatically");
-		filename = (filesystem::path(filename) / "index").string(); //Not index.html; taking care below about it
+		filename = (bf::path(filename) / "index").string(); //Not index.html; taking care below about it
 	}
 	if (pathBlocked(filename)) {
-		DBG_FMT("Blocking path %1%", filename);
+		DBG_FMT("Blocking bf::path %1%", filename);
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	if (!filesystem::exists(filename)){
-		if (filesystem::exists(filename + ".html")){
+	if (!bf::exists(filename)) {
+		if (bf::exists(filename + ".html")) {
 			//DBG("Adding .html automatically");
 			filename += ".html";
 		}
-		else if (filesystem::exists(filename + ".htm")){
+		else if (bf::exists(filename + ".htm")) {
 			//DBG("Adding .htm automatically");
 			filename += ".htm";
 		}
-		else if (filesystem::exists(filename + ".pyml")){
+		else if (bf::exists(filename + ".pyml")) {
 			//DBG("Adding .pyml automatically");
 			filename += ".pyml";
 		}
-		else if (filesystem::exists(filename + ".py")){
+		else if (bf::exists(filename + ".py")) {
 			filename += ".py";
 		}
 
-		else if (path(filename).extension() == ".html" &&
-				filesystem::exists(filesystem::change_extension(filename, ".htm"))){
-			filename = filesystem::change_extension(filename, "htm").string();
+		else if (bf::path(filename).extension() == ".html" &&
+			bf::exists(bf::change_extension(filename, ".htm"))) {
+			filename = bf::change_extension(filename, "htm").string();
 			//DBG("Changing extension to .htm");
 		}
-		else if (path(filename).extension() == ".htm" &&
-				filesystem::exists(filesystem::change_extension(filename, ".html"))){
-			filename = filesystem::change_extension(filename, "html").string();
+		else if (bf::path(filename).extension() == ".htm" &&
+			bf::exists(bf::change_extension(filename, ".html"))) {
+			filename = bf::change_extension(filename, "html").string();
 			//DBG("Changing extension to .html");
 		}
 	}
@@ -577,48 +573,48 @@ string Server::expandFilename(string filename) {
 }
 
 
-IteratorResult Server::getPymlResultRequestCache(string filename) {
+IteratorResult Server::getPymlResultRequestCache(std::string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
 	const IPymlFile* pymlFile = serverCache.get(filename);
 	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
 }
 
-bool Server::getPymlIsDynamic(string filename){
+bool Server::getPymlIsDynamic(std::string filename) {
 	interpretCacheRequest = true;
 	const IPymlFile* pymlFile = serverCache.get(filename);
 	return pymlFile->isDynamic();
 }
 
-PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest){
+PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest) {
 	DBG_FMT("constructFromFilename(%1%)", filename);
-	string source = readFromFile(filename);
+	std::string source = readFromFile(filename);
 	generateTagFromStat(filename, tagDest);
-	unique_ptr<IPymlParser> parser;
+	std::unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
 		DBG("choosing v2 pyml parser");
-		parser = unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
+		parser = std::unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
 	}
-	else if (ends_with(filename, ".py")){
-		parser = unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
+	else if (ba::ends_with(filename, ".py")) {
+		parser = std::unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
 	}
-	else{
-		parser = unique_ptr<IPymlParser>(new RawPymlParser());
+	else {
+		parser = std::unique_ptr<IPymlParser>(new RawPymlParser());
 	}
 	return pool.construct(source.begin(), source.end(), parser);
 }
 
 
-void Server::onServerCacheMiss(std::string filename){
-	if (interpretCacheRequest){
+void Server::onServerCacheMiss(std::string filename) {
+	if (interpretCacheRequest) {
 		cacheRequestPipe.pipeWrite(filename);
 		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
 	}
 }
 
 void Server::updateParentCaches() {
-	while(cacheRequestPipe.pipeAvailable()){
-		string filename = cacheRequestPipe.pipeRead();
+	while (cacheRequestPipe.pipeAvailable()) {
+		std::string filename = cacheRequestPipe.pipeRead();
 		DBG("next cache add is in parent");
 
 		interpretCacheRequest = false;
@@ -627,10 +623,9 @@ void Server::updateParentCaches() {
 	}
 }
 
-
-bool Server::pathBlocked(string filename) {
-	boost::filesystem::path filePath(filename);
-	for (auto & part : filePath) {
+bool Server::pathBlocked(std::string filename) {
+	bf::path filePath(filename);
+	for (auto& part : filePath) {
 		if (part.c_str()[0] == '.') {
 			DBG_FMT("BANNED because of part %1%", part.c_str());
 			return true;
@@ -640,7 +635,7 @@ bool Server::pathBlocked(string filename) {
 }
 
 
-void Server::addDefaultHeaders(Response& response, string filename, Request& request) {
+void Server::addDefaultHeaders(Response& response, std::string filename, Request& request) {
 	if (!response.headerExists("Content-Type")) {
 		response.setHeader("Content-Type", getContentType(filename));
 	}
@@ -651,25 +646,25 @@ void Server::addDefaultHeaders(Response& response, string filename, Request& req
 }
 
 
-string Server::getContentType(string filename) {
-	string extension;
+std::string Server::getContentType(std::string filename) {
+	std::string extension;
 
 	if (PythonModule::krait.checkIsNone("content_type")) {
 		DBG("No content_type set");
-		filesystem::path filePath(filename);
+		bf::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
 			extension = filePath.stem().extension().string();
 		}
 	}
-	else{
-		string varContentType = PythonModule::krait.getGlobalStr("content_type");
+	else {
+		std::string varContentType = PythonModule::krait.getGlobalStr("content_type");
 		DBG_FMT("content_type set to %1%", varContentType);
 
-		if (!starts_with(varContentType, "ext/")){
+		if (!ba::starts_with(varContentType, "ext/")) {
 			return varContentType;
 		}
-		else{
+		else {
 			extension = varContentType.substr(3); //strlen("ext")
 			extension[0] = '.'; // /extension to .extension
 		}
@@ -686,39 +681,39 @@ string Server::getContentType(string filename) {
 	}
 }
 
-void Server::addStandardCacheHeaders(Response& response, string filename, CacheController::CachePragma pragma){
+void Server::addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma) {
 	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
 
-	if (pragma.isStore){
+	if (pragma.isStore) {
 		response.addHeader("etag", "\"" + serverCache.getCacheTag(filename) + "\"");
 	}
 }
 
 void Server::loadContentTypeList() {
-	filesystem::path contentFilePath = getExecRoot() / "globals" / "mime.types";
+	bf::path contentFilePath = getExecRoot() / "globals" / "mime.types";
 	std::ifstream mimeFile(contentFilePath.string());
 
 	char line[1024];
-	string mimeType;
+	std::string mimeType;
 
 	while (mimeFile.getline(line, 1023)) {
-		if (line[0] == '\0' || line[0] == '#'){
+		if (line[0] == '\0' || line[0] == '#') {
 			continue;
 		}
 
 		const char* separators = " \t\r\n";
 		char* ptr = strtok(line, separators);
-		if (ptr == NULL){
+		if (ptr == NULL) {
 			continue;
 		}
 
 		mimeType.assign(ptr);
 		ptr = strtok(NULL, separators);
-		while(ptr != NULL){
+		while (ptr != NULL) {
 			//This SHOULD be fine.
 			//Make it an extension (html to .html)
 			*(ptr - 1) = '.';
-			contentTypeByExtension[string(ptr - 1)] = mimeType;
+			contentTypeByExtension[std::string(ptr - 1)] = mimeType;
 
 			ptr = strtok(NULL, separators);
 		}

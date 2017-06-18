@@ -13,10 +13,11 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-using namespace std;
-using namespace boost;
 
-bool fdClosed(int fd){
+namespace b = boost;
+
+
+bool fdClosed(int fd) {
 	char buffer[1024];
 
 	struct pollfd pfd;
@@ -25,18 +26,18 @@ bool fdClosed(int fd){
 	pfd.revents = 0;
 
 	int pollResult = poll(&pfd, 1, 0);
-	while(pollResult != 0){
-		if(pollResult == -1){
+	while (pollResult != 0) {
+		if (pollResult == -1) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("poll(): on fd %1% (to check if closed)", fd) << errcodeInfoDef());
 		}
 		int readResult = read(fd, buffer, 1024);
-		if (readResult == -1){
-			if (errno == EBADF){
+		if (readResult == -1) {
+			if (errno == EBADF) {
 				return true;
 			}
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("read(): on fd %1% (to check if closed)", fd) << errcodeInfoDef());
 		}
-		if (readResult == 0){
+		if (readResult == 0) {
 			return true;
 		}
 		pollResult = poll(&pfd, 1, 0);
@@ -45,12 +46,12 @@ bool fdClosed(int fd){
 	return false;
 }
 
-errcodeInfo errcodeInfoDef(){
+errcodeInfo errcodeInfoDef() {
 	return errcodeInfo(errno);
 }
 
-string readFromFile(string filename) {
-	std::ifstream fileIn(filename, ios::in | ios::binary);
+std::string readFromFile(std::string filename) {
+	std::ifstream fileIn(filename, std::ios::in | std::ios::binary);
 
 	if (!fileIn) {
 		DBG("except in readFromFile");
@@ -58,20 +59,20 @@ string readFromFile(string filename) {
 		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
-	ostringstream fileData;
+	std::ostringstream fileData;
 	fileData << fileIn.rdbuf();
 	fileIn.close();
 
 	return fileData.str();
 }
 
-std::string unixTimeToString(std::time_t timeVal){
-	posix_time::ptime asPtime = posix_time::from_time_t(timeVal);
+std::string unixTimeToString(std::time_t timeVal) {
+	b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
 
-	ostringstream result;	
+	std::ostringstream result;
 
 	static char const* const fmt = "%a, %d %b %Y %H:%M:%S GMT";
-	std::locale outLocale(std::locale::classic(), new posix_time::time_facet(fmt));
+	std::locale outLocale(std::locale::classic(), new b::posix_time::time_facet(fmt));
 	result.imbue(outLocale);
 
 	result << asPtime;
@@ -79,12 +80,12 @@ std::string unixTimeToString(std::time_t timeVal){
 	return result.str();
 }
 
-void generateTagFromStat(std::string filename, char* dest){
+void generateTagFromStat(std::string filename, char* dest) {
 	struct stat statResult;
-	if (stat(filename.c_str(), &statResult) != 0){
+	if (stat(filename.c_str(), &statResult) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("stat(): generating ETag") << errcodeInfoDef());
 	}
 
-	string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
+	std::string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
 	strcpy(dest, result.c_str());
 }

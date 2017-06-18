@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE(func_getExecRoot) {
 	cout << getExecRoot() / "py" << endl;
 
 	path p = getExecRoot() / "py";
-	for (directory_entry & x : directory_iterator(p)) {
+	for (directory_entry& x : directory_iterator(p)) {
 		cout << '\t' << x.path() << '\n';
 	}
 }

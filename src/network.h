@@ -17,11 +17,10 @@ boost::optional<Request> getRequestFromSocket(int clientSocket, int timeoutMs);
 
 WebsocketsFrame getWebsocketsFrame(int clientSocket);
 boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int clientSocket, int timeoutMs);
-void sendWebsocketsFrame(int clientSocket, WebsocketsFrame &frame);
+void sendWebsocketsFrame(int clientSocket, WebsocketsFrame& frame);
 
 void respondRequestHttp10(int clientSocket);
 void respondRequest404(int clientSocket);
 void respondRequest200(int clientSocket);
 void respondWithObjectRef(int clientSocket, Response& response);
 void respondWithObject(int clientSocket, Response response);
-

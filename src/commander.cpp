@@ -11,26 +11,26 @@
 #include"commander.h"
 #include"utils.h"
 
-using namespace std;
-using namespace boost;
+namespace b = boost;
+namespace bf = boost::filesystem;
 
 void commanderStart(pid_t mainPid, int fifoFd);
 int openFifo(int flags, bool create);
 
 
-void startCommanderProcess(){
+void startCommanderProcess() {
 	pid_t mainPid = getpid();
 
 	getCreateDotKrait();
 
 	pid_t childPid = fork();
-	if (childPid == -1){
+	if (childPid == -1) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): starting commander process.") << errcodeInfoDef());
 	}
-	if (childPid == 0){
-		while(getppid() == mainPid){
+	if (childPid == 0) {
+		while (getppid() == mainPid) {
 			int fifoFd = openFifo(O_RDONLY, true);
-			if (fifoFd != -1){
+			if (fifoFd != -1) {
 				commanderStart(mainPid, fifoFd);
 			}
 			sleep(1);
@@ -38,17 +38,17 @@ void startCommanderProcess(){
 		printf("Commander process shutting down.\n");
 		exit(0);
 	}
-	else{
+	else {
 		return;
 	}
 }
 
-string getCreateDotKrait(){
-	filesystem::path fifoNameBase = filesystem::path(getenv("HOME")) / ".krait";
-	if (!filesystem::exists(fifoNameBase)){
-		if (!filesystem::create_directory(fifoNameBase)){
+std::string getCreateDotKrait() {
+	bf::path fifoNameBase = bf::path(getenv("HOME")) / ".krait";
+	if (!bf::exists(fifoNameBase)) {
+		if (!bf::create_directory(fifoNameBase)) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating .krait directory (%1%). Check that you have appropriate rights.",
-				fifoNameBase.string())
+					fifoNameBase.string())
 				<< errcodeInfoDef());
 		}
 	}
@@ -57,42 +57,42 @@ string getCreateDotKrait(){
 }
 
 
-int openFifo(int flags, bool create){
-	filesystem::path fifoNameBase = filesystem::path(getCreateDotKrait());
+int openFifo(int flags, bool create) {
+	bf::path fifoNameBase = bf::path(getCreateDotKrait());
 	const char* fifoEnd = "krait_cmdr";
-	string fifoName = (fifoNameBase / fifoEnd).string();
+	std::string fifoName = (fifoNameBase / fifoEnd).string();
 
-	if (!filesystem::exists(fifoName)){
-		if (create){
-			if (!mkfifo(fifoName.c_str(), 0666)){
+	if (!bf::exists(fifoName)) {
+		if (create) {
+			if (!mkfifo(fifoName.c_str(), 0666)) {
 				BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkfifo(): creating command file (%1%)", fifoName) << errcodeInfoDef());
 			}
 		}
-		else{
+		else {
 			return -1;
 		}
 	}
 	//TODO: IMPORTANT: maybe parent exits while we try to open this... maybe do this on a timeout? maybe open nonblocking?
 	int fifoFd = open(fifoName.c_str(), flags | O_NONBLOCK);
-	if (fifoFd < 0){
-		if (errno == ENXIO){
+	if (fifoFd < 0) {
+		if (errno == ENXIO) {
 			BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("There is no running server listening on command file."));
 		}
-		else{
+		else {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("open(): opening command file (%1%)", fifoName) << errcodeInfoDef());
 		}
 	}
-	if (fcntl(fifoFd, F_SETFD, flags) < 0){
+	if (fcntl(fifoFd, F_SETFD, flags) < 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("fcntl(): opening command file (%1%)", fifoName) << errcodeInfoDef());
 	}
-	
+
 
 	return fifoFd;
 }
 
 bool processCommand(pid_t mainPid, const char* cmd, int cmdLen);
 
-void commanderStart(pid_t mainPid, int fifoFd){
+void commanderStart(pid_t mainPid, int fifoFd) {
 	//TODO: handle CTRL-C; X, etc.absIdx
 	//TODO: IMPORTANT: exit when parent exits!
 	char cmdBuffer[1024];
@@ -103,42 +103,42 @@ void commanderStart(pid_t mainPid, int fifoFd){
 	pfd.fd = fifoFd;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
-	
+
 	//while not detached
-	while(getppid() == mainPid){
+	while (getppid() == mainPid) {
 		int pollResult = poll(&pfd, 1, 100);
-		if (pollResult == -1){
+		if (pollResult == -1) {
 			BOOST_THROW_EXCEPTION(syscallError() << stringInfo("poll(): reading command fifo.") << errcodeInfoDef());
 		}
-		if (pollResult == 1){
+		if (pollResult == 1) {
 			memzero(cmdBuffer);
 			int bytesRead = read(fifoFd, cmdBuffer, 1024);
-			if (bytesRead == -1){
-				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading command fifo.") << errcodeInfoDef());				
+			if (bytesRead == -1) {
+				BOOST_THROW_EXCEPTION(syscallError() << stringInfo("read(): reading command fifo.") << errcodeInfoDef());
 			}
-			else if (bytesRead == 0){
+			else if (bytesRead == 0) {
 				//FIFO closed; will reopen.
 				close(fifoFd);
 				return;
 			}
 			else {
-				if (!processCommand(mainPid, cmdBuffer, bytesRead)){
-					BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("Execution of command %1% failed.", string(cmdBuffer, bytesRead)));
+				if (!processCommand(mainPid, cmdBuffer, bytesRead)) {
+					BOOST_THROW_EXCEPTION(cmdrError() << stringInfoFromFormat("Execution of command %1% failed.", std::string(cmdBuffer, bytesRead)));
 				}
 			}
 		}
 	}
 }
 
-bool processCommand(pid_t mainPid, const char* cmd, int cmdLen){
-	if (cmdLen == 0){
+bool processCommand(pid_t mainPid, const char* cmd, int cmdLen) {
+	if (cmdLen == 0) {
 		return true;
 	}
-	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'X'){
+	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'X') {
 		kill(mainPid, SIGINT);
 		return processCommand(mainPid, cmd + 2, cmdLen - 2);
 	}
-	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'K'){
+	if (cmdLen >= 2 && cmd[0] == '^' && cmd[1] == 'K') {
 		kill(mainPid, SIGTERM);
 		return processCommand(mainPid, cmd + 2, cmdLen - 2);
 	}
@@ -147,24 +147,24 @@ bool processCommand(pid_t mainPid, const char* cmd, int cmdLen){
 
 void sendCommand(const char* command, int cmdLen);
 
-void sendCommand(const char* command){
+void sendCommand(const char* command) {
 	sendCommand(command, strlen(command));
 }
 
-void sendCommand(const char* command, int cmdLen){
+void sendCommand(const char* command, int cmdLen) {
 	int fifoFd = openFifo(O_WRONLY, true);
-	if (fifoFd == -1){
+	if (fifoFd == -1) {
 		BOOST_THROW_EXCEPTION(cmdrError() << stringInfo("Coult not open named pipe to request server shutdown."));
 	}
-	if (write(fifoFd, command, cmdLen) != cmdLen){
+	if (write(fifoFd, command, cmdLen) != cmdLen) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write: writing shutdown command to named pipe") << errcodeInfoDef());
 	}
 }
 
-void sendCommandClose(){
+void sendCommandClose() {
 	sendCommand("^X");
 }
 
-void sendCommandKill(){
+void sendCommandKill() {
 	sendCommand("^K");
 }
