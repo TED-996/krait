@@ -2,8 +2,6 @@ import urllib
 import collections
 import os
 
-import krait_utils
-
 """
 The site_root (directly from the krait argument)
 """

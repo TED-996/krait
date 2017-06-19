@@ -164,6 +164,10 @@
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="py\krait\__init__.py">
+      <FileType>Script</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
     <ClInclude Include="src\commander.h" />
@@ -350,31 +354,31 @@
     <None Include="globals\mime.types">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="py\cookie.py">
+    <None Include="py\krait\cookie.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\krait.py">
+    <None Include="py\krait\krait.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\krait_utils.py">
+    <None Include="py\krait\krait_utils.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\mvc.py">
+    <None Include="py\krait\mvc.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\python-setup.py">
+    <None Include="py\krait\python-setup.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\site-setup.py">
+    <None Include="py\krait\site-setup.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
-    <None Include="py\websockets.py">
+    <None Include="py\krait\websockets.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
