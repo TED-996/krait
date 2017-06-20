@@ -129,9 +129,9 @@ void V2PymlParser::addPymlWorkingCtrl(const std::string& ctrlCode) {
 
 	pushPymlWorkingSeq();
 
-	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, formatString("ctrl = mvc.push_ctrl((%1%))", ctrlCode));
+	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, formatString("ctrl = krait.mvc.push_ctrl((%1%))", ctrlCode));
 	addPymlWorkingEmbed("ctrl.get_view()");
-	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, "ctrl = mvc.pop_ctrl()");
+	addPymlWorkingPyCode(PymlWorkingItem::Type::PyExec, "ctrl = krait.mvc.pop_ctrl()");
 
 	addPymlStackTop();
 }
@@ -269,11 +269,11 @@ void V2PymlParser::pushPymlWorkingForIn(std::string entry, std::string collectio
 	boost::trim(collection);
 
 	//1: krIterator; 2: collection;;; 3: entry
-	std::string initCode = (boost::format("%1% = krait.IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
+	std::string initCode = (boost::format("%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
 		% krIterator % collection % entry).str();
 	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
-	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %3% = %1%.value")
-		% krIterator % collection % entry).str();
+	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %2% = %1%.value")
+		% krIterator % entry).str();
 
 	pushPymlWorkingFor();
 	addCodeToPymlWorkingFor(0, initCode);
