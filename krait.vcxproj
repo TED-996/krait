@@ -224,23 +224,26 @@
       <DeploymentContent>true</DeploymentContent>
       <FileType>Text</FileType>
     </None>
-    <None Include="demoserver\.ctrl\ctrl_db.py">
+    <None Include="demoserver\.py\ctrl\__init__.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.py\ctrl\db.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </None>
-    <None Include="demoserver\.ctrl\ctrl_http.py">
+    <None Include="demoserver\.py\ctrl\http.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </None>
-    <None Include="demoserver\.ctrl\ctrl_index.py">
+    <None Include="demoserver\.py\ctrl\index.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </None>
-    <None Include="demoserver\.ctrl\ctrl_pingpong_ws.py">
+    <None Include="demoserver\.py\ctrl\pingpong_ws.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </None>
-    <None Include="demoserver\.ctrl\ctrl_ws.py">
+    <None Include="demoserver\.py\ctrl\ws.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </None>
@@ -394,9 +397,11 @@
   <ItemGroup>
     <Text Include="CMakeLists.txt">
       <DeploymentContent>true</DeploymentContent>
+      <FileType>Makefile</FileType>
     </Text>
     <Text Include="src\CMakeLists.txt">
       <DeploymentContent>true</DeploymentContent>
+      <FileType>Makefile</FileType>
     </Text>
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">

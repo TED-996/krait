@@ -13,12 +13,16 @@ function get_websocket_url() {
 
 function WebsocketPingPong() {
     this.socket = new WebSocket(get_websocket_url(), "pingpong");
+    this.open = false;
+    this.socket.onopen = function () {
+        this.open = true;
+    }.bind(this);
     this.ticker = new Ticker();
 
     this.on_send = function(msg){
         this.ticker.ticker_add(msg, "msg_client")
     };
-    this.on_recv = function(msg) {
+    this.on_recv = function (msg) {
         this.ticker.ticker_add(msg, "msg_server")
     };
 
@@ -39,20 +43,22 @@ function WebsocketPingPong() {
         var self = this;
         setTimeout(function () {
             if (!self.closed) {
-                var msg = self.msg_queue.shift();
-                if (msg !== undefined){
-                    self.on_recv(msg);
+                if (self.open) {
+                    var msg = self.msg_queue.shift();
+                    if (msg !== undefined) {
+                        self.on_recv(msg);
 
-                    if (msg.startsWith("PING")){
-                        var pong_msg = "PONG: " + msg;
-                        self.socket.send(pong_msg);
-                        self.on_send(pong_msg);
+                        if (msg.startsWith("PING")) {
+                            var pong_msg = "PONG: " + msg;
+                            self.socket.send(pong_msg);
+                            self.on_send(pong_msg);
+                        }
                     }
-                }
-                if (Math.random() < 0.05){
-                    var ping_msg = "PING: " + self.random_string();
-                    self.socket.send(ping_msg);
-                    self.on_send(ping_msg)
+                    if (Math.random() < 0.05) {
+                        var ping_msg = "PING: " + self.random_string();
+                        self.socket.send(ping_msg);
+                        self.on_send(ping_msg)
+                    }
                 }
 
                 self.loop();

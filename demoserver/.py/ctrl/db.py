@@ -1,5 +1,5 @@
 import sqlite3
-import cookie
+import krait
 
 class DbController(object):
     def __init__(self, db_filename):
@@ -8,7 +8,7 @@ class DbController(object):
         self.page_url = "/db"
         self.messages = None
         self.load_db(db_filename)
-        self.nr_comments = int(cookie.get_cookie("comment_count", 0))
+        self.nr_comments = int(krait.cookie.get_cookie("comment_count", 0))
 
     def load_db(self, db_filename):
         conn = sqlite3.connect(db_filename)

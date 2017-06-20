@@ -1,4 +1,4 @@
-import ctrl_db
 import krait
+from ctrl import db
 
-krait.mvc.set_init_ctrl(ctrl_db.DbController(sqlite_db))
+krait.mvc.set_init_ctrl(db.DbController(sqlite_db))
