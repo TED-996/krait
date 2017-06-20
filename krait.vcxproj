@@ -80,7 +80,7 @@
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
-    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
     <AdditionalOptions>-d__clang__</AdditionalOptions>
@@ -99,7 +99,7 @@
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
-    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
     <AdditionalOptions>-d__clang__</AdditionalOptions>
@@ -118,7 +118,7 @@
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
-    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)\sdk\include\x86_64-linux-gnu</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
     <AdditionalOptions>-d__clang__</AdditionalOptions>
@@ -164,10 +164,6 @@
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="py\krait\__init__.py">
-      <FileType>Script</FileType>
-      <DeploymentContent>true</DeploymentContent>
-    </ClInclude>
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
     <ClInclude Include="src\commander.h" />
@@ -230,23 +226,23 @@
     </None>
     <None Include="demoserver\.ctrl\ctrl_db.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+      <FileType>Document</FileType>
     </None>
     <None Include="demoserver\.ctrl\ctrl_http.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+      <FileType>Document</FileType>
     </None>
     <None Include="demoserver\.ctrl\ctrl_index.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+      <FileType>Document</FileType>
     </None>
     <None Include="demoserver\.ctrl\ctrl_pingpong_ws.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+      <FileType>Document</FileType>
     </None>
     <None Include="demoserver\.ctrl\ctrl_ws.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+      <FileType>Document</FileType>
     </None>
     <None Include="demoserver\.private\db">
       <DeploymentContent>true</DeploymentContent>
@@ -356,31 +352,32 @@
     </None>
     <None Include="py\krait\cookie.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
-    </None>
-    <None Include="py\krait\krait.py">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
     </None>
     <None Include="py\krait\krait_utils.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
     </None>
     <None Include="py\krait\mvc.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
     </None>
-    <None Include="py\krait\python-setup.py">
+    <None Include="py\krait\http_request.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
     </None>
-    <None Include="py\krait\site-setup.py">
+    <None Include="py\krait\http_response.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
     </None>
     <None Include="py\krait\websockets.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Script</FileType>
+    </None>
+    <None Include="py\krait\_internal\python-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="py\krait\_internal\site-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="py\krait\__init__.py">
+      <DeploymentContent>true</DeploymentContent>
     </None>
   </ItemGroup>
   <ItemGroup>

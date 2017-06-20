@@ -28,7 +28,7 @@ private:
 
 	//Methods
 public:
-	PythonModule(std::string name);
+	explicit PythonModule(std::string name);
 	void clear();
 
 	void run(std::string command);

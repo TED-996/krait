@@ -15,8 +15,8 @@ namespace bp = boost::python;
 
 PythonModule PythonModule::main("__main__");
 PythonModule PythonModule::krait("krait");
-PythonModule PythonModule::mvc("mvc");
-PythonModule PythonModule::websockets("websockets");
+PythonModule PythonModule::mvc("krait.mvc");
+PythonModule PythonModule::websockets("krait.websockets");
 
 
 bool PythonModule::pythonInitialized = false;
@@ -80,7 +80,7 @@ void PythonModule::initPython() {
 
 		mainModule.attr("root_dir") = bp::str(getExecRoot().string());
 
-		bp::exec_file(bp::str((getExecRoot() / "py" / "python-setup.py").string()), mainDict, mainDict);
+		bp::exec_file(bp::str((getExecRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
 	}
 	catch (bp::error_already_set const&) {
 		DBG("Python error in initPython()!");
@@ -140,7 +140,7 @@ void PythonModule::resetModules(std::string projectDir) {
 		}
 		PythonModule::main.setGlobal("project_dir", projectDir);
 
-		PythonModule::main.execfile((getExecRoot() / "py" / "site-setup.py").string());
+		PythonModule::main.execfile((getExecRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
 
 		requestType = PythonModule::krait.moduleGlobals["Request"];
 	}

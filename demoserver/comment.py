@@ -1,11 +1,6 @@
 import krait
 import sqlite3
-import cookie
 import datetime
-
-import krait_utils
-reload(krait_utils)
-print "reloaded"
 
 
 post_form = krait.request.get_post_form()
@@ -22,8 +17,8 @@ c.execute("insert into messages values(?, ?)", (name, message))
 conn.commit()
 conn.close()
 
-new_cookie = cookie.Cookie("comment_count", int(cookie.get_cookie("comment_count", "0")) + 1)
+new_cookie = krait.cookie.Cookie("comment_count", int(krait.cookie.get_cookie("comment_count", "0")) + 1)
 new_cookie.set_expires(datetime.datetime.utcnow() + datetime.timedelta(minutes=1))
 new_cookie.set_http_only(True)
 
-cookie.set_cookie(new_cookie)
+krait.cookie.set_cookie(new_cookie)
