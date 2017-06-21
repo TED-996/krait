@@ -2,6 +2,7 @@
 
 #include<Python.h>
 #include<boost/python.hpp>
+#include<boost/optional.hpp>
 #include<string>
 #include<map>
 #include<memory>
@@ -58,6 +59,15 @@ private:
 public:
 	static std::string prepareStr(std::string pyCode);
 	static std::string errAsString();
+	template<typename T>
+	static boost::optional<T> extractOptional(boost::python::object value){
+		if (value.is_none()) {
+			return boost::none;
+		}
+		else {
+			return boost::python::extract<T>(value);
+		}
+	}
 
 	static void initPython();
 	static void initModules(std::string projectDir);

@@ -353,6 +353,7 @@
     <None Include="globals\mime.types">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="py\krait\config.py" />
     <None Include="py\krait\cookie.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
