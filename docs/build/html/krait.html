@@ -98,7 +98,6 @@
 <li class="toctree-l3"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -116,7 +115,6 @@
 <li class="toctree-l4"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -209,8 +207,11 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="krait.mvc.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="krait.mvc.html#reference">Reference</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
 </div>
@@ -231,7 +232,7 @@ Krait emphasizes ease of use over absolute purity.</li>
 <dl class="data">
 <dt id="krait.site_root">
 <code class="descclassname">krait.</code><code class="descname">site_root</code><em class="property"> = None</em><a class="headerlink" href="#krait.site_root" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The site root (lifted directly from the krait argument)</p>
+<dd><p><em>str</em> &#8211; The site root (lifted directly from the krait argument)</p>
 </dd></dl>
 
 <dl class="function">
@@ -243,11 +244,11 @@ Note that this is not necessarily absolute, but is derived from the krait argume
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; a filename relative to the site root (the krait argument)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; a filename relative to the site root (the krait argument)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">os.path.join(krait.site_root,</span> <span class="pre">filename)</span></code></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-obj docutils literal"><span class="pre">str</span></code></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -271,7 +272,43 @@ If you only want to add or change headers, use <a class="reference internal" hre
 <dt id="krait.Request">
 <em class="property">class </em><code class="descclassname">krait.</code><code class="descname">Request</code><span class="sig-paren">(</span><em>http_method</em>, <em>url</em>, <em>query_string</em>, <em>http_version</em>, <em>headers</em>, <em>body</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.Request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wraps a HTTP request.</p>
+<p>Represents an HTTP request.
+Objects of this class are created by Krait before passing control to your Python code.
+The variable <a class="reference internal" href="#krait.request" title="krait.request"><code class="xref py py-obj docutils literal"><span class="pre">krait.request</span></code></a> is an instance of this class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>http_method</strong> (<em>str</em>) &#8211; The HTTP method in the request. Values: &#8216;GET&#8217;, &#8216;POST&#8217;, etc.</li>
+<li><strong>url</strong> (<em>str</em>) &#8211; The URL of the requests, without the query</li>
+<li><strong>query_string</strong> (<em>str</em>) &#8211; The URL query</li>
+<li><strong>http_version</strong> (<em>str</em>) &#8211; the HTTP version; only &#8216;HTTP/1.1&#8217; is supported</li>
+<li><strong>headers</strong> (<em>dict of str str</em>) &#8211; The HTTP headers sent by the client</li>
+<li><strong>body</strong> (<em>str</em>) &#8211; The body of the request</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="krait.Request.http_method">
+<code class="descname">http_method</code><a class="headerlink" href="#krait.Request.http_method" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The HTTP method in the request. Values: &#8216;GET&#8217;, &#8216;POST&#8217;, etc.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.Request.url">
+<code class="descname">url</code><a class="headerlink" href="#krait.Request.url" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The URL of the requests, without the query</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.Request.query">
+<code class="descname">query</code><a class="headerlink" href="#krait.Request.query" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict of str str</em> &#8211; The query extracted from the URL, parsed in a dict.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="krait.Request.MultipartFormData">
 <em class="property">class </em><code class="descname">MultipartFormData</code><span class="sig-paren">(</span><em>data</em>, <em>name</em>, <em>filename</em>, <em>content_type</em><span class="sig-paren">)</span><a class="headerlink" href="#krait.Request.MultipartFormData" title="Permalink to this definition">¶</a></dt>
@@ -305,15 +342,33 @@ If you only want to add or change headers, use <a class="reference internal" hre
 <dl class="method">
 <dt id="krait.Request.get_multipart_form">
 <code class="descname">get_multipart_form</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request.get_multipart_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.Request.get_multipart_form" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extracts multipart form data from the request body.
-:return: a list of named tuples with (data, name, filename, content_type)</p>
+<dd><p>Extract an HTTP multipart form from the request body.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the HTTP form parts.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#krait.Request.MultipartFormData" title="krait.Request.MultipartFormData"><code class="xref py py-obj docutils literal"><span class="pre">Request.MultipartFormData</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="krait.Request.get_post_form">
 <code class="descname">get_post_form</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request.get_post_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.Request.get_post_form" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extracts the HTTP form from a POST request
-:return: A dict with the HTTP form data</p>
+<dd><p>Extract the HTTP form from a POST request. This is done on demand.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the HTTP form data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict of str str</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -322,11 +377,45 @@ If you only want to add or change headers, use <a class="reference internal" hre
 <dt id="krait.Response">
 <em class="property">class </em><code class="descclassname">krait.</code><code class="descname">Response</code><span class="sig-paren">(</span><em>http_version</em>, <em>status_code</em>, <em>headers</em>, <em>body</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_response.html#Response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.Response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wraps a HTTP response.</p>
+<p>Represents an HTTP response.
+Set <a class="reference internal" href="#krait.response" title="krait.response"><code class="xref py py-obj docutils literal"><span class="pre">krait.response</span></code></a> with an instance of this variable (or its subclasses) to override the HTTP response.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>http_version</strong> (<em>str</em>) &#8211; &#8216;HTTP/1.1&#8217;, no other values are supported.</li>
+<li><strong>status_code</strong> (<em>int</em>) &#8211; The HTTP status code (for example, 200 or 404).</li>
+<li><strong>headers</strong> (<em>list of</em><em> (</em><em>str</em><em>, </em><em>str</em><em>)</em>) &#8211; The response headers.</li>
+<li><strong>body</strong> &#8211; The response body.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="attribute">
-<dt id="krait.Response.status_reasons">
-<code class="descname">status_reasons</code><em class="property"> = {304: 'Not Modified', 400: 'Bad Request', 403: 'Forbidden', 404: 'Not Found', 401: 'Unauthorized', 200: 'OK', 500: 'Internal Server Error', 302: 'Found'}</em><a class="headerlink" href="#krait.Response.status_reasons" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="krait.Response.http_version">
+<code class="descname">http_version</code><a class="headerlink" href="#krait.Response.http_version" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The HTTP version of the response.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.Response.status_code">
+<code class="descname">status_code</code><a class="headerlink" href="#krait.Response.status_code" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> &#8211; The HTTP status code.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.Response.headers">
+<code class="descname">headers</code><a class="headerlink" href="#krait.Response.headers" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list of (str, str)</em> &#8211; The response headers.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.Response.body">
+<code class="descname">body</code><a class="headerlink" href="#krait.Response.body" title="Permalink to this definition">¶</a></dt>
+<dd><p>The response body.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -334,7 +423,15 @@ If you only want to add or change headers, use <a class="reference internal" hre
 <dt id="krait.ResponseNotFound">
 <em class="property">class </em><code class="descclassname">krait.</code><code class="descname">ResponseNotFound</code><span class="sig-paren">(</span><em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_response.html#ResponseNotFound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.ResponseNotFound" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="krait.http_response.html#krait.http_response.Response" title="krait.http_response.Response"><code class="xref py py-class docutils literal"><span class="pre">krait.http_response.Response</span></code></a></p>
-<p>Response returning 404 Not Found</p>
+<p>Response returning a 404 Not Found</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>headers</strong> (<em>list of</em><em> (</em><em>str</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) &#8211; Extra headers to send with the response.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
@@ -342,19 +439,39 @@ If you only want to add or change headers, use <a class="reference internal" hre
 <em class="property">class </em><code class="descclassname">krait.</code><code class="descname">ResponseBadRequest</code><span class="sig-paren">(</span><em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_response.html#ResponseBadRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.ResponseBadRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="krait.http_response.html#krait.http_response.Response" title="krait.http_response.Response"><code class="xref py py-class docutils literal"><span class="pre">krait.http_response.Response</span></code></a></p>
 <p>Response returning 400 Bad Request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>headers</strong> (<em>list of</em><em> (</em><em>str</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) &#8211; Extra headers to send with the response.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
 <dt id="krait.ResponseRedirect">
 <em class="property">class </em><code class="descclassname">krait.</code><code class="descname">ResponseRedirect</code><span class="sig-paren">(</span><em>destination</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_response.html#ResponseRedirect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.ResponseRedirect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="krait.http_response.html#krait.http_response.Response" title="krait.http_response.Response"><code class="xref py py-class docutils literal"><span class="pre">krait.http_response.Response</span></code></a></p>
-<p>Response returning a 302 Found redirect</p>
+<p>Response returning a 302 Found redirect.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>destination</strong> (<em>str</em>) &#8211; The URL on which to redirect the client.</li>
+<li><strong>headers</strong> (<em>list of</em><em> (</em><em>str</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) &#8211; Extra headers to send with the response.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="data">
 <dt id="krait.extra_headers">
 <code class="descclassname">krait.</code><code class="descname">extra_headers</code><em class="property"> = None</em><a class="headerlink" href="#krait.extra_headers" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-obj docutils literal"><span class="pre">(:obj:`str</span></code>, <code class="xref py py-obj docutils literal"><span class="pre">str</span></code>)` &#8211; Extra response headers to set without overriding the entire response.</p>
+<dd><p><em>list of (str, str)</em> &#8211; Extra response headers to set without overriding the entire response.</p>
 </dd></dl>
 
 <dl class="function">
@@ -367,8 +484,8 @@ Used when the original route target&#8217;s extension is not relevant to the ext
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>raw</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; full MIME type (e.g. <code class="docutils literal"><span class="pre">'application/json'</span></code>)</li>
-<li><strong>ext</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; file extension from which to derive the MIME type (e.g. <code class="docutils literal"><span class="pre">'json'</span></code>)</li>
+<li><strong>raw</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; full MIME type (e.g. <code class="docutils literal"><span class="pre">'application/json'</span></code>)</li>
+<li><strong>ext</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; file extension from which to derive the MIME type (e.g. <code class="docutils literal"><span class="pre">'json'</span></code>)</li>
 </ul>
 </td>
 </tr>

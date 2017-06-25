@@ -163,10 +163,23 @@
 
 <div class="viewcode-block" id="Response"><a class="viewcode-back" href="../../krait.http_response.html#krait.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Wraps a HTTP response.</span>
+<span class="sd">    Represents an HTTP response.</span>
+<span class="sd">    Set :obj:`krait.response` with an instance of this variable (or its subclasses) to override the HTTP response.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        http_version (str): &#39;HTTP/1.1&#39;, no other values are supported.</span>
+<span class="sd">        status_code (int): The HTTP status code (for example, 200 or 404).</span>
+<span class="sd">        headers (list of (str, str)): The response headers.</span>
+<span class="sd">        body: The response body.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        http_version (str): The HTTP version of the response.</span>
+<span class="sd">        status_code (int): The HTTP status code.</span>
+<span class="sd">        headers (list of (str, str)): The response headers.</span>
+<span class="sd">        body: The response body.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">status_reasons</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">_status_reasons</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">200</span><span class="p">:</span> <span class="s2">&quot;OK&quot;</span><span class="p">,</span>
         <span class="mi">302</span><span class="p">:</span> <span class="s2">&quot;Found&quot;</span><span class="p">,</span>
         <span class="mi">304</span><span class="p">:</span> <span class="s2">&quot;Not Modified&quot;</span><span class="p">,</span>
@@ -178,26 +191,26 @@
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">http_version</span><span class="p">,</span> <span class="n">status_code</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param http_version: &#39;HTTP/1.1&#39;, no other values are supported.</span>
-<span class="sd">        :param status_code: The HTTP status code (for example, 200 or 404)</span>
-<span class="sd">        :param headers: Response headers, as a tuple array</span>
-<span class="sd">        :param body:</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">http_version</span> <span class="o">=</span> <span class="n">http_version</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="n">status_code</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">http_version</span> <span class="o">!=</span> <span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only HTTP/1.1 is supported.&quot;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert the Response object according to the HTTP standard</span>
-<span class="sd">        :return: The HTTP data for the response</span>
+<span class="sd">        Convert the Response object according to the HTTP standard.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The HTTP data for the response.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="se">\r\n</span><span class="si">{}</span><span class="se">\r\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">http_version</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">status_reasons</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_status_reasons</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">),</span>
             <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\r\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">]),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">body</span>
         <span class="p">)</span></div>
@@ -205,13 +218,13 @@
 
 <div class="viewcode-block" id="ResponseNotFound"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseNotFound">[docs]</a><span class="k">class</span> <span class="nc">ResponseNotFound</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Response returning 404 Not Found</span>
+<span class="sd">    Response returning a 404 Not Found</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        headers (list of (str, str), optional): Extra headers to send with the response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param headers: extra headers to send with the response, as a tuple list</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ResponseNotFound</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span> <span class="mi">404</span><span class="p">,</span> <span class="n">headers</span> <span class="ow">or</span> <span class="p">[],</span>
                                                <span class="s2">&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;404 Not Found&lt;/title&gt;&lt;/head&gt;&quot;</span>
                                                <span class="s2">&quot;&lt;body&gt;&lt;h1&gt;404 Not Found&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span><span class="p">)</span></div>
@@ -219,14 +232,14 @@
 
 <div class="viewcode-block" id="ResponseRedirect"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseRedirect">[docs]</a><span class="k">class</span> <span class="nc">ResponseRedirect</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Response returning a 302 Found redirect</span>
+<span class="sd">    Response returning a 302 Found redirect.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        destination (str): The URL on which to redirect the client.</span>
+<span class="sd">        headers (list of (str, str), optional): Extra headers to send with the response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param destination: the URL to which to redirect the client</span>
-<span class="sd">        :param headers: extra headers to send with the response, as a tuple list</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="n">headers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;Location&quot;</span><span class="p">,</span> <span class="n">urllib</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">destination</span><span class="p">)))</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ResponseRedirect</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span> <span class="mi">302</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
@@ -235,12 +248,12 @@
 <div class="viewcode-block" id="ResponseBadRequest"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseBadRequest">[docs]</a><span class="k">class</span> <span class="nc">ResponseBadRequest</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Response returning 400 Bad Request</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        headers (list of (str, str), optional): Extra headers to send with the response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param headers: extra headers to send with the response, as a tuple list</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ResponseBadRequest</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="n">headers</span> <span class="ow">or</span> <span class="p">[],</span>
                                                  <span class="s2">&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;400 Bad Request&lt;/title&gt;&lt;/head&gt;&quot;</span>
                                                  <span class="s2">&quot;&lt;body&gt;&lt;h1&gt;404 Bad Request&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span><span class="p">)</span></div>

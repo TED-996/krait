@@ -1,30 +1,33 @@
 ﻿import collections
 import urllib
 
+
 class Request(object):
     """
-    Wraps a HTTP request.
+    Represents an HTTP request.
+    Objects of this class are created by Krait before passing control to your Python code.
+    The variable :obj:`krait.request` is an instance of this class.
+
+    Args:
+        http_method (str): The HTTP method in the request. Values: 'GET', 'POST', etc.
+        url (str): The URL of the requests, without the query
+        query_string (str): The URL query
+        http_version (str): the HTTP version; only 'HTTP/1.1' is supported
+        headers (dict of str str): The HTTP headers sent by the client
+        body (str): The body of the request
+
+    Attributes:
+        http_method (str): The HTTP method in the request. Values: 'GET', 'POST', etc.
+        url (str): The URL of the requests, without the query
+        query (dict of str str): The query extracted from the URL, parsed in a dict.
     """
 
     MultipartFormData = collections.namedtuple("MultipartFormData", ["data", "name", "filename", "content_type"])
     """
     A named tuple to hold a multipart form entry.
-    Fields:
-    * data: the entry data
-    * name: the entry name in the multipart header
-    * filename: the entry filename in the multipart header
-    * content_type: the entry content_type in the multipart header
     """
 
     def __init__(self, http_method, url, query_string, http_version, headers, body):
-        """
-        :param http_method: the HTTP verb in the request. Values: 'GET', 'POST', etc.
-        :param url: The URL of the requests, without the query
-        :param query_string: The URL query as a string
-        :param http_version: the HTTP version; only 'HTTP/1.1' is supported
-        :param headers: The headers of the request, as a dict
-        :param body: The body of the request
-        """
         self.http_method = http_method
         self.url = url
         self.query = Request._get_query(query_string)
@@ -34,16 +37,22 @@ class Request(object):
 
     def get_post_form(self):
         """
-        Extracts the HTTP form from a POST request
-        :return: A dict with the HTTP form data
+        Extract the HTTP form from a POST request. This is done on demand.
+
+        Returns:
+            dict of str str: the HTTP form data.
         """
+
         return Request._get_query(self.body)
 
     def get_multipart_form(self):
         """
-        Extracts multipart form data from the request body.
-        :return: a list of named tuples with (data, name, filename, content_type)
+        Extract an HTTP multipart form from the request body.
+
+        Returns:
+            list of :obj:`Request.MultipartFormData`: the HTTP form parts.
         """
+
         content_type_multipart = self.headers.get("content-type")
         if content_type_multipart is None:
             print "Error: asked for multipart form, but the request's content-type is missing."
@@ -64,7 +73,6 @@ class Request(object):
             boundary = boundary[1:-1]
         boundary = "--" + boundary
         boundary_next = "\r\n" + boundary
-        # print "found  multipart form data with boundary", boundary
 
         result = []
         found_idx = 0 if self.body.startswith(boundary) else self.body.find(boundary_next)
@@ -77,14 +85,19 @@ class Request(object):
 
     def _get_multipart_item(self, start_idx, end_idx):
         """
-        Extracts a multipart entry from the request body
-        :param start_idx: The start index in the body of the multipart entry
-        :param end_idx: The end index in the body of the multipart entry
-        :return: An object of type Request.MultipartFormData with the extracted information
+        Extract a single multipart entry from the request body.
+
+        Args:
+            start_idx: The start index in the body.
+            end_idx: The end index in the body.
+
+        Returns:
+            :obj:`Request.MultipartFormData`: The multipart entry starting and ending at the specified points.
         """
-        part_headers = self.body.find("\r\n\r\n", start_idx)
-        part_headers = self.body[self.body.find("\r\n", start_idx) + 2:part_headers]
-        data_start = part_headers + 4
+
+        part_headers_start = self.body.find("\r\n\r\n", start_idx)
+        part_headers = self.body[self.body.find("\r\n", start_idx) + 2:part_headers_start]
+        data_start = part_headers_start + 4
 
         part_data = self.body[data_start:end_idx]
         part_name = None
@@ -125,10 +138,15 @@ class Request(object):
     @staticmethod
     def _get_query(query_string):
         """
-        Extracts a dict from a string in the URL query format
-        :param query_string: a string in the URL query format
-        :return: a dict with the keys and values from the input
+        Extract a dict from a string in the URL query format.
+
+        Args:
+            query_string (str): A string in the key=value[&key=value...] format
+
+        Returns:
+            dict of str str: The extracted key: value pairs.
         """
+
         if query_string is None or query_string == "":
             return dict()
 
@@ -143,9 +161,13 @@ class Request(object):
 
     def __str__(self):
         """
-        Convert a Request to a string according to the HTTP standard
-        :return: The HTTP data for the request
+        Convert a request to a string according to the HTTP standard.
+
+        Returns:
+            str: The HTTP data for the request.
+
         """
+
         return "{} {}{} {}\r\n{}\r\n{}".format(
             self.http_method,
             self.url,

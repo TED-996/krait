@@ -22,7 +22,7 @@ from krait.http_response import Response, ResponseNotFound, ResponseBadRequest, 
 
 import os
 
-__all__ = ["cookie", "krait_utils", "mvc", "websockets", "config",
+__all__ = ["cookie", "mvc", "websockets", "config",
            "request", "response", "site_root", "get_full_path", "extra_headers", "set_content_type",
            "Request", "Response", "ResponseNotFound", "ResponseBadRequest", "ResponseRedirect"]
 
@@ -30,7 +30,7 @@ __all__ = ["cookie", "krait_utils", "mvc", "websockets", "config",
 # Globals are dumped here for API ease of use.
 
 site_root = None
-""":obj:`str`: The site root (lifted directly from the krait argument)"""
+"""str: The site root (lifted directly from the krait argument)"""
 
 
 def get_full_path(filename):
@@ -39,10 +39,10 @@ def get_full_path(filename):
     Note that this is not necessarily absolute, but is derived from the krait argument.
 
     Args:
-        filename (:obj:`str`): a filename relative to the site root (the krait argument)
+        filename (str): a filename relative to the site root (the krait argument)
 
     Returns:
-        :obj:`str`: ``os.path.join(krait.site_root, filename)``
+        str: ``os.path.join(krait.site_root, filename)``
     """
 
     global site_root
@@ -61,13 +61,13 @@ If you only want to add or change headers, use :obj:`krait.extra_headers`.
 
 _content_type = None
 """
-:obj:`str`: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.set_content_type`.
+str: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.set_content_type`.
 If None, the server deduces it from the original route target's extension.
 """
 
 extra_headers = None
 """
-:obj:`list` of :obj:`(:obj:`str`, :obj:`str`)`: Extra response headers to set without overriding the entire response.
+list of (str, str): Extra response headers to set without overriding the entire response.
 """
 
 
@@ -77,8 +77,8 @@ def set_content_type(raw=None, ext=None):
     Used when the original route target's extension is not relevant to the extension of the final content.
 
     Args:
-        raw (:obj:`str`, optional): full MIME type (e.g. ``'application/json'``)
-        ext (:obj:`str`, optional): file extension from which to derive the MIME type (e.g. ``'json'``)
+        raw (str, optional): full MIME type (e.g. ``'application/json'``)
+        ext (str, optional): file extension from which to derive the MIME type (e.g. ``'json'``)
     """
 
     global _content_type

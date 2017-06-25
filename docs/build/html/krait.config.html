@@ -209,11 +209,11 @@ Currently, this module is used to configure routing and the client-side cache.</
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>verb</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The routing verb (most HTTP verbs, plus <code class="docutils literal"><span class="pre">ANY</span></code> and <code class="docutils literal"><span class="pre">WEBSOCKET</span></code>).
+<li><strong>verb</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The routing verb (most HTTP verbs, plus <code class="docutils literal"><span class="pre">ANY</span></code> and <code class="docutils literal"><span class="pre">WEBSOCKET</span></code>).
 See <a class="reference internal" href="#krait.config.Route.route_verbs" title="krait.config.Route.route_verbs"><code class="xref py py-obj docutils literal"><span class="pre">Route.route_verbs</span></code></a> for options; GET by default</li>
-<li><strong>url</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The URL to match, or None to skip</li>
-<li><strong>regex</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The regex to match, or None to skip</li>
-<li><strong>target</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The target of the route, or None to keep default target (extracted from URL)</li>
+<li><strong>url</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The URL to match, or None to skip</li>
+<li><strong>regex</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The regex to match, or None to skip</li>
+<li><strong>target</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The target of the route, or None to keep default target (extracted from URL)</li>
 </ul>
 </td>
 </tr>
@@ -222,25 +222,25 @@ See <a class="reference internal" href="#krait.config.Route.route_verbs" title="
 <dl class="attribute">
 <dt id="krait.config.Route.verb">
 <code class="descname">verb</code><a class="headerlink" href="#krait.config.Route.verb" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The routing verb</p>
+<dd><p><em>str</em> &#8211; The routing verb</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.config.Route.url">
 <code class="descname">url</code><a class="headerlink" href="#krait.config.Route.url" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional &#8211; The URL to match, or None to skip</p>
+<dd><p><em>str, optional</em> &#8211; The URL to match, or None to skip</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.config.Route.regex">
 <code class="descname">regex</code><a class="headerlink" href="#krait.config.Route.regex" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional &#8211; The regex to match, or None to skip</p>
+<dd><p><em>str, optional</em> &#8211; The regex to match, or None to skip</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.config.Route.target">
 <code class="descname">target</code><a class="headerlink" href="#krait.config.Route.target" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional &#8211; The target of the route. None keeps default target (extracted from the URL)</p>
+<dd><p><em>str, optional</em> &#8211; The target of the route. None keeps default target (extracted from the URL)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -254,7 +254,7 @@ See <a class="reference internal" href="#krait.config.Route.route_verbs" title="
 <dl class="data">
 <dt id="krait.config.routes">
 <code class="descclassname">krait.config.</code><code class="descname">routes</code><em class="property"> = None</em><a class="headerlink" href="#krait.config.routes" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.config.Route" title="krait.config.Route"><code class="xref py py-class docutils literal"><span class="pre">Route</span></code></a> &#8211; The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.
+<dd><p>list of <a class="reference internal" href="#krait.config.Route" title="krait.config.Route"><code class="xref py py-class docutils literal"><span class="pre">Route</span></code></a> &#8211; The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.
 If you override this, the last route <em>should</em> be a default one (<code class="docutils literal"><span class="pre">Route()</span></code>) to allow GET requests to reach
 resources that aren&#8217;t explicitly routed (like CSS or Javascript files)</p>
 </dd></dl>
@@ -262,26 +262,26 @@ resources that aren&#8217;t explicitly routed (like CSS or Javascript files)</p>
 <dl class="data">
 <dt id="krait.config.cache_no_store">
 <code class="descclassname">krait.config.</code><code class="descname">cache_no_store</code><em class="property"> = []</em><a class="headerlink" href="#krait.config.cache_no_store" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The list of filename regexes that the clients shouldn&#8217;t cache.</p>
+<dd><p><em>list of str</em> &#8211; The list of filename regexes that the clients shouldn&#8217;t cache.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="krait.config.cache_private">
 <code class="descclassname">krait.config.</code><code class="descname">cache_private</code><em class="property"> = []</em><a class="headerlink" href="#krait.config.cache_private" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The list or filename regexes that only private (client) caches should keep.
+<dd><p><em>list of str</em> &#8211; The list or filename regexes that only private (client) caches should keep.
 This usually means that browser caches can keep the resource, but not shared caches.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="krait.config.cache_public">
 <code class="descclassname">krait.config.</code><code class="descname">cache_public</code><em class="property"> = []</em><a class="headerlink" href="#krait.config.cache_public" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The list of filename regexes that can be kept in any caches.</p>
+<dd><p><em>list of str</em> &#8211; The list of filename regexes that can be kept in any caches.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="krait.config.cache_long_term">
 <code class="descclassname">krait.config.</code><code class="descname">cache_long_term</code><em class="property"> = []</em><a class="headerlink" href="#krait.config.cache_long_term" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The list of filename regexes that can be kept for a longer time.
+<dd><p><em>list of str</em> &#8211; The list of filename regexes that can be kept for a longer time.
 This duration is configured with <a class="reference internal" href="#krait.config.cache_max_age_long_term" title="krait.config.cache_max_age_long_term"><code class="xref py py-obj docutils literal"><span class="pre">krait.config.cache_max_age_long_term</span></code></a>
 This is a modifier, so it can be applied to both private or public cache directives.</p>
 </dd></dl>
@@ -289,14 +289,14 @@ This is a modifier, so it can be applied to both private or public cache directi
 <dl class="data">
 <dt id="krait.config.cache_max_age_default">
 <code class="descclassname">krait.config.</code><code class="descname">cache_max_age_default</code><em class="property"> = 300</em><a class="headerlink" href="#krait.config.cache_max_age_default" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">int</span></code> &#8211; The number of seconds that clients should not re-request the resource.
+<dd><p><em>int</em> &#8211; The number of seconds that clients should not re-request the resource.
 This corresponds to the Max-Age of the HTTP response, for public or private (and not long-term) cached resources.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="krait.config.cache_max_age_long_term">
 <code class="descclassname">krait.config.</code><code class="descname">cache_max_age_long_term</code><em class="property"> = 864000</em><a class="headerlink" href="#krait.config.cache_max_age_long_term" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">int</span></code> &#8211; The number of seconds that clients should not re-request the resource, for long-term cached resources.
+<dd><p><em>int</em> &#8211; The number of seconds that clients should not re-request the resource, for long-term cached resources.
 This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.</p>
 </dd></dl>
 

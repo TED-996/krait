@@ -14,17 +14,17 @@ class Route(object):
     Signifies a route that incoming requests can take.
 
     Args:
-        verb (:obj:`str`, optional): The routing verb (most HTTP verbs, plus ``ANY`` and ``WEBSOCKET``).
+        verb (str, optional): The routing verb (most HTTP verbs, plus ``ANY`` and ``WEBSOCKET``).
             See :obj:`Route.route_verbs` for options; GET by default
-        url (:obj:`str`, optional): The URL to match, or None to skip
-        regex (:obj:`str`, optional): The regex to match, or None to skip
-        target (:obj:`str`, optional): The target of the route, or None to keep default target (extracted from URL)
+        url (str, optional): The URL to match, or None to skip
+        regex (str, optional): The regex to match, or None to skip
+        target (str, optional): The target of the route, or None to keep default target (extracted from URL)
 
     Attributes:
-        verb (:obj:`str`): The routing verb
-        url (:obj:`str`, optional): The URL to match, or None to skip
-        regex (:obj:`str`, optional): The regex to match, or None to skip
-        target (:obj:`str`, optional): The target of the route. None keeps default target (extracted from the URL)
+        verb (str): The routing verb
+        url (str, optional): The URL to match, or None to skip
+        regex (str, optional): The regex to match, or None to skip
+        target (str, optional): The target of the route. None keeps default target (extracted from the URL)
     """
 
     route_verbs = [
@@ -53,29 +53,29 @@ class Route(object):
 
 routes = None
 """
-:obj:`list` of :class:`Route`:
+list of :class:`Route`:
 The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.
 If you override this, the last route *should* be a default one (``Route()``) to allow GET requests to reach
 resources that aren't explicitly routed (like CSS or Javascript files)
 """
 
 cache_no_store = []
-""":obj:`list` of :obj:`str`: The list of filename regexes that the clients shouldn't cache."""
+"""list of str: The list of filename regexes that the clients shouldn't cache."""
 
 cache_private = []
 """:
-:obj:`list` of :obj:`str`: 
+list of str: 
 The list or filename regexes that only private (client) caches should keep.
 This usually means that browser caches can keep the resource, but not shared caches.
 """
 
 cache_public = []
-""":obj:`list` of :obj:`str`: The list of filename regexes that can be kept in any caches."""
+"""list of str: The list of filename regexes that can be kept in any caches."""
 
 
 cache_long_term = []
 """
-:obj:`list` of :obj:`str`: 
+list of str: 
 The list of filename regexes that can be kept for a longer time.
 This duration is configured with :obj:`krait.config.cache_max_age_long_term`
 This is a modifier, so it can be applied to both private or public cache directives.
@@ -83,14 +83,14 @@ This is a modifier, so it can be applied to both private or public cache directi
 
 cache_max_age_default = 300
 """
-:obj:`int`: 
+int: 
 The number of seconds that clients should not re-request the resource.
 This corresponds to the Max-Age of the HTTP response, for public or private (and not long-term) cached resources.
 """
 
 cache_max_age_long_term = 864000
 """
-:obj:`int`:
+int:
 The number of seconds that clients should not re-request the resource, for long-term cached resources.
 This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.
 """

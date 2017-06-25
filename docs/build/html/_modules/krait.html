@@ -181,7 +181,7 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cookie&quot;</span><span class="p">,</span> <span class="s2">&quot;krait_utils&quot;</span><span class="p">,</span> <span class="s2">&quot;mvc&quot;</span><span class="p">,</span> <span class="s2">&quot;websockets&quot;</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cookie&quot;</span><span class="p">,</span> <span class="s2">&quot;mvc&quot;</span><span class="p">,</span> <span class="s2">&quot;websockets&quot;</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span>
            <span class="s2">&quot;request&quot;</span><span class="p">,</span> <span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="s2">&quot;site_root&quot;</span><span class="p">,</span> <span class="s2">&quot;get_full_path&quot;</span><span class="p">,</span> <span class="s2">&quot;extra_headers&quot;</span><span class="p">,</span> <span class="s2">&quot;set_content_type&quot;</span><span class="p">,</span>
            <span class="s2">&quot;Request&quot;</span><span class="p">,</span> <span class="s2">&quot;Response&quot;</span><span class="p">,</span> <span class="s2">&quot;ResponseNotFound&quot;</span><span class="p">,</span> <span class="s2">&quot;ResponseBadRequest&quot;</span><span class="p">,</span> <span class="s2">&quot;ResponseRedirect&quot;</span><span class="p">]</span>
 
@@ -189,7 +189,7 @@
 <span class="c1"># Globals are dumped here for API ease of use.</span>
 
 <span class="n">site_root</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="sd">&quot;&quot;&quot;:obj:`str`: The site root (lifted directly from the krait argument)&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;str: The site root (lifted directly from the krait argument)&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="get_full_path"><a class="viewcode-back" href="../krait.html#krait.get_full_path">[docs]</a><span class="k">def</span> <span class="nf">get_full_path</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
@@ -198,10 +198,10 @@
 <span class="sd">    Note that this is not necessarily absolute, but is derived from the krait argument.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        filename (:obj:`str`): a filename relative to the site root (the krait argument)</span>
+<span class="sd">        filename (str): a filename relative to the site root (the krait argument)</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        :obj:`str`: ``os.path.join(krait.site_root, filename)``</span>
+<span class="sd">        str: ``os.path.join(krait.site_root, filename)``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">global</span> <span class="n">site_root</span>
@@ -220,13 +220,13 @@
 
 <span class="n">_content_type</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`str`: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.set_content_type`.</span>
+<span class="sd">str: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.set_content_type`.</span>
 <span class="sd">If None, the server deduces it from the original route target&#39;s extension.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">extra_headers</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`list` of :obj:`(:obj:`str`, :obj:`str`)`: Extra response headers to set without overriding the entire response.</span>
+<span class="sd">list of (str, str): Extra response headers to set without overriding the entire response.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -236,8 +236,8 @@
 <span class="sd">    Used when the original route target&#39;s extension is not relevant to the extension of the final content.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        raw (:obj:`str`, optional): full MIME type (e.g. ``&#39;application/json&#39;``)</span>
-<span class="sd">        ext (:obj:`str`, optional): file extension from which to derive the MIME type (e.g. ``&#39;json&#39;``)</span>
+<span class="sd">        raw (str, optional): full MIME type (e.g. ``&#39;application/json&#39;``)</span>
+<span class="sd">        ext (str, optional): file extension from which to derive the MIME type (e.g. ``&#39;json&#39;``)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">global</span> <span class="n">_content_type</span>

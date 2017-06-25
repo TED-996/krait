@@ -11,7 +11,7 @@ Welcome to Krait's documentation!
 What is Krait?
 ==============
 
-Krait is a HTTP server with Python server-side scripting. Its main purpose is to be as simple and elegant to use as possible, while having no major drawbacks (no important missing features, no performance, stability or security issues)
+Krait is an HTTP server with Python server-side scripting. Its main purpose is to be as simple and elegant to use as possible, while having no major drawbacks (no important missing features, no performance, stability or security issues)
 
 It is written in C++, but you'll be coding the backend only in Python. Its Python API is built with simplicity and elegance in mind. Right now Krait only runs on Linux, but it also runs perfectly under Windows 10, in the Linux Subsystem.
 

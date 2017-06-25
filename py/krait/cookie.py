@@ -24,18 +24,18 @@ import krait_utils
 
 class Cookie:
     """
-    Represents a HTTP cookie.
+    Represents an HTTP cookie.
 
     Args:
-        name (:obj:`str`): The name of the cookie
-        value (:obj:`str`): The value of the cookie.
-        attributes (:obj:`list` of :class:`CookieAttribute`, optional): A (possibly empty) list of attributes.
+        name (str): The name of the cookie
+        value (str): The value of the cookie.
+        attributes (list of :class:`CookieAttribute`, optional): A (possibly empty) list of attributes.
             Can be updated later.
 
     Attributes:
-        name (:obj:`str`): The name of the cookie.
-        value (:obj:`str`): The value of the cookie.
-        attributes (:obj:`list` of :class:`CookieAttribute`): A (possibly empty) list of attributes.
+        name (str): The name of the cookie.
+        value (str): The value of the cookie.
+        attributes (list of :class:`CookieAttribute`): A (possibly empty) list of attributes.
             Update only with instance methods.
     """
 
@@ -69,8 +69,7 @@ class Cookie:
         Remove an attribute from the cookie.
 
         Args:
-            name :obj:`str`: The name of the attribute to remove (e.g. ``Expires``).
-
+            name (str): The name of the attribute to remove (e.g. ``Expires``).
         """
 
         name = name.lower()
@@ -101,7 +100,7 @@ class Cookie:
         Warnings:
             This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.
         Args:
-            max_age (:obj:`int`, optional): The maximum time that a cookie can be kept, in seconds, or None to remove.
+            max_age (int, optional): The maximum time that a cookie can be kept, in seconds, or None to remove.
         """
 
         if max_age is None:
@@ -115,7 +114,7 @@ class Cookie:
         This restricts the cookie only to one URL and its descendants.
 
         Args:
-            path (:obj:`str`, optional): The path, or None to remove.
+            path (str, optional): The path, or None to remove.
         """
 
         if path is None:
@@ -129,7 +128,7 @@ class Cookie:
         This restricts the domain on which the cookie can be sent by the client.
 
         Args:
-            domain (:obj:`str`, optional): The domain, or None to remove.
+            domain (str, optional): The domain, or None to remove.
         """
 
         if domain is None:
@@ -171,12 +170,12 @@ class CookieAttribute(object):
     A generic cookie attribute.
 
     Args:
-        name (:obj:`str`): The name of the attribute.
-        value (:obj:`str`): The value of the attribute.
+        name (str): The name of the attribute.
+        value (str, optional): The value of the attribute.
 
     Attributes:
-        name (:obj:`str`): The name of the attribute.
-        value (:obj:`str`): The value of the attribute.
+        name (str): The name of the attribute.
+        value (str): The value of the attribute.
 
     """
     def __init__(self, name, value):
@@ -218,10 +217,10 @@ class CookieMaxAgeAttribute(CookieAttribute):
         This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.
 
     Args:
-        max_age (:obj:`int`): The lifetime of the cookie, in seconds.
+        max_age (int): The lifetime of the cookie, in seconds.
 
     Attributes:
-        max_age (:obj:`int`): The lifetime of the cookie, in seconds.
+        max_age (int): The lifetime of the cookie, in seconds.
     """
 
     def __init__(self, max_age):
@@ -234,10 +233,10 @@ class CookiePathAttribute(CookieAttribute):
     This restricts the cookie only to one URL and its descendants.
 
     Args:
-        path (:obj:`str`): The URL to which to restrict the cookie.
+        path (str): The URL to which to restrict the cookie.
 
     Attributes:
-        path (:obj:`str`): The URL to which to restrict the cookie.
+        path (str): The URL to which to restrict the cookie.
     """
 
     def __init__(self, path):
@@ -250,10 +249,10 @@ class CookieDomainAttribute(CookieAttribute):
     This restricts the domain on which the cookie can be sent by the client.
 
     Args:
-        domain (:obj:`str`): The domain on which the cookie is restricted.
+        domain (str): The domain on which the cookie is restricted.
 
     Attributes:
-        domain (:obj:`str`): The domain on which the cookie is restricted.
+        domain (str): The domain on which the cookie is restricted.
     """
 
     def __init__(self, domain):
@@ -282,7 +281,7 @@ class CookieSecureAttribute(CookieAttribute):
 
 _cookies_cpt = None
 """
-:obj:`list` of :class:`Cookie`:
+list of :class:`Cookie`:
 Computed request cookies. Since it would be of no use to keep recomputing them, these are cached.
 """
 
@@ -292,7 +291,7 @@ def get_cookies():
     Get all the cookies sent by the client.
 
     Returns:
-        :obj:`list` of :class:`Cookie`
+        list of :class:`Cookie`
     """
     global _cookies_cpt
     if _cookies_cpt is not None:
@@ -319,8 +318,8 @@ def get_cookie(name, default=None):
     Get the value of a single cookie, by name.
 
     Args:
-        name (:obj:`str`): The name of the cookie to be returned.
-        default (:obj:`str`, optional): The value to be used if the cookie cannot be found.
+        name (str): The name of the cookie to be returned.
+        default (str, optional): The value to be used if the cookie cannot be found.
     Returns:
         The value of the cookie, or the second argument, if it doesn't exist.
     """
@@ -336,10 +335,10 @@ def _split_equals(item):
     Split a ``name=value`` string in a ``(name, value) tuple.
 
     Args:
-        item (:obj:`str`): the string to be split, as ``'name=value'``.
+        item (str): the string to be split, as ``'name=value'``.
 
     Returns:
-        :obj:`(:obj:`str`, :obj:`str`): the ``(name, value)`` tuple.
+        (str, str): the ``(name, value)`` tuple.
     """
     sep_idx = item.index("=")
     return item[:sep_idx], item[sep_idx + 1:]
@@ -350,7 +349,7 @@ def get_response_cookies():
     Get cookies already set with :obj:`cookie.setCookie()` or direct header manipulation
 
     Returns:
-        :obj:`list` of :class:`cookie.Cookie`: the response cookies already set.
+        list of :class:`cookie.Cookie`: the response cookies already set.
     """
 
     cookie_values = [value for name, value in krait.extra_headers if name == 'set-cookie']

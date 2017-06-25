@@ -1,3 +1,31 @@
+"""
+This module interfaces Krait's WebSocket support with your Python backend.
+WebSocket controllers are implemented as two threads, one running the networking in C++,
+and the other running the behaviour in Python. Your backend implements the second thread,
+by subclassing :class:`WebsocketsCtrlBase` and overriding the relevant methods.
+
+The WebSocket protocol requires three components:
+
+1. A page contains JavaScript code that requests a WebSocket connection to a specific URL, by requesting
+   a WebSocket upgrade (change of protocols) through an otherwise normal GET request.
+2. A server-side script to handle a GET request on that URL and accept or deny the WebSocket upgrade
+3. A WebSocket controller that runs in a separate thread, handles incoming messages and sends messages itself.
+
+See the websockets tutorial (TODO) for a more detailed explanation.
+
+Usage
+=====
+
+1. Create a page with the relevant JavaScript that makes a WebSocket upgrade request to a separate URL,
+   then communicates with the server on the new channel.
+2. Create a WebSockets controller by subclassing :class:`WebsocketsCtrlBase` and overriding, at least,
+   :obj:`WebsocketsCtrlBase.on_thread_start`. This method should contain a loop that runs while
+   :obj:`WebsocketsCtrlBase.should_stop` on ``self`` is false.
+3. 
+
+Reference
+=========
+"""
 import threading
 import krait
 
@@ -36,7 +64,7 @@ class WebsocketsCtrlBase(object):
     Base class responsible for handling Websockets communication.
     Subclass it to add behavior.
     """
-    def __init__(self, use_in_message_queue):
+    def __init__(self, use_in_message_queue=True):
         self._out_message_queue = []
         self._in_message_queue = [] if use_in_message_queue else None
 

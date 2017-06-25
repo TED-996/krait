@@ -38,7 +38,7 @@
     <link rel="top" title="Krait 0.5 documentation" href="index.html"/>
         <link rel="up" title="krait package" href="krait.html"/>
         <link rel="next" title="krait.websockets module" href="krait.websockets.html"/>
-        <link rel="prev" title="krait.krait_utils module" href="krait.krait_utils.html"/> 
+        <link rel="prev" title="krait.http_response module" href="krait.http_response.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -99,8 +99,11 @@
 <li class="toctree-l3"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">krait.mvc module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">krait.mvc module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
 </li>
@@ -114,7 +117,6 @@
 <li class="toctree-l4"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">krait.mvc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -191,21 +193,59 @@
             
   <div class="section" id="module-krait.mvc">
 <span id="krait-mvc-module"></span><h1>krait.mvc module<a class="headerlink" href="#module-krait.mvc" title="Permalink to this headline">¶</a></h1>
+<p>This module interfaces Krait&#8217;s MVC support with your Python backend.</p>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>See the tutorial (TODO) for a more detailed explanation.</p>
+<ol class="arabic simple">
+<li><dl class="first docutils">
+<dt>Create a template (a view):</dt>
+<dd>Create a file with the <code class="docutils literal"><span class="pre">.html</span></code> or <code class="docutils literal"><span class="pre">.pyml</span></code> extension in a hidden directory in your site root
+(typically <code class="docutils literal"><span class="pre">.view</span></code>) with your template code.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Create a controller:</dt>
+<dd>Create a subclass of <a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a> and override its <a class="reference internal" href="#krait.mvc.CtrlBase.get_view" title="krait.mvc.CtrlBase.get_view"><code class="xref py py-obj docutils literal"><span class="pre">CtrlBase.get_view</span></code></a> method
+to return the <strong>relative</strong> path of a template. To add properties to the controller, simply set them
+in its <code class="docutils literal"><span class="pre">__init__</span></code> method.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Reference properties on the controller in templates:</dt>
+<dd>In template files the <code class="docutils literal"><span class="pre">ctrl</span></code> variable refers to the active controller.
+Use Pyml syntax to access its members and use them on the page.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Set a controller to handle a specific URL</dt>
+<dd>Create a Python script with the appropriate location and name to be reached by the URL.
+Import <code class="docutils literal"><span class="pre">krait.mvc</span></code>, then call <a class="reference internal" href="#krait.mvc.set_init_ctrl" title="krait.mvc.set_init_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">set_init_ctrl</span></code></a>, passing as an argument an object
+of your controller type. Krait will then call its overridden <a class="reference internal" href="#krait.mvc.CtrlBase.get_view" title="krait.mvc.CtrlBase.get_view"><code class="xref py py-obj docutils literal"><span class="pre">CtrlBase.get_view</span></code></a> method
+and render the template.</dd>
+</dl>
+</li>
+</ol>
+</div>
+<div class="section" id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="krait.mvc.CtrlBase">
 <em class="property">class </em><code class="descclassname">krait.mvc.</code><code class="descname">CtrlBase</code><a class="reference internal" href="_modules/krait/mvc.html#CtrlBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.CtrlBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>The base of a MVC controller.
-The only necessary method is get_view, this returns the filename (relative to the site_root)
-to build the response from.</p>
+Abstract, implementations have to override the <a class="reference internal" href="#krait.mvc.CtrlBase.get_view" title="krait.mvc.CtrlBase.get_view"><code class="xref py py-obj docutils literal"><span class="pre">get_view</span></code></a> method.</p>
 <dl class="method">
 <dt id="krait.mvc.CtrlBase.get_view">
 <code class="descname">get_view</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#CtrlBase.get_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.CtrlBase.get_view" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Get the view that renders the response.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The filename (relative to the site_root) of the view</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a <strong>relative</strong> path</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -218,41 +258,113 @@ to build the response from.</p>
 <em class="property">class </em><code class="descclassname">krait.mvc.</code><code class="descname">SimpleCtrl</code><span class="sig-paren">(</span><em>view</em>, <em>members</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#SimpleCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.SimpleCtrl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">krait.mvc.CtrlBase</span></code></a></p>
 <p>A simple controller wrapper. Best not to use, controllers should set their views themselves.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>view</strong> (<em>str</em>) &#8211; The view that this controller renders with.</li>
+<li><strong>members</strong> (<em>dict</em>) &#8211; The attributes of the controller. These will be set dynamically as instance attributes.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="krait.mvc.SimpleCtrl.view">
+<code class="descname">view</code><a class="headerlink" href="#krait.mvc.SimpleCtrl.view" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The view that this controller renders with.</p>
+</dd></dl>
+
+<p>Apart from the view, other attributes exist, specified in the <code class="xref py py-obj docutils literal"><span class="pre">members</span></code> dictionary.</p>
 <dl class="method">
 <dt id="krait.mvc.SimpleCtrl.get_view">
 <code class="descname">get_view</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#SimpleCtrl.get_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.SimpleCtrl.get_view" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get the selected view.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#krait.mvc.SimpleCtrl.view" title="krait.mvc.SimpleCtrl.view"><code class="xref py py-obj docutils literal"><span class="pre">view</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="data">
-<dt id="krait.mvc.ctrl_stack">
-<code class="descclassname">krait.mvc.</code><code class="descname">ctrl_stack</code><em class="property"> = []</em><a class="headerlink" href="#krait.mvc.ctrl_stack" title="Permalink to this definition">¶</a></dt>
-<dd><p>The current controller, used by push_ctrl and pop_ctrl</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="krait.mvc.push_ctrl">
-<code class="descclassname">krait.mvc.</code><code class="descname">push_ctrl</code><span class="sig-paren">(</span><em>new_ctrl</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#push_ctrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.push_ctrl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save the current controller and set a new one
-param new_ctrl: the new controller
-:return: the new controller, for chaining purposes</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="krait.mvc.pop_ctrl">
-<code class="descclassname">krait.mvc.</code><code class="descname">pop_ctrl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#pop_ctrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.pop_ctrl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Discards the current controller and sets the one before it
-:return: The newly-set controller</p>
+<dt id="krait.mvc.init_ctrl">
+<code class="descclassname">krait.mvc.</code><code class="descname">init_ctrl</code><em class="property"> = None</em><a class="headerlink" href="#krait.mvc.init_ctrl" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a> &#8211; The controller to be used as a master controller. Do not use directly, use <a class="reference internal" href="#krait.mvc.set_init_ctrl" title="krait.mvc.set_init_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">set_init_ctrl</span></code></a>.
+Set from route targets that want to invoke a controller (and render a response using MVC).</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="krait.mvc.set_init_ctrl">
 <code class="descclassname">krait.mvc.</code><code class="descname">set_init_ctrl</code><span class="sig-paren">(</span><em>ctrl</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#set_init_ctrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.set_init_ctrl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invoke a controller after the script has finish executing.
-:param ctrl: The controller to be used.</p>
+<dd><p>Invoke a controller after the route target has finished executing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ctrl</strong> (<a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a>) &#8211; The controller object to be used.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
+<dl class="data">
+<dt id="krait.mvc.ctrl_stack">
+<code class="descclassname">krait.mvc.</code><code class="descname">ctrl_stack</code><em class="property"> = []</em><a class="headerlink" href="#krait.mvc.ctrl_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of <a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a> &#8211; The stack of controllers, used with nested controllers. Semi-deprecated.
+Do not use directly, use <a class="reference internal" href="#krait.mvc.push_ctrl" title="krait.mvc.push_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">push_ctrl</span></code></a> and <a class="reference internal" href="#krait.mvc.pop_ctrl" title="krait.mvc.pop_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">pop_ctrl</span></code></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="krait.mvc.curr_ctrl">
+<code class="descclassname">krait.mvc.</code><code class="descname">curr_ctrl</code><em class="property"> = None</em><a class="headerlink" href="#krait.mvc.curr_ctrl" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a> &#8211; The current controller, used in controller stacking. Semi-deprecated.
+Do not use directly, use <a class="reference internal" href="#krait.mvc.push_ctrl" title="krait.mvc.push_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">push_ctrl</span></code></a> and <a class="reference internal" href="#krait.mvc.pop_ctrl" title="krait.mvc.pop_ctrl"><code class="xref py py-obj docutils literal"><span class="pre">pop_ctrl</span></code></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="krait.mvc.push_ctrl">
+<code class="descclassname">krait.mvc.</code><code class="descname">push_ctrl</code><span class="sig-paren">(</span><em>new_ctrl</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#push_ctrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.push_ctrl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current controller and set a new one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_ctrl</strong> (<a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a>) &#8211; The new controller.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The new controller.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="krait.mvc.pop_ctrl">
+<code class="descclassname">krait.mvc.</code><code class="descname">pop_ctrl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/mvc.html#pop_ctrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.mvc.pop_ctrl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discard the current controller and set the one before it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The old, now current, controller.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#krait.mvc.CtrlBase" title="krait.mvc.CtrlBase"><code class="xref py py-class docutils literal"><span class="pre">CtrlBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -268,7 +380,7 @@ param new_ctrl: the new controller
         <a href="krait.websockets.html" class="btn btn-neutral float-right" title="krait.websockets module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="krait.krait_utils.html" class="btn btn-neutral" title="krait.krait_utils module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="krait.http_response.html" class="btn btn-neutral" title="krait.http_response module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

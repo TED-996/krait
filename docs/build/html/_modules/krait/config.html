@@ -175,17 +175,17 @@
 <span class="sd">    Signifies a route that incoming requests can take.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        verb (:obj:`str`, optional): The routing verb (most HTTP verbs, plus ``ANY`` and ``WEBSOCKET``).</span>
+<span class="sd">        verb (str, optional): The routing verb (most HTTP verbs, plus ``ANY`` and ``WEBSOCKET``).</span>
 <span class="sd">            See :obj:`Route.route_verbs` for options; GET by default</span>
-<span class="sd">        url (:obj:`str`, optional): The URL to match, or None to skip</span>
-<span class="sd">        regex (:obj:`str`, optional): The regex to match, or None to skip</span>
-<span class="sd">        target (:obj:`str`, optional): The target of the route, or None to keep default target (extracted from URL)</span>
+<span class="sd">        url (str, optional): The URL to match, or None to skip</span>
+<span class="sd">        regex (str, optional): The regex to match, or None to skip</span>
+<span class="sd">        target (str, optional): The target of the route, or None to keep default target (extracted from URL)</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        verb (:obj:`str`): The routing verb</span>
-<span class="sd">        url (:obj:`str`, optional): The URL to match, or None to skip</span>
-<span class="sd">        regex (:obj:`str`, optional): The regex to match, or None to skip</span>
-<span class="sd">        target (:obj:`str`, optional): The target of the route. None keeps default target (extracted from the URL)</span>
+<span class="sd">        verb (str): The routing verb</span>
+<span class="sd">        url (str, optional): The URL to match, or None to skip</span>
+<span class="sd">        regex (str, optional): The regex to match, or None to skip</span>
+<span class="sd">        target (str, optional): The target of the route. None keeps default target (extracted from the URL)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">route_verbs</span> <span class="o">=</span> <span class="p">[</span>
@@ -214,29 +214,29 @@
 
 <span class="n">routes</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`list` of :class:`Route`:</span>
+<span class="sd">list of :class:`Route`:</span>
 <span class="sd">The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.</span>
 <span class="sd">If you override this, the last route *should* be a default one (``Route()``) to allow GET requests to reach</span>
 <span class="sd">resources that aren&#39;t explicitly routed (like CSS or Javascript files)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">cache_no_store</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="sd">&quot;&quot;&quot;:obj:`list` of :obj:`str`: The list of filename regexes that the clients shouldn&#39;t cache.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;list of str: The list of filename regexes that the clients shouldn&#39;t cache.&quot;&quot;&quot;</span>
 
 <span class="n">cache_private</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="sd">&quot;&quot;&quot;:</span>
-<span class="sd">:obj:`list` of :obj:`str`: </span>
+<span class="sd">list of str: </span>
 <span class="sd">The list or filename regexes that only private (client) caches should keep.</span>
 <span class="sd">This usually means that browser caches can keep the resource, but not shared caches.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">cache_public</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="sd">&quot;&quot;&quot;:obj:`list` of :obj:`str`: The list of filename regexes that can be kept in any caches.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;list of str: The list of filename regexes that can be kept in any caches.&quot;&quot;&quot;</span>
 
 
 <span class="n">cache_long_term</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`list` of :obj:`str`: </span>
+<span class="sd">list of str: </span>
 <span class="sd">The list of filename regexes that can be kept for a longer time.</span>
 <span class="sd">This duration is configured with :obj:`krait.config.cache_max_age_long_term`</span>
 <span class="sd">This is a modifier, so it can be applied to both private or public cache directives.</span>
@@ -244,14 +244,14 @@
 
 <span class="n">cache_max_age_default</span> <span class="o">=</span> <span class="mi">300</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`int`: </span>
+<span class="sd">int: </span>
 <span class="sd">The number of seconds that clients should not re-request the resource.</span>
 <span class="sd">This corresponds to the Max-Age of the HTTP response, for public or private (and not long-term) cached resources.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">cache_max_age_long_term</span> <span class="o">=</span> <span class="mi">864000</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`int`:</span>
+<span class="sd">int:</span>
 <span class="sd">The number of seconds that clients should not re-request the resource, for long-term cached resources.</span>
 <span class="sd">This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.</span>
 <span class="sd">&quot;&quot;&quot;</span>

@@ -99,7 +99,6 @@
 <li class="toctree-l3"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">krait.http_request module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -114,7 +113,6 @@
 <li class="toctree-l4"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">krait.http_request module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -195,17 +193,48 @@
 <dt id="krait.http_request.Request">
 <em class="property">class </em><code class="descclassname">krait.http_request.</code><code class="descname">Request</code><span class="sig-paren">(</span><em>http_method</em>, <em>url</em>, <em>query_string</em>, <em>http_version</em>, <em>headers</em>, <em>body</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.http_request.Request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wraps a HTTP request.</p>
+<p>Represents an HTTP request.
+Objects of this class are created by Krait before passing control to your Python code.
+The variable <a class="reference internal" href="krait.html#krait.request" title="krait.request"><code class="xref py py-obj docutils literal"><span class="pre">krait.request</span></code></a> is an instance of this class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>http_method</strong> (<em>str</em>) &#8211; The HTTP method in the request. Values: &#8216;GET&#8217;, &#8216;POST&#8217;, etc.</li>
+<li><strong>url</strong> (<em>str</em>) &#8211; The URL of the requests, without the query</li>
+<li><strong>query_string</strong> (<em>str</em>) &#8211; The URL query</li>
+<li><strong>http_version</strong> (<em>str</em>) &#8211; the HTTP version; only &#8216;HTTP/1.1&#8217; is supported</li>
+<li><strong>headers</strong> (<em>dict of str str</em>) &#8211; The HTTP headers sent by the client</li>
+<li><strong>body</strong> (<em>str</em>) &#8211; The body of the request</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="krait.http_request.Request.http_method">
+<code class="descname">http_method</code><a class="headerlink" href="#krait.http_request.Request.http_method" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The HTTP method in the request. Values: &#8216;GET&#8217;, &#8216;POST&#8217;, etc.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.http_request.Request.url">
+<code class="descname">url</code><a class="headerlink" href="#krait.http_request.Request.url" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; The URL of the requests, without the query</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krait.http_request.Request.query">
+<code class="descname">query</code><a class="headerlink" href="#krait.http_request.Request.query" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict of str str</em> &#8211; The query extracted from the URL, parsed in a dict.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="krait.http_request.Request.MultipartFormData">
 <em class="property">class </em><code class="descname">MultipartFormData</code><span class="sig-paren">(</span><em>data</em>, <em>name</em>, <em>filename</em>, <em>content_type</em><span class="sig-paren">)</span><a class="headerlink" href="#krait.http_request.Request.MultipartFormData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
-<p>A named tuple to hold a multipart form entry.
-Fields:
-* data: the entry data
-* name: the entry name in the multipart header
-* filename: the entry filename in the multipart header
-* content_type: the entry content_type in the multipart header</p>
+<p>A named tuple to hold a multipart form entry.</p>
 <dl class="attribute">
 <dt id="krait.http_request.Request.MultipartFormData.content_type">
 <code class="descname">content_type</code><a class="headerlink" href="#krait.http_request.Request.MultipartFormData.content_type" title="Permalink to this definition">¶</a></dt>
@@ -235,15 +264,33 @@ Fields:
 <dl class="method">
 <dt id="krait.http_request.Request.get_post_form">
 <code class="descname">get_post_form</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request.get_post_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.http_request.Request.get_post_form" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extracts the HTTP form from a POST request
-:return: A dict with the HTTP form data</p>
+<dd><p>Extract the HTTP form from a POST request. This is done on demand.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the HTTP form data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict of str str</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="krait.http_request.Request.get_multipart_form">
 <code class="descname">get_multipart_form</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/http_request.html#Request.get_multipart_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.http_request.Request.get_multipart_form" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extracts multipart form data from the request body.
-:return: a list of named tuples with (data, name, filename, content_type)</p>
+<dd><p>Extract an HTTP multipart form from the request body.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the HTTP form parts.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#krait.http_request.Request.MultipartFormData" title="krait.http_request.Request.MultipartFormData"><code class="xref py py-obj docutils literal"><span class="pre">Request.MultipartFormData</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

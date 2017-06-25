@@ -185,18 +185,18 @@
 
 <div class="viewcode-block" id="Cookie"><a class="viewcode-back" href="../../krait.cookie.html#krait.cookie.Cookie">[docs]</a><span class="k">class</span> <span class="nc">Cookie</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a HTTP cookie.</span>
+<span class="sd">    Represents an HTTP cookie.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name (:obj:`str`): The name of the cookie</span>
-<span class="sd">        value (:obj:`str`): The value of the cookie.</span>
-<span class="sd">        attributes (:obj:`list` of :class:`CookieAttribute`, optional): A (possibly empty) list of attributes.</span>
+<span class="sd">        name (str): The name of the cookie</span>
+<span class="sd">        value (str): The value of the cookie.</span>
+<span class="sd">        attributes (list of :class:`CookieAttribute`, optional): A (possibly empty) list of attributes.</span>
 <span class="sd">            Can be updated later.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        name (:obj:`str`): The name of the cookie.</span>
-<span class="sd">        value (:obj:`str`): The value of the cookie.</span>
-<span class="sd">        attributes (:obj:`list` of :class:`CookieAttribute`): A (possibly empty) list of attributes.</span>
+<span class="sd">        name (str): The name of the cookie.</span>
+<span class="sd">        value (str): The value of the cookie.</span>
+<span class="sd">        attributes (list of :class:`CookieAttribute`): A (possibly empty) list of attributes.</span>
 <span class="sd">            Update only with instance methods.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -230,8 +230,7 @@
 <span class="sd">        Remove an attribute from the cookie.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name :obj:`str`: The name of the attribute to remove (e.g. ``Expires``).</span>
-
+<span class="sd">            name (str): The name of the attribute to remove (e.g. ``Expires``).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
@@ -262,7 +261,7 @@
 <span class="sd">        Warnings:</span>
 <span class="sd">            This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.</span>
 <span class="sd">        Args:</span>
-<span class="sd">            max_age (:obj:`int`, optional): The maximum time that a cookie can be kept, in seconds, or None to remove.</span>
+<span class="sd">            max_age (int, optional): The maximum time that a cookie can be kept, in seconds, or None to remove.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">max_age</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -276,7 +275,7 @@
 <span class="sd">        This restricts the cookie only to one URL and its descendants.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            path (:obj:`str`, optional): The path, or None to remove.</span>
+<span class="sd">            path (str, optional): The path, or None to remove.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -290,7 +289,7 @@
 <span class="sd">        This restricts the domain on which the cookie can be sent by the client.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            domain (:obj:`str`, optional): The domain, or None to remove.</span>
+<span class="sd">            domain (str, optional): The domain, or None to remove.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">domain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -332,12 +331,12 @@
 <span class="sd">    A generic cookie attribute.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name (:obj:`str`): The name of the attribute.</span>
-<span class="sd">        value (:obj:`str`): The value of the attribute.</span>
+<span class="sd">        name (str): The name of the attribute.</span>
+<span class="sd">        value (str, optional): The value of the attribute.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        name (:obj:`str`): The name of the attribute.</span>
-<span class="sd">        value (:obj:`str`): The value of the attribute.</span>
+<span class="sd">        name (str): The name of the attribute.</span>
+<span class="sd">        value (str): The value of the attribute.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -379,10 +378,10 @@
 <span class="sd">        This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        max_age (:obj:`int`): The lifetime of the cookie, in seconds.</span>
+<span class="sd">        max_age (int): The lifetime of the cookie, in seconds.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        max_age (:obj:`int`): The lifetime of the cookie, in seconds.</span>
+<span class="sd">        max_age (int): The lifetime of the cookie, in seconds.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_age</span><span class="p">):</span>
@@ -395,10 +394,10 @@
 <span class="sd">    This restricts the cookie only to one URL and its descendants.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        path (:obj:`str`): The URL to which to restrict the cookie.</span>
+<span class="sd">        path (str): The URL to which to restrict the cookie.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        path (:obj:`str`): The URL to which to restrict the cookie.</span>
+<span class="sd">        path (str): The URL to which to restrict the cookie.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
@@ -411,10 +410,10 @@
 <span class="sd">    This restricts the domain on which the cookie can be sent by the client.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        domain (:obj:`str`): The domain on which the cookie is restricted.</span>
+<span class="sd">        domain (str): The domain on which the cookie is restricted.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        domain (:obj:`str`): The domain on which the cookie is restricted.</span>
+<span class="sd">        domain (str): The domain on which the cookie is restricted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
@@ -443,7 +442,7 @@
 
 <span class="n">_cookies_cpt</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">:obj:`list` of :class:`Cookie`:</span>
+<span class="sd">list of :class:`Cookie`:</span>
 <span class="sd">Computed request cookies. Since it would be of no use to keep recomputing them, these are cached.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -453,7 +452,7 @@
 <span class="sd">    Get all the cookies sent by the client.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        :obj:`list` of :class:`Cookie`</span>
+<span class="sd">        list of :class:`Cookie`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">_cookies_cpt</span>
     <span class="k">if</span> <span class="n">_cookies_cpt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -480,8 +479,8 @@
 <span class="sd">    Get the value of a single cookie, by name.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name (:obj:`str`): The name of the cookie to be returned.</span>
-<span class="sd">        default (:obj:`str`, optional): The value to be used if the cookie cannot be found.</span>
+<span class="sd">        name (str): The name of the cookie to be returned.</span>
+<span class="sd">        default (str, optional): The value to be used if the cookie cannot be found.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        The value of the cookie, or the second argument, if it doesn&#39;t exist.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -497,10 +496,10 @@
 <span class="sd">    Split a ``name=value`` string in a ``(name, value) tuple.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        item (:obj:`str`): the string to be split, as ``&#39;name=value&#39;``.</span>
+<span class="sd">        item (str): the string to be split, as ``&#39;name=value&#39;``.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        :obj:`(:obj:`str`, :obj:`str`): the ``(name, value)`` tuple.</span>
+<span class="sd">        (str, str): the ``(name, value)`` tuple.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sep_idx</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">item</span><span class="p">[:</span><span class="n">sep_idx</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="n">sep_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
@@ -511,7 +510,7 @@
 <span class="sd">    Get cookies already set with :obj:`cookie.setCookie()` or direct header manipulation</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        :obj:`list` of :class:`cookie.Cookie`: the response cookies already set.</span>
+<span class="sd">        list of :class:`cookie.Cookie`: the response cookies already set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">cookie_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">krait</span><span class="o">.</span><span class="n">extra_headers</span> <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;set-cookie&#39;</span><span class="p">]</span>

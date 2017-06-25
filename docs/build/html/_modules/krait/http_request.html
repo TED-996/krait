@@ -162,30 +162,33 @@
 <span></span><span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">urllib</span>
 
+
 <div class="viewcode-block" id="Request"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Wraps a HTTP request.</span>
+<span class="sd">    Represents an HTTP request.</span>
+<span class="sd">    Objects of this class are created by Krait before passing control to your Python code.</span>
+<span class="sd">    The variable :obj:`krait.request` is an instance of this class.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        http_method (str): The HTTP method in the request. Values: &#39;GET&#39;, &#39;POST&#39;, etc.</span>
+<span class="sd">        url (str): The URL of the requests, without the query</span>
+<span class="sd">        query_string (str): The URL query</span>
+<span class="sd">        http_version (str): the HTTP version; only &#39;HTTP/1.1&#39; is supported</span>
+<span class="sd">        headers (dict of str str): The HTTP headers sent by the client</span>
+<span class="sd">        body (str): The body of the request</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        http_method (str): The HTTP method in the request. Values: &#39;GET&#39;, &#39;POST&#39;, etc.</span>
+<span class="sd">        url (str): The URL of the requests, without the query</span>
+<span class="sd">        query (dict of str str): The query extracted from the URL, parsed in a dict.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">MultipartFormData</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;MultipartFormData&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;content_type&quot;</span><span class="p">])</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A named tuple to hold a multipart form entry.</span>
-<span class="sd">    Fields:</span>
-<span class="sd">    * data: the entry data</span>
-<span class="sd">    * name: the entry name in the multipart header</span>
-<span class="sd">    * filename: the entry filename in the multipart header</span>
-<span class="sd">    * content_type: the entry content_type in the multipart header</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">http_method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">query_string</span><span class="p">,</span> <span class="n">http_version</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param http_method: the HTTP verb in the request. Values: &#39;GET&#39;, &#39;POST&#39;, etc.</span>
-<span class="sd">        :param url: The URL of the requests, without the query</span>
-<span class="sd">        :param query_string: The URL query as a string</span>
-<span class="sd">        :param http_version: the HTTP version; only &#39;HTTP/1.1&#39; is supported</span>
-<span class="sd">        :param headers: The headers of the request, as a dict</span>
-<span class="sd">        :param body: The body of the request</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">http_method</span> <span class="o">=</span> <span class="n">http_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">Request</span><span class="o">.</span><span class="n">_get_query</span><span class="p">(</span><span class="n">query_string</span><span class="p">)</span>
@@ -195,16 +198,22 @@
 
 <div class="viewcode-block" id="Request.get_post_form"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request.get_post_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts the HTTP form from a POST request</span>
-<span class="sd">        :return: A dict with the HTTP form data</span>
+<span class="sd">        Extract the HTTP form from a POST request. This is done on demand.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict of str str: the HTTP form data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">return</span> <span class="n">Request</span><span class="o">.</span><span class="n">_get_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Request.get_multipart_form"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request.get_multipart_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_multipart_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts multipart form data from the request body.</span>
-<span class="sd">        :return: a list of named tuples with (data, name, filename, content_type)</span>
+<span class="sd">        Extract an HTTP multipart form from the request body.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of :obj:`Request.MultipartFormData`: the HTTP form parts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">content_type_multipart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content-type&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">content_type_multipart</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">print</span> <span class="s2">&quot;Error: asked for multipart form, but the request&#39;s content-type is missing.&quot;</span>
@@ -225,7 +234,6 @@
             <span class="n">boundary</span> <span class="o">=</span> <span class="n">boundary</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">boundary</span> <span class="o">=</span> <span class="s2">&quot;--&quot;</span> <span class="o">+</span> <span class="n">boundary</span>
         <span class="n">boundary_next</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">boundary</span>
-        <span class="c1"># print &quot;found  multipart form data with boundary&quot;, boundary</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">found_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">boundary</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">boundary_next</span><span class="p">)</span>
@@ -238,14 +246,19 @@
 
     <span class="k">def</span> <span class="nf">_get_multipart_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts a multipart entry from the request body</span>
-<span class="sd">        :param start_idx: The start index in the body of the multipart entry</span>
-<span class="sd">        :param end_idx: The end index in the body of the multipart entry</span>
-<span class="sd">        :return: An object of type Request.MultipartFormData with the extracted information</span>
+<span class="sd">        Extract a single multipart entry from the request body.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            start_idx: The start index in the body.</span>
+<span class="sd">            end_idx: The end index in the body.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :obj:`Request.MultipartFormData`: The multipart entry starting and ending at the specified points.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">part_headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">)</span>
-        <span class="n">part_headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">part_headers</span><span class="p">]</span>
-        <span class="n">data_start</span> <span class="o">=</span> <span class="n">part_headers</span> <span class="o">+</span> <span class="mi">4</span>
+
+        <span class="n">part_headers_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">)</span>
+        <span class="n">part_headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">part_headers_start</span><span class="p">]</span>
+        <span class="n">data_start</span> <span class="o">=</span> <span class="n">part_headers_start</span> <span class="o">+</span> <span class="mi">4</span>
 
         <span class="n">part_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="n">data_start</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
         <span class="n">part_name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -286,10 +299,15 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_get_query</span><span class="p">(</span><span class="n">query_string</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts a dict from a string in the URL query format</span>
-<span class="sd">        :param query_string: a string in the URL query format</span>
-<span class="sd">        :return: a dict with the keys and values from the input</span>
+<span class="sd">        Extract a dict from a string in the URL query format.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query_string (str): A string in the key=value[&amp;key=value...] format</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict of str str: The extracted key: value pairs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">query_string</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">query_string</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
 
@@ -304,9 +322,13 @@
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert a Request to a string according to the HTTP standard</span>
-<span class="sd">        :return: The HTTP data for the request</span>
+<span class="sd">        Convert a request to a string according to the HTTP standard.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The HTTP data for the request.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}{}</span><span class="s2"> </span><span class="si">{}</span><span class="se">\r\n</span><span class="si">{}</span><span class="se">\r\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">http_method</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>

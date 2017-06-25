@@ -103,7 +103,6 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -118,7 +117,6 @@
 <li class="toctree-l4 current"><a class="current reference internal" href="#">krait.cookie module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
 </ul>
@@ -223,15 +221,15 @@ then use <code class="xref py py-obj docutils literal"><span class="pre">cookie.
 <dl class="class">
 <dt id="krait.cookie.Cookie">
 <em class="property">class </em><code class="descclassname">krait.cookie.</code><code class="descname">Cookie</code><span class="sig-paren">(</span><em>name</em>, <em>value</em>, <em>attributes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/cookie.html#Cookie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.cookie.Cookie" title="Permalink to this definition">¶</a></dt>
-<dd><p>Represents a HTTP cookie.</p>
+<dd><p>Represents an HTTP cookie.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The name of the cookie</li>
-<li><strong>value</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The value of the cookie.</li>
-<li><strong>attributes</strong> (<code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.cookie.CookieAttribute" title="krait.cookie.CookieAttribute"><code class="xref py py-class docutils literal"><span class="pre">CookieAttribute</span></code></a>, optional) &#8211; A (possibly empty) list of attributes.
+<li><strong>name</strong> (<em>str</em>) &#8211; The name of the cookie</li>
+<li><strong>value</strong> (<em>str</em>) &#8211; The value of the cookie.</li>
+<li><strong>attributes</strong> (list of <a class="reference internal" href="#krait.cookie.CookieAttribute" title="krait.cookie.CookieAttribute"><code class="xref py py-class docutils literal"><span class="pre">CookieAttribute</span></code></a>, optional) &#8211; A (possibly empty) list of attributes.
 Can be updated later.</li>
 </ul>
 </td>
@@ -241,19 +239,19 @@ Can be updated later.</li>
 <dl class="attribute">
 <dt id="krait.cookie.Cookie.name">
 <code class="descname">name</code><a class="headerlink" href="#krait.cookie.Cookie.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The name of the cookie.</p>
+<dd><p><em>str</em> &#8211; The name of the cookie.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.cookie.Cookie.value">
 <code class="descname">value</code><a class="headerlink" href="#krait.cookie.Cookie.value" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The value of the cookie.</p>
+<dd><p><em>str</em> &#8211; The value of the cookie.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.cookie.Cookie.attributes">
 <code class="descname">attributes</code><a class="headerlink" href="#krait.cookie.Cookie.attributes" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.cookie.CookieAttribute" title="krait.cookie.CookieAttribute"><code class="xref py py-class docutils literal"><span class="pre">CookieAttribute</span></code></a> &#8211; A (possibly empty) list of attributes.
+<dd><p>list of <a class="reference internal" href="#krait.cookie.CookieAttribute" title="krait.cookie.CookieAttribute"><code class="xref py py-class docutils literal"><span class="pre">CookieAttribute</span></code></a> &#8211; A (possibly empty) list of attributes.
 Update only with instance methods.</p>
 </dd></dl>
 
@@ -268,7 +266,14 @@ Update only with instance methods.</p>
 <dt id="krait.cookie.Cookie.remove_attribute">
 <code class="descname">remove_attribute</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/cookie.html#Cookie.remove_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.cookie.Cookie.remove_attribute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove an attribute from the cookie.</p>
-<p>:param name <code class="xref py py-obj docutils literal"><span class="pre">str</span></code>: The name of the attribute to remove (e.g. <code class="docutils literal"><span class="pre">Expires</span></code>).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; The name of the attribute to remove (e.g. <code class="docutils literal"><span class="pre">Expires</span></code>).</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -299,7 +304,7 @@ This makes the cookie delete itself after a certain number of seconds.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_age</strong> (<code class="xref py py-obj docutils literal"><span class="pre">int</span></code>, optional) &#8211; The maximum time that a cookie can be kept, in seconds, or None to remove.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_age</strong> (<em>int</em><em>, </em><em>optional</em>) &#8211; The maximum time that a cookie can be kept, in seconds, or None to remove.</td>
 </tr>
 </tbody>
 </table>
@@ -314,7 +319,7 @@ This restricts the cookie only to one URL and its descendants.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The path, or None to remove.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The path, or None to remove.</td>
 </tr>
 </tbody>
 </table>
@@ -329,7 +334,7 @@ This restricts the domain on which the cookie can be sent by the client.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>domain</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The domain, or None to remove.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>domain</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The domain, or None to remove.</td>
 </tr>
 </tbody>
 </table>
@@ -377,8 +382,8 @@ This causes the cookie to be inaccessible from Javascript.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The name of the attribute.</li>
-<li><strong>value</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The value of the attribute.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; The name of the attribute.</li>
+<li><strong>value</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The value of the attribute.</li>
 </ul>
 </td>
 </tr>
@@ -387,13 +392,13 @@ This causes the cookie to be inaccessible from Javascript.</p>
 <dl class="attribute">
 <dt id="krait.cookie.CookieAttribute.name">
 <code class="descname">name</code><a class="headerlink" href="#krait.cookie.CookieAttribute.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The name of the attribute.</p>
+<dd><p><em>str</em> &#8211; The name of the attribute.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="krait.cookie.CookieAttribute.value">
 <code class="descname">value</code><a class="headerlink" href="#krait.cookie.CookieAttribute.value" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The value of the attribute.</p>
+<dd><p><em>str</em> &#8211; The value of the attribute.</p>
 </dd></dl>
 
 </dd></dl>
@@ -434,14 +439,14 @@ This makes the cookie delete itself after a certain number of seconds.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_age</strong> (<code class="xref py py-obj docutils literal"><span class="pre">int</span></code>) &#8211; The lifetime of the cookie, in seconds.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_age</strong> (<em>int</em>) &#8211; The lifetime of the cookie, in seconds.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="krait.cookie.CookieMaxAgeAttribute.max_age">
 <code class="descname">max_age</code><a class="headerlink" href="#krait.cookie.CookieMaxAgeAttribute.max_age" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">int</span></code> &#8211; The lifetime of the cookie, in seconds.</p>
+<dd><p><em>int</em> &#8211; The lifetime of the cookie, in seconds.</p>
 </dd></dl>
 
 </dd></dl>
@@ -456,14 +461,14 @@ This restricts the cookie only to one URL and its descendants.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The URL to which to restrict the cookie.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<em>str</em>) &#8211; The URL to which to restrict the cookie.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="krait.cookie.CookiePathAttribute.path">
 <code class="descname">path</code><a class="headerlink" href="#krait.cookie.CookiePathAttribute.path" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The URL to which to restrict the cookie.</p>
+<dd><p><em>str</em> &#8211; The URL to which to restrict the cookie.</p>
 </dd></dl>
 
 </dd></dl>
@@ -478,14 +483,14 @@ This restricts the domain on which the cookie can be sent by the client.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>domain</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The domain on which the cookie is restricted.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>domain</strong> (<em>str</em>) &#8211; The domain on which the cookie is restricted.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="krait.cookie.CookieDomainAttribute.domain">
 <code class="descname">domain</code><a class="headerlink" href="#krait.cookie.CookieDomainAttribute.domain" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">str</span></code> &#8211; The domain on which the cookie is restricted.</p>
+<dd><p><em>str</em> &#8211; The domain on which the cookie is restricted.</p>
 </dd></dl>
 
 </dd></dl>
@@ -514,7 +519,7 @@ This causes the cookie to only be sent over HTTPS (not yet supported by Krait).<
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.cookie.Cookie" title="krait.cookie.Cookie"><code class="xref py py-class docutils literal"><span class="pre">Cookie</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <a class="reference internal" href="#krait.cookie.Cookie" title="krait.cookie.Cookie"><code class="xref py py-class docutils literal"><span class="pre">Cookie</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -529,8 +534,8 @@ This causes the cookie to only be sent over HTTPS (not yet supported by Krait).<
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) &#8211; The name of the cookie to be returned.</li>
-<li><strong>default</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The value to be used if the cookie cannot be found.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; The name of the cookie to be returned.</li>
+<li><strong>default</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The value to be used if the cookie cannot be found.</li>
 </ul>
 </td>
 </tr>
@@ -551,7 +556,7 @@ This causes the cookie to only be sent over HTTPS (not yet supported by Krait).<
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the response cookies already set.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <code class="xref py py-class docutils literal"><span class="pre">cookie.Cookie</span></code></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">cookie.Cookie</span></code></td>
 </tr>
 </tbody>
 </table>
