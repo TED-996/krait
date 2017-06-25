@@ -1,12 +1,9 @@
 """
-Purpose:
-========
-
 This module is used to wrap the usage of cookies in websites.
 This prevents the need to manipulate the HTTP headers manually.
 
-Usage:
-======
+Usage
+=====
 
 1. Get request cookies:
     Use :obj:`cookie.get_cookie` or :obj:`cookie.get_cookies` to get all
@@ -16,8 +13,8 @@ Usage:
 3. Get response cookies:
     Use :obj:`cookie.get_response_cookies`.
 
-Reference:
-==========
+Reference
+=========
 """
 
 

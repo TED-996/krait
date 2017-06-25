@@ -1,13 +1,10 @@
 ﻿"""
-Purpose:
-========
-
 This module is used to configure the behaviour of Krait when a request arrives and when its response is sent.
 Currently, this module is used to configure routing and the client-side cache.
 
 The members of this module should only be changed from ``.py/init.py``, later changes are ignored.
 
-Reference:
+Reference
 =========
 """
 

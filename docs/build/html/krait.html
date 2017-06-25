@@ -104,7 +104,27 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-krait">Module contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#reference">Reference:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">krait package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="krait.config.html">krait.config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-krait">Module contents</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -178,10 +198,13 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="krait.config.html">krait.config module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krait.config.html">krait.config module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="krait.config.html#reference">Reference</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="krait.cookie.html#usage">Usage:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="krait.cookie.html#reference">Reference:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="krait.cookie.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="krait.cookie.html#reference">Reference</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
@@ -196,20 +219,15 @@
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-krait" title="Permalink to this headline">¶</a></h2>
 <p>This is the root of the Krait API. This has two purposes:</p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt>As a package, this holds the different modules that you can use to interact with Krait,</dt>
-<dd>such as <a class="reference internal" href="krait.mvc.html#module-krait.mvc" title="krait.mvc"><code class="xref py py-obj docutils literal"><span class="pre">krait.mvc</span></code></a>, <a class="reference internal" href="krait.cookie.html#module-krait.cookie" title="krait.cookie"><code class="xref py py-obj docutils literal"><span class="pre">krait.cookie</span></code></a> or <a class="reference internal" href="krait.config.html#module-krait.config" title="krait.config"><code class="xref py py-obj docutils literal"><span class="pre">krait.config</span></code></a>.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>As a (pseudo-)module, this holds generic data related to the HTTP request, or site configuration.</dt>
-<dd>While this may not be the best practice, given Python&#8217;s poor concurrency, the fact that any process
-serves at most one request at a time, this is safe. Krait emphasizes ease of use over absolute purity.</dd>
-</dl>
-</li>
+<li>As a package, this holds the different modules that you can use to interact with Krait,
+such as <a class="reference internal" href="krait.mvc.html#module-krait.mvc" title="krait.mvc"><code class="xref py py-obj docutils literal"><span class="pre">krait.mvc</span></code></a>, <a class="reference internal" href="krait.cookie.html#module-krait.cookie" title="krait.cookie"><code class="xref py py-obj docutils literal"><span class="pre">krait.cookie</span></code></a> or <a class="reference internal" href="krait.config.html#module-krait.config" title="krait.config"><code class="xref py py-obj docutils literal"><span class="pre">krait.config</span></code></a>.</li>
+<li>As a (pseudo-)module, this holds generic data related to the HTTP request, or site configuration.
+While this may not be the best practice, given Python&#8217;s poor concurrency, the fact that
+any process serves at most one request at a time, this is safe.
+Krait emphasizes ease of use over absolute purity.</li>
 </ul>
 <div class="section" id="reference">
-<h3>Reference:<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h3>
+<h3>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h3>
 <dl class="data">
 <dt id="krait.site_root">
 <code class="descclassname">krait.</code><code class="descname">site_root</code><em class="property"> = None</em><a class="headerlink" href="#krait.site_root" title="Permalink to this definition">¶</a></dt>

@@ -92,6 +92,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../krait.html">krait package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
 </ul>
 
             
@@ -161,7 +162,7 @@
 <span></span><span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">urllib</span>
 
-<div class="viewcode-block" id="Request"><a class="viewcode-back" href="../../krait.html#krait.http_request.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Request"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wraps a HTTP request.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -192,14 +193,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
 
-<div class="viewcode-block" id="Request.get_post_form"><a class="viewcode-back" href="../../krait.html#krait.http_request.Request.get_post_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Request.get_post_form"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request.get_post_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Extracts the HTTP form from a POST request</span>
 <span class="sd">        :return: A dict with the HTTP form data</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">Request</span><span class="o">.</span><span class="n">_get_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Request.get_multipart_form"><a class="viewcode-back" href="../../krait.html#krait.http_request.Request.get_multipart_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_multipart_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Request.get_multipart_form"><a class="viewcode-back" href="../../krait.http_request.html#krait.Request.get_multipart_form">[docs]</a>    <span class="k">def</span> <span class="nf">get_multipart_form</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Extracts multipart form data from the request body.</span>
 <span class="sd">        :return: a list of named tuples with (data, name, filename, content_type)</span>

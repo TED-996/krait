@@ -92,6 +92,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../krait.html">krait package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
 </ul>
 
             
@@ -160,7 +161,7 @@
   <h1>Source code for krait.http_response</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">urllib</span>
 
-<div class="viewcode-block" id="Response"><a class="viewcode-back" href="../../krait.html#krait.http_response.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Response"><a class="viewcode-back" href="../../krait.http_response.html#krait.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wraps a HTTP response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -202,7 +203,7 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ResponseNotFound"><a class="viewcode-back" href="../../krait.html#krait.http_response.ResponseNotFound">[docs]</a><span class="k">class</span> <span class="nc">ResponseNotFound</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseNotFound"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseNotFound">[docs]</a><span class="k">class</span> <span class="nc">ResponseNotFound</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Response returning 404 Not Found</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -216,7 +217,7 @@
                                                <span class="s2">&quot;&lt;body&gt;&lt;h1&gt;404 Not Found&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ResponseRedirect"><a class="viewcode-back" href="../../krait.html#krait.http_response.ResponseRedirect">[docs]</a><span class="k">class</span> <span class="nc">ResponseRedirect</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseRedirect"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseRedirect">[docs]</a><span class="k">class</span> <span class="nc">ResponseRedirect</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Response returning a 302 Found redirect</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -231,7 +232,7 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">ResponseRedirect</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span> <span class="mi">302</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ResponseBadRequest"><a class="viewcode-back" href="../../krait.html#krait.http_response.ResponseBadRequest">[docs]</a><span class="k">class</span> <span class="nc">ResponseBadRequest</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseBadRequest"><a class="viewcode-back" href="../../krait.http_response.html#krait.ResponseBadRequest">[docs]</a><span class="k">class</span> <span class="nc">ResponseBadRequest</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Response returning 400 Bad Request</span>
 <span class="sd">    &quot;&quot;&quot;</span>

@@ -1,16 +1,14 @@
 ﻿"""
-Purpose:
-========
-
 This is the root of the Krait API. This has two purposes:
 
 * As a package, this holds the different modules that you can use to interact with Krait,
-    such as :obj:`krait.mvc`, :obj:`krait.cookie` or :obj:`krait.config`.
+  such as :obj:`krait.mvc`, :obj:`krait.cookie` or :obj:`krait.config`.
 * As a (pseudo-)module, this holds generic data related to the HTTP request, or site configuration.
-    While this may not be the best practice, given Python's poor concurrency, the fact that any process
-    serves at most one request at a time, this is safe. Krait emphasizes ease of use over absolute purity.
+  While this may not be the best practice, given Python's poor concurrency, the fact that
+  any process serves at most one request at a time, this is safe.
+  Krait emphasizes ease of use over absolute purity.
 
-Reference:
+Reference
 ==========
 """
 

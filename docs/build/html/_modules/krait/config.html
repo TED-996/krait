@@ -92,6 +92,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../krait.html">krait package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
 </ul>
 
             
@@ -163,6 +164,9 @@
 <span class="sd">Currently, this module is used to configure routing and the client-side cache.</span>
 
 <span class="sd">The members of this module should only be changed from ``.py/init.py``, later changes are ignored.</span>
+
+<span class="sd">Reference</span>
+<span class="sd">=========</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -212,6 +216,8 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">:obj:`list` of :class:`Route`:</span>
 <span class="sd">The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.</span>
+<span class="sd">If you override this, the last route *should* be a default one (``Route()``) to allow GET requests to reach</span>
+<span class="sd">resources that aren&#39;t explicitly routed (like CSS or Javascript files)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">cache_no_store</span> <span class="o">=</span> <span class="p">[]</span>

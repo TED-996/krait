@@ -6,6 +6,7 @@ Welcome to Krait's documentation!
    :caption: Contents:
 
    krait
+   modules
 
 What is Krait?
 ==============

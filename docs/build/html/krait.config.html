@@ -95,7 +95,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="krait.html">krait package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="krait.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">krait.config module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">krait.config module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
@@ -105,6 +108,23 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="krait.html#module-krait">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="krait.html">krait package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="krait.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">krait.config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.cookie.html">krait.cookie module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.http_request.html">krait.http_request module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.http_response.html">krait.http_response module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.krait_utils.html">krait.krait_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.mvc.html">krait.mvc module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="krait.websockets.html">krait.websockets module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="krait.html#module-krait">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -177,6 +197,8 @@
 <p>This module is used to configure the behaviour of Krait when a request arrives and when its response is sent.
 Currently, this module is used to configure routing and the client-side cache.</p>
 <p>The members of this module should only be changed from <code class="docutils literal"><span class="pre">.py/init.py</span></code>, later changes are ignored.</p>
+<div class="section" id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="krait.config.Route">
 <em class="property">class </em><code class="descclassname">krait.config.</code><code class="descname">Route</code><span class="sig-paren">(</span><em>verb=None</em>, <em>url=None</em>, <em>regex=None</em>, <em>target=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/krait/config.html#Route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#krait.config.Route" title="Permalink to this definition">¶</a></dt>
@@ -232,7 +254,9 @@ See <a class="reference internal" href="#krait.config.Route.route_verbs" title="
 <dl class="data">
 <dt id="krait.config.routes">
 <code class="descclassname">krait.config.</code><code class="descname">routes</code><em class="property"> = None</em><a class="headerlink" href="#krait.config.routes" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.config.Route" title="krait.config.Route"><code class="xref py py-class docutils literal"><span class="pre">Route</span></code></a> &#8211; The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.</p>
+<dd><p><code class="xref py py-obj docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="#krait.config.Route" title="krait.config.Route"><code class="xref py py-class docutils literal"><span class="pre">Route</span></code></a> &#8211; The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.
+If you override this, the last route <em>should</em> be a default one (<code class="docutils literal"><span class="pre">Route()</span></code>) to allow GET requests to reach
+resources that aren&#8217;t explicitly routed (like CSS or Javascript files)</p>
 </dd></dl>
 
 <dl class="data">
@@ -276,6 +300,7 @@ This corresponds to the Max-Age of the HTTP response, for public or private (and
 This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.</p>
 </dd></dl>
 
+</div>
 </div>
 
 
