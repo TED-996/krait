@@ -130,6 +130,7 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
     <ClCompile Include="src\commander.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\config.h" />
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
     <ClInclude Include="src\commander.h" />
@@ -216,7 +218,7 @@
       <DeploymentContent>true</DeploymentContent>
       <FileType>Text</FileType>
     </None>
-    <None Include="demoserver\.config\init.py">
+    <None Include="demoserver\.py\init.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
     </None>
@@ -353,6 +355,7 @@
     <None Include="globals\mime.types">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="py\krait\config.py" />
     <None Include="py\krait\cookie.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -387,12 +390,6 @@
     <Font Include="demoserver\fonts\glyphicons-halflings-regular.ttf">
       <DeploymentContent>true</DeploymentContent>
     </Font>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="demoserver\.config\routes.xml">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Text</FileType>
-    </Xml>
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt">

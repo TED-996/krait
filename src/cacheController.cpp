@@ -1,21 +1,43 @@
 #include"cacheController.h"
 #include"utils.h"
 #include"formatHelper.h"
+#include"pythonModule.h"
 
 #define DBG_DISABLE
 #include"dbg.h"
 
-CacheController::CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheNoStoreFilename, std::string cacheLongTermFilename)
+namespace bp = boost::python;
+
+
+CacheController::CacheController(Config& config)
 	:
-	noStoreTargets(RegexList::fromFile(cacheNoStoreFilename)),
-	privateTargets(RegexList::fromFile(cachePrivateFilename)),
-	publicTargets(RegexList::fromFile(cachePublicFilename)),
-	longTermTargets(RegexList::fromFile(cacheLongTermFilename)) {
-	maxAgeDefault = 300;
-	maxAgeLongTerm = 864000;
+	noStoreTargets(),
+	privateTargets(),
+	publicTargets(),
+	longTermTargets() {
+	maxAgeDefault = -1;
+	maxAgeLongTerm = -1;
+
+	loaded = false;
+}
+
+void CacheController::load() {
+	this->noStoreTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_no_store"));
+	this->privateTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_private"));
+	this->publicTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_public"));
+	this->longTermTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_long_term"));
+
+	this->maxAgeDefault = bp::extract<int>(PythonModule::config.getGlobalVariable("cache_max_age_default"));
+	this->maxAgeLongTerm = bp::extract<int>(PythonModule::config.getGlobalVariable("cache_max_age_long_term"));
+
+	loaded = true;
 }
 
 CacheController::CachePragma CacheController::getCacheControl(std::string targetFilename, bool defaultIsStore) {
+	if (!loaded) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Cache controller not loaded. Call load() first."));
+	}
+
 	std::pair<std::string, bool> cacheKey = make_pair(targetFilename, defaultIsStore);
 
 	const auto it = pragmaCache.find(cacheKey);

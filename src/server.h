@@ -1,17 +1,16 @@
 #pragma once
 
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include<boost/filesystem/path.hpp>
-#include"except.h"
-#include"routes.h"
-#include"network.h"
-#include"response.h"
+#include <string>
+#include <unordered_map>
+#include <boost/filesystem/path.hpp>
+#include "except.h"
+#include "network.h"
+#include "response.h"
 #include "pymlFile.h"
-#include"stringPiper.h"
-#include"pymlCache.h"
-#include"cacheController.h"
+#include "stringPiper.h"
+#include "pymlCache.h"
+#include "cacheController.h"
+#include "config.h"
 
 
 class Server
@@ -19,13 +18,13 @@ class Server
 	static Server* instance;
 
 	boost::filesystem::path serverRoot;
-	std::vector<Route> routes;
 	int serverSocket;
 
 	const int maxKeepAliveSec = 60;
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
+	Config config;
 	CacheController cacheController;
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 

@@ -128,7 +128,7 @@ std::vector<Route> Route::getDefaultRoutes() {
 	return std::vector<Route>{Route(RouteVerb::GET, boost::none, boost::none, boost::none)};
 }
 
-const Route& Route::getRouteMatch(const std::vector<Route> routes, RouteVerb verb, std::string url,
+const Route& Route::getRouteMatch(const std::vector<Route>& routes, RouteVerb verb, std::string url,
                                   std::map<std::string, std::string>& outParams) {
 	for (const Route& route : routes) {
 		if (route.isMatch(verb, url, outParams)) {

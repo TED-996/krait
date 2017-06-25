@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <vector>
 #include <ctime>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -19,6 +18,7 @@
 #include "websocketsServer.h"
 #include "rawPythonPymlParser.h"
 #include "signalManager.h"
+#include "config.h"
 
 #define DBG_DISABLE
 #include"dbg.h"
@@ -32,10 +32,8 @@ Server* Server::instance = nullptr;
 
 Server::Server(std::string serverRoot, int port)
 	:
-	cacheController((bf::path(serverRoot) / ".config" / "cache-private.cfg").string(),
-	                (bf::path(serverRoot) / ".config" / "cache-public.cfg").string(),
-	                (bf::path(serverRoot) / ".config" / "cache-nostore.cfg").string(),
-	                (bf::path(serverRoot) / ".config" / "cache-longterm.cfg").string()),
+	config(),
+	cacheController(config),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
 		          this,
@@ -51,15 +49,6 @@ Server::Server(std::string serverRoot, int port)
 
 	this->serverRoot = bf::path(serverRoot);
 	socketToClose = -1;
-
-	bf::path routesFilename = this->serverRoot / ".config" / "routes.json";
-	if (exists(routesFilename)) {
-		this->routes = Route::getRoutesFromFile(routesFilename.string());
-	}
-	else {
-		Loggers::logInfo("No routes file found; default used (all GETs to default target;) create a file named \".config/routes.json\" in the server root directory.");
-		this->routes = Route::getDefaultRoutes();
-	}
 
 	DBG("routes got");
 
@@ -85,6 +74,11 @@ Server::Server(std::string serverRoot, int port)
 	DBG("python initialized");
 
 	loadContentTypeList();
+
+	DBG("mime.types initialized.");
+
+	config.load();
+	cacheController.load();
 
 	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 
@@ -153,7 +147,7 @@ void Server::tryAcceptConnection() {
 		closeSocket(serverSocket);
 		cacheRequestPipe.closeRead();
 
-		serveClientStart(clientSocket);//TODO: connect stderr?
+		serveClientStart(clientSocket);
 		exit(255); //The function above should call exit()!
 	}
 	closeSocket(clientSocket);
@@ -164,7 +158,7 @@ void Server::tryAcceptConnection() {
 
 void Server::tryCheckStdinClosed() const {
 	if (!stdinDisconnected && fdClosed(0)) {
-		raise(SIGUSR1); //TODO: change to SIGUSR2 when shutdown is implemented.
+		raise(SIGUSR1); //TODO: change to SIGUSR2 when proper shutdown is implemented.
 	}
 }
 
@@ -261,7 +255,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 			isHead = true;
 		}
 		std::map<std::string, std::string> params;
-		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
+		const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
 
 		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
 		std::string sourceFile = getFilenameFromTarget(targetReplaced);
@@ -384,7 +378,7 @@ void Server::startWebsocketsServer(int clientSocket, Request& request) {
 		request.setRouteVerb(RouteVerb::WEBSOCKET);
 
 		std::map<std::string, std::string> params;
-		const Route& route = Route::getRouteMatch(routes, request.getRouteVerb(), request.getUrl(), params);
+		const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
 
 		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
 		std::string sourceFile = getFilenameFromTarget(targetReplaced);

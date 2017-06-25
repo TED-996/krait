@@ -1,12 +1,13 @@
 ﻿import krait.cookie
 import krait.mvc
 import krait.websockets
+import krait.config
 from krait.http_request import Request
 from krait.http_response import Response, ResponseNotFound, ResponseBadRequest, ResponseRedirect
 
 import os
 
-__all__ = ["cookie", "krait_utils", "mvc", "websockets"]
+__all__ = ["cookie", "krait_utils", "mvc", "websockets", "config"]
 
 
 # Globals are dumped here for API ease of use.

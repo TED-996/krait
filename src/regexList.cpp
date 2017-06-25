@@ -7,13 +7,13 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-using namespace std;
+namespace bp = boost::python;
 
-RegexList RegexList::fromFile(string filename) {
-	ifstream fin(filename);
-	string line;
+RegexList RegexList::fromFile(std::string filename) {
+	std::ifstream fin(filename);
+	std::string line;
 
-	vector<boost::regex> resultVector;
+	std::vector<boost::regex> resultVector;
 
 	if (!fin) {
 		resultVector.clear();
@@ -30,7 +30,21 @@ RegexList RegexList::fromFile(string filename) {
 	return RegexList(resultVector);
 }
 
-bool RegexList::isMatch(string target) {
+RegexList RegexList::fromPythonObject(boost::python::object source) {
+	if (source.is_none()) {
+		return RegexList();
+	}
+
+	long len = bp::len(source);
+	
+	std::vector<boost::regex> regexes;
+	for (int i = 0; i < len; i++) {
+		regexes.push_back(boost::regex(static_cast<std::string>(bp::extract<std::string>(bp::str(source[i])))));
+	}
+	return RegexList(regexes);
+}
+
+bool RegexList::isMatch(std::string target) {
 	boost::cmatch matchVariables;
 	for (const auto& it: targets) {
 		if (boost::regex_match(target.c_str(), matchVariables, it)) {
@@ -39,3 +53,4 @@ bool RegexList::isMatch(string target) {
 	}
 	return false;
 }
+
