@@ -1,4 +1,21 @@
-﻿import krait.cookie
+﻿"""
+Purpose:
+========
+
+This is the root of the Krait API. This has two purposes:
+
+* As a package, this holds the different modules that you can use to interact with Krait,
+    such as :obj:`krait.mvc`, :obj:`krait.cookie` or :obj:`krait.config`.
+* As a (pseudo-)module, this holds generic data related to the HTTP request, or site configuration.
+    While this may not be the best practice, given Python's poor concurrency, the fact that any process
+    serves at most one request at a time, this is safe. Krait emphasizes ease of use over absolute purity.
+
+Reference:
+==========
+"""
+
+
+import krait.cookie
 import krait.mvc
 import krait.websockets
 import krait.config
@@ -7,55 +24,69 @@ from krait.http_response import Response, ResponseNotFound, ResponseBadRequest, 
 
 import os
 
-__all__ = ["cookie", "krait_utils", "mvc", "websockets", "config"]
+__all__ = ["cookie", "krait_utils", "mvc", "websockets", "config",
+           "request", "response", "site_root", "get_full_path", "extra_headers", "set_content_type",
+           "Request", "Response", "ResponseNotFound", "ResponseBadRequest", "ResponseRedirect"]
 
 
 # Globals are dumped here for API ease of use.
 
-"""
-The site_root (directly from the krait argument)
-"""
-site_root = ""
+site_root = None
+""":obj:`str`: The site root (lifted directly from the krait argument)"""
 
 
 def get_full_path(filename):
     """
-    Converts a filename relative to the site-root to its full path
+    Convert a filename relative to the site root to its full path.
     Note that this is not necessarily absolute, but is derived from the krait argument.
-    :param filename: a filename relative to the site-root (the krait argument)
-    :return: os.path.join(site_root, filename)
+
+    Args:
+        filename (:obj:`str`): a filename relative to the site root (the krait argument)
+
+    Returns:
+        :obj:`str`: ``os.path.join(krait.site_root, filename)``
     """
+
     global site_root
-    print "site root is ", site_root
     return os.path.join(site_root, filename)
 
 
-# An object of type krait.Request, set before any responses are handled
 request = None
-# An object of type krait.Response (or its subclasses); leave None for usual behavior, set to override.
+""":class:`krait.Request`: The HTTP request that is being handled right now. Set by Krait."""
+
 response = None
+"""
+:class:`krait.Response`: Set this to completely change the HTTP response, leave None for usual behaviour.
+Useful when you want, for example, to return a *400 Bad Request* or *302 Found*.
+If you only want to add or change headers, use :obj:`krait.extra_headers`.
+"""
 
-# If this is None, get from source extension.
-# If this is "ext/.{extension}", read from mime.types;
-#   (since this may change, use krait.set_content_type(ext="your-ext")
-# otherwise this is the content-type to send to the client.
-content_type = None
+_content_type = None
+"""
+:obj:`str`: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.set_content_type`.
+If None, the server deduces it from the original route target's extension.
+"""
 
-# Extra response headers to set without overriding the entire response, as a tuple list
 extra_headers = None
+"""
+:obj:`list` of :obj:`(:obj:`str`, :obj:`str`)`: Extra response headers to set without overriding the entire response.
+"""
 
 
 def set_content_type(raw=None, ext=None):
     """
-    Sets the content-type to a custom value
-    Use when the routable page's extension is not the extension of the final content.
-    :param raw: full content-type (e.g 'application/json')
-    :param ext: extension from which to derive the content-type (e.g. 'json')
+    Set the HTTP Content-Type to a custom value.
+    Used when the original route target's extension is not relevant to the extension of the final content.
+
+    Args:
+        raw (:obj:`str`, optional): full MIME type (e.g. ``'application/json'``)
+        ext (:obj:`str`, optional): file extension from which to derive the MIME type (e.g. ``'json'``)
     """
-    global content_type
+
+    global _content_type
     if raw is not None:
-        content_type = raw
+        _content_type = raw
     elif ext is not None:
-        content_type = "ext/{}".format(ext)
+        _content_type = "ext/{}".format(ext)
     else:
-        content_type = None
+        _content_type = None

@@ -533,7 +533,7 @@ void Server::addDefaultHeaders(Response& response, std::string filename, Request
 std::string Server::getContentType(std::string filename) {
 	std::string extension;
 
-	if (PythonModule::krait.checkIsNone("content_type")) {
+	if (PythonModule::krait.checkIsNone("_content_type")) {
 		DBG("No content_type set");
 		bf::path filePath(filename);
 		extension = filePath.extension().string();
@@ -542,7 +542,7 @@ std::string Server::getContentType(std::string filename) {
 		}
 	}
 	else {
-		std::string varContentType = PythonModule::krait.getGlobalStr("content_type");
+		std::string varContentType = PythonModule::krait.getGlobalStr("_content_type");
 		DBG_FMT("content_type set to %1%", varContentType);
 
 		if (!ba::starts_with(varContentType, "ext/")) {

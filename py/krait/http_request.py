@@ -3,14 +3,18 @@ import urllib
 
 class Request(object):
     """
+    Wraps a HTTP request.
+    """
+
+    MultipartFormData = collections.namedtuple("MultipartFormData", ["data", "name", "filename", "content_type"])
+    """
     A named tuple to hold a multipart form entry.
     Fields:
-        * data: the entry data
-        * name: the entry name in the multipart header
-        * filename: the entry filename in the multipart header
-        * content_type: the entry content_type in the multipart header
+    * data: the entry data
+    * name: the entry name in the multipart header
+    * filename: the entry filename in the multipart header
+    * content_type: the entry content_type in the multipart header
     """
-    MultipartFormData = collections.namedtuple("MultipartFormData", ["data", "name", "filename", "content_type"])
 
     def __init__(self, http_method, url, query_string, http_version, headers, body):
         """

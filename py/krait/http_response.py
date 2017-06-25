@@ -1,6 +1,10 @@
 ﻿import urllib
 
 class Response(object):
+    """
+    Wraps a HTTP response.
+    """
+
     status_reasons = {
         200: "OK",
         302: "Found",

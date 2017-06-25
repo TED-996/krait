@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>krait.websockets &mdash; Krait 0.5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Krait 0.5 documentation" href="../../index.html"/>
+        <link rel="up" title="krait" href="../krait.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Krait
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../krait.html">krait package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Krait</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../krait.html">krait</a> &raquo;</li>
+        
+      <li>krait.websockets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for krait.websockets</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">krait</span>
+
+<div class="viewcode-block" id="WebsocketsRequest"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsRequest">[docs]</a><span class="k">class</span> <span class="nc">WebsocketsRequest</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a Websockets request.</span>
+<span class="sd">    Contains additional information extracted from a Upgrade: websocket request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">http_request</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocols</span> <span class="o">=</span> <span class="n">WebsocketsRequest</span><span class="o">.</span><span class="n">extract_protocols</span><span class="p">(</span><span class="n">http_request</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WebsocketsRequest.extract_protocols"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsRequest.extract_protocols">[docs]</a>    <span class="k">def</span> <span class="nf">extract_protocols</span><span class="p">(</span><span class="n">http_request</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">http_request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;upgrade&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;websocket&quot;</span><span class="p">:</span>
+            <span class="n">protocols</span> <span class="o">=</span> <span class="n">http_request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sec-websocket-protocol&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">protocols</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">protocols</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="WebsocketsResponse"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsResponse">[docs]</a><span class="k">class</span> <span class="nc">WebsocketsResponse</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">protocol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span> <span class="o">=</span> <span class="n">controller</span></div>
+
+
+<span class="n">request</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="WebsocketsCtrlBase"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase">[docs]</a><span class="k">class</span> <span class="nc">WebsocketsCtrlBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class responsible for handling Websockets communication.</span>
+<span class="sd">    Subclass it to add behavior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_in_message_queue</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_queue</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">use_in_message_queue</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="c1"># noinspection PyArgumentList</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exit_event</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">on_thread_start</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.on_start"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.on_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by Krait when the controller is ready to start. This is running on the main thread.</span>
+<span class="sd">        Do not perform expensive initialization here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+    <span class="c1"># noinspection PyMethodMayBeStatic</span>
+<div class="viewcode-block" id="WebsocketsCtrlBase.on_thread_start"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.on_thread_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_thread_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The thread&#39;s target.</span>
+<span class="sd">        Started by the controller&#39;s on_start() method.</span>
+<span class="sd">        Override this to add behavior to your controller.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.on_in_message"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.on_in_message">[docs]</a>    <span class="k">def</span> <span class="nf">on_in_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by Krait (indirectly) when a new message arrives from the client.</span>
+<span class="sd">        By default adds the message to the message queue.</span>
+<span class="sd">        Override this if the controller is not configured to use messages queues.</span>
+<span class="sd">        :param message: the new message</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.on_in_message_internal"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.on_in_message_internal">[docs]</a>    <span class="k">def</span> <span class="nf">on_in_message_internal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by Krait (directly) when a new message arrives from the client.</span>
+<span class="sd">        This only acquires the lock, then calls on_in_message(message).</span>
+<span class="sd">        :param message: the new message</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_in_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.pop_in_message"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.pop_in_message">[docs]</a>    <span class="k">def</span> <span class="nf">pop_in_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the first message in the input queue, popping it, if it exists, or None otherwise.</span>
+<span class="sd">        Call this to get messages from the client.</span>
+<span class="sd">        Do not call this if the controller doesn&#39;t use input message queues.</span>
+<span class="sd">        :return: The value of the first message, or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;WebsocketsCtrlBase: Input message queueing disabled, but tried calling pop_in_message.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_message_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.push_out_message"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.push_out_message">[docs]</a>    <span class="k">def</span> <span class="nf">push_out_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Call this to send a message. This adds it to the queue; Krait will watch the message queue and send it.</span>
+<span class="sd">        :param message: The message to send.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.pop_out_message"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.pop_out_message">[docs]</a>    <span class="k">def</span> <span class="nf">pop_out_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the first message in the output queue, popping it, if it exists, or None otherwise.</span>
+<span class="sd">        Called by Krait to check on messages to send.</span>
+<span class="sd">        :return: The value of the first message, or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_message_queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_out_message_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.on_stop"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.on_stop">[docs]</a>    <span class="k">def</span> <span class="nf">on_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets a flag that tells the controller thread to shut down.</span>
+<span class="sd">        Called by Krait when the WebSockets connection is closing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exit_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.should_stop"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.should_stop">[docs]</a>    <span class="k">def</span> <span class="nf">should_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if the shutdown event has been set, or False otherwise.</span>
+<span class="sd">        Call this periodically from the controller thread to check if you should shut down.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exit_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="WebsocketsCtrlBase.wait_stopped"><a class="viewcode-back" href="../../krait.websockets.html#krait.websockets.WebsocketsCtrlBase.wait_stopped">[docs]</a>    <span class="k">def</span> <span class="nf">wait_stopped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Joins the controller thread, with an optional timeout.</span>
+<span class="sd">        Called by Krait until the thread has shut down.</span>
+<span class="sd">        :return: True if the thread has shut down, or False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TED_996.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.5',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
