@@ -206,25 +206,9 @@
     <ClInclude Include="src\websocketsTypes.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="demoserver\.config\cache-longterm-2.cfg">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Text</FileType>
-    </None>
-    <None Include="demoserver\.config\cache-longterm.cfg">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Text</FileType>
-    </None>
-    <None Include="demoserver\.config\cache-public.cfg">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Text</FileType>
-    </None>
     <None Include="demoserver\.py\init.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
-    </None>
-    <None Include="demoserver\.config\routes.json">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Text</FileType>
     </None>
     <None Include="demoserver\.py\ctrl\__init__.py">
       <DeploymentContent>true</DeploymentContent>
