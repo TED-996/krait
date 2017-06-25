@@ -28,6 +28,6 @@ public:
 	static Route getRoute(boost::property_tree::ptree routePtree);
 	static std::vector<Route> getRoutesFromFile(std::string filename);
 	static std::vector<Route> getDefaultRoutes();
-	static const Route& getRouteMatch(const std::vector<Route> routes, RouteVerb verb, std::string url,
+	static const Route& getRouteMatch(const std::vector<Route>& routes, RouteVerb verb, std::string url,
 	                                  std::map<std::string, std::string>& outParams);
 };

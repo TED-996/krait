@@ -3,6 +3,15 @@ import os
 import atexit
 import sys
 
+from krait import config
+
+config.routes = [
+    config.Route("POST", url="/comment"),
+    config.Route("WEBSOCKET", url="/ws_socket"),
+    config.Route()
+]
+
+
 project_name = "Krait Demo"
 header_items = [
     ("Home", "/"),

@@ -5,8 +5,8 @@
 #include<boost/optional.hpp>
 #include<string>
 #include<map>
-#include<memory>
 #include"request.h"
+#include"except.h"
 
 class PythonModule
 {
@@ -21,6 +21,7 @@ public:
 	static PythonModule krait;
 	static PythonModule mvc;
 	static PythonModule websockets;
+	static PythonModule config;
 
 private:
 	static bool pythonInitialized;
@@ -36,6 +37,12 @@ public:
 	void execfile(std::string filename);
 	std::string eval(std::string code);
 	boost::python::object evalToObject(std::string code);
+
+	template<typename T>
+	boost::optional<T> evalToOptional(std::string code) {
+		return extractOptional<T>(this->evalToObject(code));
+	}
+
 	bool test(std::string condition);
 	bool checkIsNone(std::string name);
 
@@ -52,20 +59,28 @@ public:
 	std::multimap<std::string, std::string> getGlobalTupleList(std::string name);
 	boost::python::object getGlobalVariable(std::string name);
 
+	template<typename T>
+	boost::optional<T> getGlobalOptional(std::string name) {
+		return extractOptional<T>(this->getGlobalVariable(name));
+	}
+
 private:
 	void setGlobal(std::string name, boost::python::object value);
 
 	//Statics
 public:
 	static std::string prepareStr(std::string pyCode);
-	static std::string errAsString();
+
 	template<typename T>
 	static boost::optional<T> extractOptional(boost::python::object value){
 		if (value.is_none()) {
 			return boost::none;
 		}
-		else {
-			return boost::python::extract<T>(value);
+		try {
+			return boost::optional<T>(boost::python::extract<T>(value));
+		}
+		catch(boost::python::error_already_set const&) {
+			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("extractOptional()"));
 		}
 	}
 
@@ -90,5 +105,11 @@ private:
 	struct StringMultimapToPythonObjectConverter
 	{
 		static PyObject* convert(std::multimap<std::string, std::string> const& map);
+	};
+
+	struct PythonObjectToRouteConverter
+	{
+		static void* convertible(PyObject* objPtr);
+		static void construct(PyObject* objPtr, boost::python::converter::rvalue_from_python_stage1_data* data);
 	};
 };

@@ -4,6 +4,7 @@
 #include<boost/date_time/posix_time/posix_time.hpp>
 #include<boost/date_time/local_time_adjustor.hpp>
 #include<boost/date_time/c_local_time_adjustor.hpp>
+#include <boost/python.hpp>
 #include<poll.h>
 #include<errno.h>
 #include<sys/stat.h>
@@ -15,6 +16,7 @@
 
 
 namespace b = boost;
+namespace bp = boost::python;
 
 
 bool fdClosed(int fd) {
@@ -64,6 +66,49 @@ std::string readFromFile(std::string filename) {
 	fileIn.close();
 
 	return fileData.str();
+}
+
+std::string pyErrAsString() {
+	DBG("in errAsString()");
+	try {
+		PyObject *exception, *value, *traceback;
+		bp::object formatted_list;
+		PyErr_Fetch(&exception, &value, &traceback);
+
+		bp::handle<> handleException(exception);
+		bp::handle<> handleValue(bp::allow_null(value));
+		bp::handle<> handleTraceback(bp::allow_null(traceback));
+
+		bp::object moduleTraceback(bp::import("traceback"));
+
+		DBG("In errAsString: gathered info");
+
+		if (!traceback) {
+			bp::object format_exception_only(moduleTraceback.attr("format_exception_only"));
+			formatted_list = format_exception_only(handleException, handleValue);
+		}
+		else {
+			bp::object format_exception(moduleTraceback.attr("format_exception"));
+			formatted_list = format_exception(handleException, handleValue, handleTraceback);
+		}
+
+		DBG("In errAsString: gathered list");
+
+		bp::object formatted = bp::str("\n").join(formatted_list);
+
+		DBG("In errAsString: got formatted str");
+
+		PyErr_Clear();
+
+		return bp::extract<std::string>(formatted);
+	}
+	catch (bp::error_already_set const&) {
+		return "We tried to get some Python error info, but we failed.";
+	}
+}
+
+pyErrorInfo getPyErrorInfo() {
+	return pyErrorInfo(pyErrAsString());
 }
 
 std::string unixTimeToString(std::time_t timeVal) {

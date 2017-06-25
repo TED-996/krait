@@ -4,6 +4,7 @@
 #include<map>
 #include<utility>
 #include"regexList.h"
+#include "config.h"
 
 
 class CacheController
@@ -29,8 +30,11 @@ private:
 
 	std::map<std::pair<std::string, bool>, CachePragma> pragmaCache;
 
+	bool loaded;
+
 public:
-	CacheController(std::string cachePrivateFilename, std::string cachePublicFilename, std::string cacheNoStoreFilename, std::string cacheLongTermFilename);
+	CacheController(Config& config);
+	void load();
 
 	CachePragma getCacheControl(std::string targetFilename, bool defaultIsStore);
 

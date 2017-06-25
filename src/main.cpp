@@ -3,14 +3,14 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "network.h"
 #include "logger.h"
 #include "server.h"
 #include "commander.h"
+#include "signalManager.h"
+#include "except.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
-#include "signalManager.h"
 
 namespace bpo = boost::program_options;
 
@@ -85,9 +85,16 @@ int main(int argc, char* argv[]) {
 	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>(new StopSignalHandler())));
 	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>(new KillSignalHandler())));
 
-	Server server(siteRoot, port);
-	
-	server.runServer();
+	try {
+		Server server(siteRoot, port);
+
+		server.runServer();
+	}
+	catch(const rootException &ex) {
+		Loggers::logErr(ex.what());
+		Loggers::logErr("Server terminated.");
+		exit(1);
+	}
 
 	Loggers::logInfo("Waiting for children to shut down.");
 	SignalManager::waitChildrenBlocking();
