@@ -24,6 +24,7 @@ class Server
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
+	Config config;
 	CacheController cacheController;
 	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
@@ -33,8 +34,6 @@ class Server
 	StringPiper cacheRequestPipe;
 	bool interpretCacheRequest;
 	PymlCache serverCache;
-
-	Config config;
 
 	bool shutdownRequested;
 

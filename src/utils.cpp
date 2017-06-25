@@ -11,7 +11,7 @@
 #include"utils.h"
 #include"except.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -70,6 +70,10 @@ std::string readFromFile(std::string filename) {
 
 std::string pyErrAsString() {
 	DBG("in errAsString()");
+	if (PyErr_Occurred() == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tried to call pyErrAsString() when no Python exception occured."));
+	}
+
 	try {
 		PyObject *exception, *value, *traceback;
 		bp::object formatted_list;
@@ -100,10 +104,15 @@ std::string pyErrAsString() {
 
 		PyErr_Clear();
 
+		DBG("Error cleared");
+
+		if (formatted.is_none()) {
+			return "Error info is None";
+		}
 		return bp::extract<std::string>(formatted);
 	}
 	catch (bp::error_already_set const&) {
-		return "We tried to get some Python error info, but we failed.";
+		return "Error trying to get Python error info.";
 	}
 }
 

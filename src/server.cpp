@@ -78,6 +78,7 @@ Server::Server(std::string serverRoot, int port)
 	DBG("mime.types initialized.");
 
 	config.load();
+	cacheController.load();
 
 	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 

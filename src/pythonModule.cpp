@@ -86,7 +86,7 @@ void PythonModule::initModules(std::string projectDir) {
 	}
 	catch (pythonError& err) {
 		DBG("Python error in initModules()!");
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("initModules()"));
+		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(err.what()) << originCallInfo("initModules()"));
 	}
 }
 
@@ -159,7 +159,7 @@ void PythonModule::execfile(std::string filename) {
 		DBG("Python error in execfile()!");
 
 		BOOST_THROW_EXCEPTION(pythonError()
-			<< getPyErrorInfo() << originCallInfo("TODO ()")
+			<< getPyErrorInfo() << originCallInfo("execfile()")
 			<< pyCodeInfo(formatString("<see %1%>", filename)));
 	}
 }
