@@ -1,4 +1,4 @@
-import ctrl_index
-import mvc
+import krait
+from ctrl import index
 
-mvc.set_init_ctrl(ctrl_index.IndexController())
+krait.mvc.set_init_ctrl(index.IndexController())

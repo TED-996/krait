@@ -2,18 +2,20 @@
 #include <string>
 
 
-enum class HttpVerb {
-    GET = 0,
-    HEAD,
-    POST,
-    PUT,
-    DELETE,
-    CONNECT,
-    OPTIONS,
-    TRACE
+enum class HttpVerb
+{
+	GET = 0,
+	HEAD,
+	POST,
+	PUT,
+	DELETE,
+	CONNECT,
+	OPTIONS,
+	TRACE
 };
 
-enum class RouteVerb {
+enum class RouteVerb
+{
 	INVALID = 0,
 	GET,
 	POST,
@@ -31,4 +33,3 @@ RouteVerb toRouteVerb(HttpVerb verb);
 RouteVerb toRouteVerb(std::string str);
 std::string httpVerbToString(HttpVerb value);
 std::string routeVerbToString(RouteVerb value);
-

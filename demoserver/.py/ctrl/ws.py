@@ -1,8 +1,7 @@
 import krait
-import mvc
 
 
-class WsPageController(mvc.CtrlBase):
+class WsPageController(krait.mvc.CtrlBase):
     def __init__(self):
         self.page_url = "/ws"
 

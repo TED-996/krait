@@ -8,14 +8,17 @@
 #include"utils.h"
 
 
-template <typename T>
-class FileCache {
+template<typename T>
+class FileCache
+{
 private:
-	struct CacheEntry{
+	struct CacheEntry
+	{
 		std::time_t time;
 		T* item;
 		char tag[33];
 	};
+
 public:
 	typedef T* (*constructorFunction)(std::string filename, boost::object_pool<T>& pool, char* tagDest);
 	typedef void (*cacheEventFunction)(std::string filename);
@@ -28,12 +31,12 @@ private:
 
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
-	T* constructAddNew(std::string filename, std::time_t time){
+	T* constructAddNew(std::string filename, std::time_t time) {
 		CacheEntry resultEntry;
 		memzero(resultEntry);
 
 		T* result = constructor(filename, pool, resultEntry.tag);
-		if (onCacheMiss != NULL){
+		if (onCacheMiss != NULL) {
 			onCacheMiss(filename);
 		}
 		resultEntry.time = time;
@@ -42,14 +45,14 @@ private:
 		return result;
 	}
 
-	const T* replaceWithNewer(std::string filename){
+	const T* replaceWithNewer(std::string filename) {
 		const auto it = cacheMap.find(filename);
 
-		if (!boost::filesystem::exists(filename)){
+		if (!boost::filesystem::exists(filename)) {
 			BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 		}
 
-		if (it != cacheMap.end() && pool.is_from(it->second.item)){
+		if (it != cacheMap.end() && pool.is_from(it->second.item)) {
 			pool.destroy(it->second.item);
 			cacheMap.erase(it);
 		}
@@ -58,16 +61,16 @@ private:
 
 public:
 	FileCache(constructorFunction constructor, cacheEventFunction onCacheMiss)
-		: constructor(constructor), onCacheMiss(onCacheMiss){
+		: constructor(constructor), onCacheMiss(onCacheMiss) {
 		frozen = false;
 	}
 
-	bool existsNewer(std::string filename, std::time_t time){
-		if (frozen){
+	bool existsNewer(std::string filename, std::time_t time) {
+		if (frozen) {
 			return true;
 		}
 
-		if (!boost::filesystem::exists(filename)){
+		if (!boost::filesystem::exists(filename)) {
 			BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
 		}
 
@@ -77,48 +80,48 @@ public:
 	/*
 		Gets a file from cache; the file is updated if there is a newer version.
 	*/
-	const T* get(std::string filename){
+	const T* get(std::string filename) {
 		const auto it = cacheMap.find(filename);
-		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
 			return replaceWithNewer(filename);
 		}
-		else{
+		else {
 			return it->second.item;
 		}
 	}
 
-	std::time_t getCacheTime(std::string filename){
+	std::time_t getCacheTime(std::string filename) {
 		const auto it = cacheMap.find(filename);
-		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
 			replaceWithNewer(filename);
 		}
 
 		return cacheMap[filename].time;
 	}
 
-	bool checkCacheTag(std::string filename, std::string tag){
+	bool checkCacheTag(std::string filename, std::string tag) {
 		const auto it = cacheMap.find(filename);
-		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
 			replaceWithNewer(filename);
 		}
 
 		return (strcmp(tag.c_str(), cacheMap[filename].tag) == 0);
 	}
 
-	std::string getCacheTag(std::string filename){
+	std::string getCacheTag(std::string filename) {
 		const auto it = cacheMap.find(filename);
-		if (it == cacheMap.end() || existsNewer(filename, it->second.time)){
+		if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
 			replaceWithNewer(filename);
 		}
 
 		return cacheMap[filename].tag;
 	}
 
-	void freeze(){
+	void freeze() {
 		frozen = true;
 	}
 
-	void unfreeze(){
+	void unfreeze() {
 		frozen = false;
 	}
 };

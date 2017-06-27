@@ -1,6 +1,7 @@
 #pragma once
 
-class IPymlItem {
+class IPymlItem
+{
 public:
 	virtual std::string runPyml() const = 0;
 

@@ -1,6 +1,4 @@
-import ctrl_http
-import mvc
 import krait
+from ctrl import http
 
-
-mvc.set_init_ctrl(ctrl_http.HttpController(krait.request))
+krait.mvc.set_init_ctrl(http.HttpController(krait.request))

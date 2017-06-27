@@ -1,16 +1,23 @@
 #pragma once
 #include<vector>
+#include <boost/python.hpp>
 #include <boost/regex.hpp>
 
 
-class RegexList {
+class RegexList
+{
 	std::vector<boost::regex> targets;
 
 public:
-	RegexList(std::vector<boost::regex> &targets) : targets(targets){
+	explicit RegexList(std::vector<boost::regex>& targets)
+		: targets(targets) {
+	}
+	RegexList() {
 	}
 
 	bool isMatch(std::string target);
-	
+
 	static RegexList fromFile(std::string filename);
+
+	static RegexList fromPythonObject(boost::python::object source);
 };

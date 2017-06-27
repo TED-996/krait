@@ -78,8 +78,7 @@
     }
 
 #define SaveStore(dest)\
-    (dest).assign(fsmBackBuffer + std::string(fsmWorkingBuffer, fsmWorkingIdx));\
-
+    (dest).assign(fsmBackBuffer + std::string(fsmWorkingBuffer, fsmWorkingIdx));
 #define SaveStoreOne(dest)\
     if (fsmWorkingIdx != 0){\
         SaveStore(dest)\

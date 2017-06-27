@@ -1,4 +1,4 @@
-import ctrl_ws
-import mvc
+import krait
+from ctrl import ws
 
-mvc.set_init_ctrl(ctrl_ws.WsPageController())
+krait.mvc.set_init_ctrl(ws.WsPageController())

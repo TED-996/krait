@@ -2,7 +2,7 @@ import time
 import random
 import string
 
-import websockets
+from krait import websockets
 
 
 class WsPingpongController(websockets.WebsocketsCtrlBase):

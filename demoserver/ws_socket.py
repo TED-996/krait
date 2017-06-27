@@ -1,12 +1,11 @@
-import websockets
 import krait
-import ctrl_pingpong_ws
+from ctrl import pingpong_ws
 
-if websockets.request is None:
+if krait.websockets.request is None:
     krait.response = krait.ResponseBadRequest()
 else:
-    protocols = websockets.request.protocols
+    protocols = krait.websockets.request.protocols
     if "pingpong" in protocols:
-        websockets.response = websockets.WebsocketsResponse(ctrl_pingpong_ws.WsPingpongController(), "pingpong")
+        krait.websockets.response = krait.websockets.WebsocketsResponse(pingpong_ws.WsPingpongController(), "pingpong")
     else:
         krait.response = krait.ResponseBadRequest()
