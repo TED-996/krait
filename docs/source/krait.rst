@@ -3,6 +3,15 @@
 krait package
 =============
 
+Module contents
+---------------
+
+.. automodule:: krait
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Submodules
 ----------
 .. toctree::
@@ -14,14 +23,6 @@ Submodules
 .. toctree::
 
    krait.config
-   krait.cookie
    krait.mvc
+   krait.cookie
    krait.websockets
-
-Module contents
----------------
-
-.. automodule:: krait
-    :members:
-    :undoc-members:
-    :show-inheritance:
