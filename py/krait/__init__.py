@@ -17,8 +17,8 @@ import krait.cookie
 import krait.mvc
 import krait.websockets
 import krait.config
-from krait.http_request import Request
-from krait.http_response import Response, ResponseNotFound, ResponseBadRequest, ResponseRedirect
+from krait._http_request import Request
+from krait._http_response import Response, ResponseNotFound, ResponseBadRequest, ResponseRedirect
 
 import os
 

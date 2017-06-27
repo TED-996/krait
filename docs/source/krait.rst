@@ -1,15 +1,20 @@
+.. _krait_package:
+
 krait package
 =============
 
 Submodules
 ----------
+.. toctree::
+   :hidden:
+
+   self
+
 
 .. toctree::
 
    krait.config
    krait.cookie
-   krait.http_request
-   krait.http_response
    krait.mvc
    krait.websockets
 
