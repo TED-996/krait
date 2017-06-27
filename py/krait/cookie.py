@@ -1,25 +1,45 @@
-import krait
-import collections
-import datetime
-import time
-import krait_utils
+"""
+This module is used to wrap the usage of cookies in websites.
+This prevents the need to manipulate the HTTP headers manually.
 
+Usage
+=====
+
+1. Get request cookies:
+    Use :obj:`cookie.get_cookie` or :obj:`cookie.get_cookies` to get all
+2. Set cookies:
+    Create a new :class:`cookie.Cookie` object, optionally add attributes to it,
+    then use :obj:`cookie.set_cookie` to make it be sent with the HTTP response.
+3. Get response cookies:
+    Use :obj:`cookie.get_response_cookies`.
+
+Reference
+=========
 """
-Represents a parsed cookie.
-"""
-#Cookie = collections.namedtuple("Cookie", ["name", "value", "attributes"])
+
+
+import krait
+import krait_utils
 
 
 class Cookie:
     """
-    Represents a cookie. Has a name, a value and zero or more attributes.
+    Represents an HTTP cookie.
+
+    Args:
+        name (str): The name of the cookie
+        value (str): The value of the cookie.
+        attributes (list of :class:`CookieAttribute`, optional): A (possibly empty) list of attributes.
+            Can be updated later.
+
+    Attributes:
+        name (str): The name of the cookie.
+        value (str): The value of the cookie.
+        attributes (list of :class:`CookieAttribute`): A (possibly empty) list of attributes.
+            Update only with instance methods.
     """
+
     def __init__(self, name, value, attributes=None):
-        """
-        :param name: the name of the cookie
-        :param value: the value of the cookie
-        :param attributes: a list of attributes (of type cookie.CookieAttribute), can be updated with instance methods.
-        """
         self.name = name
         self.value = value
         self.attributes = attributes or []
@@ -27,22 +47,31 @@ class Cookie:
     def __str__(self):
         """
         Convert the Cookie to the Set-Cookie syntax
+
+        Returns
+            str: The cookie in standard HTTP ``Set-Cookie` syntax.
         """
         return "; ".join(["{}={}".format(self.name, self.value)] + [str(a) for a in self.attributes])
 
     def add_attribute(self, attribute):
         """
-        Adds an attribute to the cookie.
-        :param attribute: the attribute to add 
+        Add an attribute to the cookie.
+
+        Args:
+            attribute :class:`CookieAttribute`: The attribute to add.
         """
+
         self.remove_attribute(attribute.name)
         self.attributes.append(attribute)
 
     def remove_attribute(self, name):
         """
-        Removes all attributes with a certain name from the cookie.
-        :param name: the name of the attributes to remove
+        Remove an attribute from the cookie.
+
+        Args:
+            name (str): The name of the attribute to remove (e.g. ``Expires``).
         """
+
         name = name.lower()
         for attribute in self.attributes[:]:
             if attribute.name.lower() == name:
@@ -50,10 +79,14 @@ class Cookie:
 
     def set_expires(self, expires_datetime):
         """
-        Sets or removes the Expires attribute on the cookie. 
-        This makes the cookie delete itself at a certain time.
-        :param expires_datetime: the **UTC**/timezoned time of expiration as a datetime.datetime, or None to remove.
+        Set or remove the *Expires* attribute on the cookie.
+        This makes the cookie delete itself after a certain time.
+
+        Args:
+            expires_datetime (:obj:`datetime.datetime`, optional):
+                The **UTC**/timezoned time of expiration, or None to remove.
         """
+
         if expires_datetime is None:
             self.remove_attribute("Expires")
         else:
@@ -61,10 +94,13 @@ class Cookie:
 
     def set_max_age(self, max_age):
         """
-        Sets or removes the Max-Age attribute on the cookie. Warning, this is not supported by all browsers.
-        Notably, Internet Explorer does not respect this.
-        This makes the cookie delete itself after a certain numbe rof seconds
-        :param max_age: the maximum time that the cookie can be kept, in seconds, or None to remove
+        Set or remove the *Max-Age* attribute on the cookie.
+        This makes the cookie delete itself after a certain number of seconds.
+
+        Warnings:
+            This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.
+        Args:
+            max_age (int, optional): The maximum time that a cookie can be kept, in seconds, or None to remove.
         """
 
         if max_age is None:
@@ -74,9 +110,11 @@ class Cookie:
 
     def set_path(self, path):
         """
-        Sets or removes the path attribute on the cookie.
-        This restricts the cookie to only one URL (and its descendants)
-        :param path: the path, or None to remove
+        Set or remove the *Path* attribute on the cookie.
+        This restricts the cookie only to one URL and its descendants.
+
+        Args:
+            path (str, optional): The path, or None to remove.
         """
 
         if path is None:
@@ -86,9 +124,11 @@ class Cookie:
 
     def set_domain(self, domain):
         """
-        Sets or removes the domain attribute on the cookie.
-        This changes the domain on which the cookie can be sent.
-        :param domain: the domain, or None to remove
+        Set or remove the *Domain* attribute on the cookie.
+        This restricts the domain on which the cookie can be sent by the client.
+
+        Args:
+            domain (str, optional): The domain, or None to remove.
         """
 
         if domain is None:
@@ -98,21 +138,25 @@ class Cookie:
 
     def set_secure(self, is_secure):
         """
-        Sets or removes the Secure attribute on the cookie.
+        Set or remove the *Secure* attribute on the cookie.
         This causes the cookie to only be sent over HTTPS (not yet supported by Krait).
-        :param is_secure: True to set the attribute, False to remove it
+
+        Args:
+            is_secure (bool): True to set the attribute, False to remove it.
         """
 
         if is_secure:
-            self.add_attribute(CookieSecureAtribute())
+            self.add_attribute(CookieSecureAttribute())
         else:
             self.remove_attribute("Secure")
 
     def set_http_only(self, is_http_only):
         """
-        Sets or removes the HttpOnly attribute on the cookie.
-        This causes the cookie to be unaccessible from Javascript.
-        :param is_http_only: True to set the attribute, False to remove it
+        Set or remove the *HTTPOnly* attribute on the cookie.
+        This causes the cookie to be inaccessible from Javascript.
+
+        Args:
+            is_http_only (bool): True to set the attribute, False to remove it.
         """
 
         if is_http_only:
@@ -122,6 +166,18 @@ class Cookie:
 
 
 class CookieAttribute(object):
+    """
+    A generic cookie attribute.
+
+    Args:
+        name (str): The name of the attribute.
+        value (str, optional): The value of the attribute.
+
+    Attributes:
+        name (str): The name of the attribute.
+        value (str): The value of the attribute.
+
+    """
     def __init__(self, name, value):
         self.name = name
         self.value = value
@@ -137,46 +193,105 @@ class CookieAttribute(object):
 
 
 class CookieExpiresAttribute(CookieAttribute):
+    """
+    Sets the *Expires* attribute on the cookie.
+    This makes the cookie delete itself after a certain time.
+
+    Args:
+        expire_datetime (:obj:`datetime.datetime`): the moment that the cookie expires at
+
+    Attributes:
+        expire_datetime (:obj:`datetime.datetime`): the moment that the cookie expires at
+    """
+
     def __init__(self, expire_datetime):
-        """
-        :param expire_datetime: the date that the cookie expires on, as a datetime.datetime
-        """
         super(CookieExpiresAttribute, self).__init__("expires", krait_utils.date_to_gmt_string(expire_datetime))
 
 
 class CookieMaxAgeAttribute(CookieAttribute):
+    """
+    Sets the *Max-Age* attribute on the cookie.
+    This makes the cookie delete itself after a certain number of seconds.
+
+    Warnings:
+        This attribute is not supported by all browsers. Notably, Internet Explorer does not respect it.
+
+    Args:
+        max_age (int): The lifetime of the cookie, in seconds.
+
+    Attributes:
+        max_age (int): The lifetime of the cookie, in seconds.
+    """
+
     def __init__(self, max_age):
         super(CookieMaxAgeAttribute, self).__init__("max-age", str(max_age))
 
 
 class CookiePathAttribute(CookieAttribute):
+    """
+    Sets the *Path* attribute on the cookie.
+    This restricts the cookie only to one URL and its descendants.
+
+    Args:
+        path (str): The URL to which to restrict the cookie.
+
+    Attributes:
+        path (str): The URL to which to restrict the cookie.
+    """
+
     def __init__(self, path):
         super(CookiePathAttribute, self).__init__("path", path)
 
 
 class CookieDomainAttribute(CookieAttribute):
+    """
+    Sets the *Domain* attribute on the cookie.
+    This restricts the domain on which the cookie can be sent by the client.
+
+    Args:
+        domain (str): The domain on which the cookie is restricted.
+
+    Attributes:
+        domain (str): The domain on which the cookie is restricted.
+    """
+
     def __init__(self, domain):
         super(CookieDomainAttribute, self).__init__("domain", domain)
 
 
 class CookieHttpOnlyAttribute(CookieAttribute):
+    """
+    Sets the *HttpOnly* attribute on the cookie.
+    This causes the cookie to be inaccessible from Javascript.
+    """
+
     def __init__(self):
         super(CookieHttpOnlyAttribute, self).__init__("httponly", None)  # TODO: must be uppercase?
 
 
-class CookieSecureAtribute(CookieAttribute):
-    def __init__(self):
-        super(CookieSecureAtribute, self).__init__("secure", None)
+class CookieSecureAttribute(CookieAttribute):
+    """
+    Sets the *Secure* attribute on the cookie.
+    This causes the cookie to only be sent over HTTPS (not yet supported by Krait).
+    """
 
-"""
-Computed request cookies. Since it would be of no use to keep recomputing them, these is cached.
-"""
+    def __init__(self):
+        super(CookieSecureAttribute, self).__init__("secure", None)
+
+
 _cookies_cpt = None
+"""
+list of :class:`Cookie`:
+Computed request cookies. Since it would be of no use to keep recomputing them, these are cached.
+"""
 
 
 def get_cookies():
     """
-    Gets all request cookies, as a list of cookie.Cookie.
+    Get all the cookies sent by the client.
+
+    Returns:
+        list of :class:`Cookie`
     """
     global _cookies_cpt
     if _cookies_cpt is not None:
@@ -200,9 +315,13 @@ def get_cookies():
 
 def get_cookie(name, default=None):
     """
-    Gets the value of a single cookie by name.
-    :param name: the name of the cookie to be returned.
-    :param default: value to be used if the cookie cannot be found.
+    Get the value of a single cookie, by name.
+
+    Args:
+        name (str): The name of the cookie to be returned.
+        default (str, optional): The value to be used if the cookie cannot be found.
+    Returns:
+        The value of the cookie, or the second argument, if it doesn't exist.
     """
     for cookie in get_cookies():
         if cookie.name == name:
@@ -213,9 +332,13 @@ def get_cookie(name, default=None):
 
 def _split_equals(item):
     """
-    Split a 'name=value' string in a (name, value) tuple.
-    :param item: the string to be split, in a 'name=value' format.
-    :return: a (name, value) tuple
+    Split a ``name=value`` string in a ``(name, value) tuple.
+
+    Args:
+        item (str): the string to be split, as ``'name=value'``.
+
+    Returns:
+        (str, str): the ``(name, value)`` tuple.
     """
     sep_idx = item.index("=")
     return item[:sep_idx], item[sep_idx + 1:]
@@ -223,8 +346,12 @@ def _split_equals(item):
 
 def get_response_cookies():
     """
-    Gets cookies already set with cookie.setCookie or direct header manipulation, as a list of cookie.Cookie items.
+    Get cookies already set with :obj:`cookie.setCookie()` or direct header manipulation
+
+    Returns:
+        list of :class:`cookie.Cookie`: the response cookies already set.
     """
+
     cookie_values = [value for name, value in krait.extra_headers if name == 'set-cookie']
     results = []
 
@@ -238,9 +365,10 @@ def get_response_cookies():
 
 def set_cookie(cookie):
     """
-    Set a new (or updated) cookie.
-    :param cookie: the cookie item, as a cookie.Cookie named tuple.
+    Set a new (or updated) cooke.
+
+    Args:
+        cookie (:class:`cookie.Cookie`): the cookie item.
     """
+
     krait.extra_headers.append(("set-cookie", str(cookie)))
-
-

@@ -364,10 +364,9 @@ __pycache__/
 build/*
 tests/*
 *.orig
-docs/*
 .idea/*
 err.log
 info.log
 callgrind-out/*
 **/*.pyc
-
+docs/build/*

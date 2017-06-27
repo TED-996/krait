@@ -1,7 +1,24 @@
 ﻿import urllib
 
 class Response(object):
-    status_reasons = {
+    """
+    Represents an HTTP response.
+    Set :obj:`krait.response` with an instance of this variable (or its subclasses) to override the HTTP response.
+
+    Args:
+        http_version (str): 'HTTP/1.1', no other values are supported.
+        status_code (int): The HTTP status code (for example, 200 or 404).
+        headers (list of (str, str)): The response headers.
+        body: The response body.
+
+    Attributes:
+        http_version (str): The HTTP version of the response.
+        status_code (int): The HTTP status code.
+        headers (list of (str, str)): The response headers.
+        body: The response body.
+    """
+
+    _status_reasons = {
         200: "OK",
         302: "Found",
         304: "Not Modified",
@@ -13,26 +30,26 @@ class Response(object):
     }
 
     def __init__(self, http_version, status_code, headers, body):
-        """
-        :param http_version: 'HTTP/1.1', no other values are supported.
-        :param status_code: The HTTP status code (for example, 200 or 404)
-        :param headers: Response headers, as a tuple array
-        :param body:
-        """
         self.http_version = http_version
         self.status_code = status_code
         self.headers = headers
         self.body = body
 
+        if self.http_version != "HTTP/1.1":
+            raise ValueError("Only HTTP/1.1 is supported.")
+
     def __str__(self):
         """
-        Convert the Response object according to the HTTP standard
-        :return: The HTTP data for the response
+        Convert the Response object according to the HTTP standard.
+
+        Returns:
+            str: The HTTP data for the response.
         """
+
         return "{} {} {}\r\n{}\r\n{}".format(
             self.http_version,
             self.status_code,
-            self.status_reasons.get(self.status_code, "Unknown"),
+            self._status_reasons.get(self.status_code, "Unknown"),
             "".join(["{}: {}\r\n".format(name, value) for name, value in self.headers]),
             self.body
         )
@@ -40,13 +57,13 @@ class Response(object):
 
 class ResponseNotFound(Response):
     """
-    Response returning 404 Not Found
+    Response returning a 404 Not Found
+
+    Args:
+        headers (list of (str, str), optional): Extra headers to send with the response.
     """
 
     def __init__(self, headers=None):
-        """
-        :param headers: extra headers to send with the response, as a tuple list
-        """
         super(ResponseNotFound, self).__init__("HTTP/1.1", 404, headers or [],
                                                "<html><head><title>404 Not Found</title></head>"
                                                "<body><h1>404 Not Found</h1></body></html>")
@@ -54,14 +71,14 @@ class ResponseNotFound(Response):
 
 class ResponseRedirect(Response):
     """
-    Response returning a 302 Found redirect
+    Response returning a 302 Found redirect.
+
+    Args:
+        destination (str): The URL on which to redirect the client.
+        headers (list of (str, str), optional): Extra headers to send with the response.
     """
 
     def __init__(self, destination, headers=None):
-        """
-        :param destination: the URL to which to redirect the client
-        :param headers: extra headers to send with the response, as a tuple list
-        """
         headers = headers or []
         headers.append(("Location", urllib.quote_plus(destination)))
         super(ResponseRedirect, self).__init__("HTTP/1.1", 302, headers, "")
@@ -70,12 +87,12 @@ class ResponseRedirect(Response):
 class ResponseBadRequest(Response):
     """
     Response returning 400 Bad Request
+
+    Args:
+        headers (list of (str, str), optional): Extra headers to send with the response.
     """
 
     def __init__(self, headers=None):
-        """
-        :param headers: extra headers to send with the response, as a tuple list
-        """
         super(ResponseBadRequest, self).__init__("HTTP/1.1", 400, headers or [],
                                                  "<html><head><title>400 Bad Request</title></head>"
                                                  "<body><h1>404 Bad Request</h1></body></html>")
