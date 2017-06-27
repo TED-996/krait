@@ -369,4 +369,4 @@ err.log
 info.log
 callgrind-out/*
 **/*.pyc
-
+docs/build/*
