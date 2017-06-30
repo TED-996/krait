@@ -2,7 +2,7 @@ import fabric.api as fab
 import posixpath as rpath
 
 host = "localhost"
-port = 80
+port = 8090
 remote_path = "~/vs_projects/krait"
 
 built = False
@@ -35,7 +35,7 @@ def start_demoserver():
 
 
 def stop_demoserver(force=False):
-    with fab.cd(remote_path), fab.settings(warn_only=force):
+    with fab.cd(remote_path), fab.settings(warn_only=(not force)):
         result = fab.run("build/krait-cmdr stop")
 
     if not force and result.failed:

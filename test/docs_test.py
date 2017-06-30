@@ -20,18 +20,13 @@ class DocsTest(unittest.TestCase):
         # TODO: allow making docs remotely.
 
         if os.name == "nt":
-            args = [
-                os.path.join(self.docs_dir, "make.bat"),
-                "html"
-            ]
+            cmd = "{} html".format(os.path.join(self.docs_dir, "make.bat"))
         else:
-            args = [
-                "make",
-                "html"
-            ]
+            cmd = "make html"
+
 
         with fab.lcd(self.docs_dir), fab.settings(warn_only=True):
-            make_result = fab.local(args)
+            make_result = fab.local(cmd)
 
         if make_result.failed:
             self.fail("Docs failed to build. Output: {}".format(make_result))
@@ -49,22 +44,101 @@ class DocsTest(unittest.TestCase):
         self.assertIn("krait", self.driver.page_source)
 
     def test_new_docs_ok(self):
-        url_base = R"file://{}/build/html/"
-        files = ["index.html",
-                 "krait.html",
-                 "krait.config.html",
-                 "krait.cookie.html",
-                 "krait.mvc.html",
-                 "krait.websockets.html"]
+        url_base = R"file://{}/docs/build/html/"\
+            .format(os.path.dirname(os.path.dirname(__file__)))\
+            .replace('\\', '/')
+        files = {
+            "index.html": [
+                "Krait Documentation Home",
+                "krait package",
+                "Module contents",
+                "Submodules",
+                "What is Krait?"],
+            "krait.html": [
+                "krait package",
+                "Module contents",
+                "Reference",
+                "Submodules",
+                "krait.config module",
+                "krait.mvc module",
+                "krait.cookie module",
+                "krait.websockets module",
+                'href="krait.config.html"',
+                'href="krait.mvc.html"',
+                'href="krait.cookie.html"',
+                'href="krait.websockets.html"'
+            ],
+            "krait.config.html": [
+                "krait.config module",
+                "Reference",
+                "Route",
+                "routes",
+                "cache_no_store",
+                "cache_private",
+                "cache_public",
+                "cache_long_term",
+                "cache_max_age_default",
+                "cache_max_age_long_term"
+            ],
+            "krait.cookie.html": [
+                "krait.cookie module",
+                "Usage",
+                "Get request cookies:",
+                "Set cookies:",
+                "Get response cookies:",
+                "Reference",
+                "Cookie",
+                "CookieAttribute",
+                "CookieExpiresAttribute",
+                "CookieMaxAgeAttribute",
+                "CookiePathAttribute",
+                "CookieDomainAttribute",
+                "CookieHttpOnlyAttribute",
+                "CookieSecureAttribute",
+                "get_cookies",
+                "get_cookie",
+                "get_response_cookies",
+                "set_cookie"
+            ],
+            "krait.mvc.html": [
+                "krait.mvc module",
+                "Usage",
+                "Create a template (a view):",
+                "Create a controller:",
+                "Reference properties on the controller in templates:",
+                "Set a controller to handle a specific URL:",
+                "Reference",
+                "CtrlBase",
+                "SimpleCtrl",
+                "get_view()",
+                "init_ctrl",
+                "set_init_ctrl",
+                "ctrl_stack",
+                "curr_ctrl",
+                "push_ctrl",
+                "pop_ctrl",
+            ],
+            "krait.websockets.html": [
+                "krait.websockets module",
+                "Usage",
+                "WebsocketsRequest",
+                "WebsocketsResponse",
+                "request",
+                "response",
+                "WebsocketsCtrlBase"
+            ]
+        }
 
-        for html_file in files:
+        for html_file, to_search in files.iteritems():
             try:
                 self.driver.get(url_base + html_file)
             except WebDriverException as ex:
-                self.fail("Could not get remote docs.\nError: {}".format(ex))
+                self.fail("Could not get local docs.\nError: {}".format(ex))
 
-            self.assertIn("krait", self.driver.title)
-            self.assertIn("krait", self.driver.page_source)
+            for search_item in to_search:
+                self.assertIn("krait", self.driver.page_source)
+
+            print "Tested docs page {} successfully.".format(url_base + html_file)
 
             # TODO: make better tests
 
