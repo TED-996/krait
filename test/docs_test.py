@@ -5,6 +5,7 @@ from selenium.common.exceptions import WebDriverException
 import fabric.api as fab
 
 import server_setup
+import test_utils
 
 
 class DocsTest(unittest.TestCase):
@@ -24,29 +25,13 @@ class DocsTest(unittest.TestCase):
         else:
             cmd = "make html"
 
-
         with fab.lcd(self.docs_dir), fab.settings(warn_only=True):
             make_result = fab.local(cmd)
 
         if make_result.failed:
             self.fail("Docs failed to build. Output: {}".format(make_result))
 
-
-    def test_krait_docs_up(self):
-        url = R"https://krait.readthedocs.io/en/latest/krait.html"
-
-        try:
-            self.driver.get(url)
-        except WebDriverException as ex:
-            self.fail("Could not get remote docs.\nError: {}".format(ex))
-
-        self.assertIn("krait", self.driver.title)
-        self.assertIn("krait", self.driver.page_source)
-
-    def test_new_docs_ok(self):
-        url_base = R"file://{}/docs/build/html/"\
-            .format(os.path.dirname(os.path.dirname(__file__)))\
-            .replace('\\', '/')
+    def do_test_docs_at_url(self, url_base):
         files = {
             "index.html": [
                 "Krait Documentation Home",
@@ -110,7 +95,7 @@ class DocsTest(unittest.TestCase):
                 "Reference",
                 "CtrlBase",
                 "SimpleCtrl",
-                "get_view()",
+                "get_view",
                 "init_ctrl",
                 "set_init_ctrl",
                 "ctrl_stack",
@@ -136,11 +121,24 @@ class DocsTest(unittest.TestCase):
                 self.fail("Could not get local docs.\nError: {}".format(ex))
 
             for search_item in to_search:
-                self.assertIn("krait", self.driver.page_source)
+                self.assertIn(search_item, self.driver.page_source)
 
             print "Tested docs page {} successfully.".format(url_base + html_file)
 
-            # TODO: make better tests
+        # TODO: make better tests
+
+    def test_krait_rtd_up(self):
+        if not test_utils.check_internet_access():
+            self.skipTest("ReadTheDocs test skipped: No internet access.")
+
+        self.do_test_docs_at_url(R"https://krait.readthedocs.io/en/latest/")
+
+    def test_new_docs_ok(self):
+        url_base = R"file://{}/docs/build/html/"\
+            .format(os.path.dirname(os.path.dirname(__file__)))\
+            .replace('\\', '/')
+
+        self.do_test_docs_at_url(url_base)
 
     def tearDown(self):
         self.driver.close()
