@@ -255,7 +255,7 @@ std::string htmlEscape(std::string htmlCode) {
 	replacements[(int)'<'] = "&lt;";
 	replacements[(int)'>'] = "&gt;";
 	replacements[(int)'"'] = "&quot;";
-	replacements[(int)'\''] = "&#39;";
+	replacements[(int)'\''] = "&apos;";
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {

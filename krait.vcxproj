@@ -349,15 +349,11 @@
     <None Include="py\krait\mvc.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="py\krait\http_request.py">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="py\krait\http_response.py">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="py\krait\websockets.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="py\krait\_http_request.py" />
+    <None Include="py\krait\_http_response.py" />
     <None Include="py\krait\_internal\python-setup.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>

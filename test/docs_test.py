@@ -121,7 +121,8 @@ class DocsTest(unittest.TestCase):
                 self.fail("Could not get local docs.\nError: {}".format(ex))
 
             for search_item in to_search:
-                self.assertIn(search_item, self.driver.page_source)
+                self.assertIn(search_item, self.driver.page_source,
+                              "`{}` not found in docs page.".format(search_item))
 
             print "Tested docs page {} successfully.".format(url_base + html_file)
 

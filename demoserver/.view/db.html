@@ -27,30 +27,31 @@
         <h1>Here you can access the DB and see what the people have written!</h1>
 
         <h3>Leave your own message!</h3>
-        <p>You've already written @ctrl.nr_comments@ comments.</p>
-        <form action="/comment" method="post">
+        <p id="comment-counter">You've already written @ctrl.nr_comments@ comments.</p>
+        <form action="/comment" method="post" id="comment-form">
         <div class="form-group">
-            <label for="name">Display name</label>
-            <input type="text" class="form-control" id="name" name="name" aria-describedby="nameHelp" placeholder="Enter name">
+            <label for="name-input">Display name</label>
+            <input type="text" class="form-control" id="name-input" name="name"
+                   aria-describedby="nameHelp" placeholder="Enter name">
             <small id="nameHelp" class="form-text text-muted">This just to add some personality :)</small>
         </div>
 
         <div class="form-group">
-            <label for="text">Your message</label>
-            <textarea class="form-control" id="text" name="text" rows="3"></textarea>
+            <label for="text-input">Your message</label>
+            <textarea class="form-control" id="text-input" name="text" rows="3"></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
         </form>
 
         <h3> See others' messages! </h3>
 
         @for name, message in ctrl.messages:
-            <div class="panel panel-default">
-                <div class="panel-heading">
+            <div class="panel panel-default comment-item">
+                <div class="panel-heading comment-name">
                     <p>@name says:</p>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body comment-text">
                     <p>@message@</p>
                 </div>
             </div>
