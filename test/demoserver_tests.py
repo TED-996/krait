@@ -15,7 +15,7 @@ class DemoserverTests(unittest.TestCase):
         super(DemoserverTests, self).__init__(methodName)
 
     def setUp(self):
-        server_setup.setup()
+        server_setup.setup(skip_build=True)
         self.host = server_setup.start_demoserver()
 
         self.driver = webdriver.Chrome()

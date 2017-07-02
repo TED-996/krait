@@ -8,11 +8,14 @@ remote_path = "~/vs_projects/krait"
 built = False
 
 
-def setup():
-    build()
+def setup(skip_build=False):
+    if not skip_build:
+        build()
 
 
 def build():
+    print "Building."
+
     global built
     if built:
         return
@@ -25,7 +28,7 @@ def build():
 
 
 def start_demoserver():
-    build()
+    # build()
     stop_demoserver()
 
     with fab.cd(remote_path):

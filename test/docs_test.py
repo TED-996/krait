@@ -10,7 +10,7 @@ import test_utils
 
 class DocsTest(unittest.TestCase):
     def setUp(self):
-        server_setup.setup()
+        server_setup.setup(skip_build=True)
 
         self.docs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "docs"))
         self.make_docs()
