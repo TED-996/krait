@@ -28,6 +28,7 @@ def build():
 
 
 def start_demoserver():
+    # Remove build from demoserver tests. Run it manually.
     # build()
     stop_demoserver()
 

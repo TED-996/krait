@@ -11,14 +11,19 @@ import server_setup
 
 
 class DemoserverTests(unittest.TestCase):
+    host = None
+    driver = None
+
+    # noinspection PyPep8Naming
     def __init__(self, methodName="runTest"):
         super(DemoserverTests, self).__init__(methodName)
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         server_setup.setup(skip_build=True)
-        self.host = server_setup.start_demoserver()
+        DemoserverTests.host = server_setup.start_demoserver()
 
-        self.driver = webdriver.Chrome()
+        DemoserverTests.driver = webdriver.Chrome()
 
     def driver_get(self, local_url):
         # local_url should NOT be empty. Root page is at "/".
@@ -73,15 +78,14 @@ class DemoserverTests(unittest.TestCase):
 
         self.assertIn("access the DB", self.driver.page_source, "Comment failed to redirect back to DB page.")
 
-
         new_cmt_item = self.db_find_comment_by_params(new_name, new_message)
 
         self.assertNotEqual(new_cmt_item, None, "New comment not posted.")
 
-        escaped_html = self.escape_html(injection_test)
+        # escaped_html = self.escape_html(injection_test)
 
         # Test skipped due to different escaping in webdriver result.
-        #self.assertIn(escaped_html, self.driver.page_source,
+        # self.assertIn(escaped_html, self.driver.page_source,
         #              "HTML misquoted. Expected {}".format(escaped_html))
 
         post_count = self.db_get_comment_count()
@@ -175,5 +179,75 @@ class DemoserverTests(unittest.TestCase):
                               "Header link: button expected to be active and was not." if expected_active else
                               "Header link: button expected not to be active and was active.")
 
-    def tearDown(self):
+    def test_http(self):
+        self.driver_get("/http")
+
+        self.check_header("/http")
+
+        self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
+        self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
+                      "`This is an approximation of your HTTP request:` missing.")
+        self.assertIn("GET /http HTTP/1.1", self.driver.page_source,
+                      "GET line missing from HTTP request readback.")
+
+    def test_ws(self):
+        self.driver_get("/ws")
+
+        self.check_header("/ws")
+
+        start_time = time.clock()
+        timeout = 10.0  # in seconds
+        check_count = 20
+        passed = False
+
+        while time.clock() - start_time < timeout:
+            if self.ws_check_pingpong():
+                passed = True
+                break
+
+            time.sleep(timeout / check_count)
+
+        if not passed:
+            self.fail("Websockets connection failed: timeout waiting for two-way PING-PONG exceeded.")
+
+    def ws_check_pingpong(self):
+        ticker = self.driver.find_element_by_id("ticker")
+        msgs_server = ticker.find_elements_by_class_name("msg_server")
+        msgs_client = ticker.find_elements_by_class_name("msg_client")
+
+        server_texts = [m.text for m in msgs_server]
+        client_texts = [m.text for m in msgs_client]
+
+        # noinspection PyShadowingNames
+        def split_pings(texts):
+            return [m[6:] for m in texts if m.startswith("PING: ")],\
+                   [m[12:] for m in texts if m.startswith("PONG: ")]
+
+        server_pings, server_pongs = split_pings(server_texts)
+        client_pings, client_pongs = split_pings(client_texts)
+
+        if len(server_pings) == 0 or len(server_pongs) == 0 or len(client_pings) == 0 or len(client_pongs) == 0:
+            return False
+
+        for pong in server_pongs:
+            if pong not in client_pings:
+                self.fail("Server PONG for missing PING!")
+        for pong in client_pongs:
+            if pong not in server_pings:
+                self.fail("Client PONG for missing PING!")
+
+        for ping in server_pings:
+            if ping not in client_pongs:
+                # No result yet.
+                return False
+        for ping in client_pings:
+            if ping not in server_pongs:
+                # No result yet.
+                return False
+
+        return True
+
+    @classmethod
+    def tearDownClass(cls):
         server_setup.stop_demoserver()
+        DemoserverTests.driver.quit()
