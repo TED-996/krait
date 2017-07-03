@@ -21,7 +21,7 @@ See the tutorial (TODO) for a more detailed explanation.
 3. Reference properties on the controller in templates:
     In template files the ``ctrl`` variable refers to the active controller.
     Use Pyml syntax to access its members and use them on the page.
-4. Set a controller to handle a specific URL
+4. Set a controller to handle a specific URL:
     Create a Python script with the appropriate location and name to be reached by the URL.
     Import ``krait.mvc``, then call :obj:`set_init_ctrl`, passing as an argument an object
     of your controller type. Krait will then call its overridden :obj:`CtrlBase.get_view` method

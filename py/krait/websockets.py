@@ -31,6 +31,7 @@ Reference
 =========
 """
 import threading
+import krait
 
 class WebsocketsRequest(object):
     """
