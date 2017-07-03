@@ -1,5 +1,8 @@
 import fabric.api as fab
+import os
+
 from test import run_test
+from test import server_setup
 
 
 def test():
@@ -19,7 +22,11 @@ def test_docs():
 
 
 def deploy():
-    raise NotImplemented("deploy()")
+    server_setup.upload()
+
+
+def build():
+    server_setup.build()
 
 
 def commit():
