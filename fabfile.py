@@ -29,5 +29,18 @@ def build():
     server_setup.build()
 
 
+def start(port):
+    server_setup.port=port
+    server_setup.start_demoserver()
+
+
+def stop():
+    server_setup.stop_demoserver()
+
+
+def watch():
+    server_setup.watch()
+
+
 def commit():
     raise NotImplemented("commit()")

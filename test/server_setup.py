@@ -37,7 +37,12 @@ def start_demoserver():
     stop_demoserver()
 
     with fab.cd(remote_path):
-        fab.run("build/krait-cmdr start -p {} {}".format(port, rpath.join(remote_path, "demoserver")))
+        if port < 1024:
+            run_cmd = fab.sudo
+        else:
+            run_cmd = fab.run
+
+        run_cmd("build/krait-cmdr start -p {} {}".format(port, rpath.join(remote_path, "demoserver")))
 
     return "http://{}:{}".format(host, port)
 
@@ -48,6 +53,11 @@ def stop_demoserver(force=False):
 
     if not force and result.failed:
         print "Server already stopped, not a problem."
+
+
+def watch():
+    with fab.cd(remote_path):
+        fab.run("build/krait-cmdr watch")
 
 
 def upload():
