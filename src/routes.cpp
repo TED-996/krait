@@ -1,4 +1,3 @@
-#include <boost/property_tree/json_parser.hpp>
 #include"routes.h"
 #include"except.h"
 
@@ -6,12 +5,11 @@
 #include"dbg.h"
 
 namespace b = boost;
-namespace bpt = boost::property_tree;
 
 
 Route::Route(RouteVerb verb, boost::optional<boost::regex> urlRegex, boost::optional<std::string> urlRaw,
-             boost::optional<std::string> target)
-	: verb(verb), urlRegex(urlRegex), urlRaw(urlRaw), target(target) {
+             boost::optional<std::string> target, boost::optional<boost::python::object> ctrlClass)
+	: verb(verb), urlRegex(urlRegex), urlRaw(urlRaw), target(target), ctrlClass(ctrlClass) {
 }
 
 
@@ -45,87 +43,20 @@ bool Route::isMatch(RouteVerb verb, std::string url, std::map<std::string, std::
 	}
 }
 
-Route Route::getRoute(bpt::ptree routePtree) {
-	try {
-		std::string verbStr = routePtree.get<std::string>("verb", "GET");
-		DBG_FMT("got verb %1%", verbStr);
-
-		RouteVerb verb = toRouteVerb(verbStr);
-		if (verb == RouteVerb::INVALID) {
-			BOOST_THROW_EXCEPTION(
-				routeParseError() << stringInfoFromFormat("Error: HTTP verb %1% not recognized.", verbStr));
-		}
-
-		std::string target = routePtree.get<std::string>("target", "");
-		DBG_FMT("got target %1%", target);
-
-		std::string url = routePtree.get<std::string>("url", "");
-		std::string regex = routePtree.get<std::string>("regex", "");
-
-		boost::optional<std::string> optionalTarget = boost::none;
-		boost::optional<std::string> optionalUrl = boost::none;
-		boost::optional<boost::regex> optionalRegex = boost::none;
-
-		if (target != "") {
-			optionalTarget = target;
-		}
-		if (url != "") {
-			optionalUrl = url;
-		}
-		if (regex != "") {
-			optionalRegex = boost::regex(regex);
-		}
-
-		return Route(verb, optionalRegex, optionalUrl, optionalTarget);
-	}
-	catch (bpt::ptree_bad_path& ex) {
-		BOOST_THROW_EXCEPTION(routeParseError() << stringInfoFromFormat("Error: Could not find route parameter '%1%'.",
-			ex.path<std::string>()));
-	}
-	catch (bpt::ptree_bad_data& ex) {
-		BOOST_THROW_EXCEPTION(routeParseError() <<
-			stringInfoFromFormat(
-				"Error: Could not convert data '%1%' to the expected type.",
-				ex.data<std::string>()));
-	}
+bool Route::isMvcRoute() const {
+	return (bool)ctrlClass;
 }
 
-std::vector<Route> Route::getRoutesFromFile(std::string filename) {
-	/*  <routes>
-	 *      <route>...</route>
-	 *      ...
-	 *  </routes>
-	 *
-	 */
-	bpt::ptree routesRoot;
-	try {
-		bpt::read_json(filename, routesRoot);
+const boost::python::object& Route::getCtrlClass() const {
+	if (ctrlClass == boost::none) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("getCtrlClass called without this being a MVC route."));
 	}
-	catch (bpt::json_parser_error& ex) {
-		BOOST_THROW_EXCEPTION(
-			routeParseError() << stringInfoFromFormat("Error parsing routes file '%1%. Additional data:\n%2%",
-				filename, ex.what()));
-	}
-
-	std::vector<Route> results;
-	for (bpt::ptree::value_type const& rt : routesRoot) {
-		DBG("one route");
-		if (rt.first != "") {
-			BOOST_THROW_EXCEPTION(routeParseError() <<
-				stringInfo("Error parsing routes: Routes JSON not an array."));
-		}
-		try {
-			results.push_back(Route::getRoute(rt.second));
-		}
-		catch (routeParseError) {
-			throw;
-		}
-	}
-	return results;
+	
+	return ctrlClass.value();
 }
 
 std::vector<Route> Route::getDefaultRoutes() {
-	return std::vector<Route>{Route(RouteVerb::GET, boost::none, boost::none, boost::none)};
+	return std::vector<Route>{Route(RouteVerb::GET, boost::none, boost::none, boost::none, boost::none)};
 }
 
 const Route& Route::getRouteMatch(const std::vector<Route>& routes, RouteVerb verb, std::string url,

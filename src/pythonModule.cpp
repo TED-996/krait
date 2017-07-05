@@ -525,7 +525,8 @@ void PythonModule::PythonObjectToRouteConverter::construct(PyObject* objPtr, bp:
 			toRouteVerb(static_cast<std::string>(bp::extract<std::string>(obj.attr("verb")))),
 			regex,
 			extractOptional<std::string>(obj.attr("url")),
-			extractOptional<std::string>(obj.attr("target"))
+			extractOptional<std::string>(obj.attr("target")),
+			extractOptional<bp::object>(obj.attr("ctrl_class"))
 		);
 		// ReSharper restore CppNonReclaimedResourceAcquisition
 
