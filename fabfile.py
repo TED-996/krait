@@ -24,6 +24,7 @@ def add_key(filename):
 
 
 def test():
+    deploy()
     run_test.run_tests()
 
 

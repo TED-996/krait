@@ -52,6 +52,7 @@ public:
 	void setGlobal(std::string name, std::string value);
 	void setGlobal(std::string name, std::map<std::string, std::string> value);
 	void setGlobal(std::string name, std::multimap<std::string, std::string> value);
+	void setGlobal(std::string name, boost::python::object value);
 	void setGlobalRequest(std::string name, Request value);
 
 	std::string getGlobalStr(std::string name);
@@ -64,9 +65,6 @@ public:
 		return extractOptional<T>(this->getGlobalVariable(name));
 	}
 
-private:
-	void setGlobal(std::string name, boost::python::object value);
-
 	//Statics
 public:
 	static std::string prepareStr(std::string pyCode);
@@ -77,9 +75,21 @@ public:
 			return boost::none;
 		}
 		try {
-			return boost::optional<T>(boost::python::extract<T>(value));
+			return boost::python::extract<T>(value)();
 		}
 		catch(boost::python::error_already_set const&) {
+			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("extractOptional()"));
+		}
+	}
+
+	static boost::optional<boost::python::object> extractOptional(boost::python::object value) {
+		if (value.is_none()) {
+			return boost::none;
+		}
+		try {
+			return boost::optional<boost::python::object>(value);
+		}
+		catch (boost::python::error_already_set const&) {
 			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("extractOptional()"));
 		}
 	}

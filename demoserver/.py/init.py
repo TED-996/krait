@@ -6,6 +6,7 @@ import sys
 import krait
 from krait import config
 
+from ctrl import index, db, http, ws
 
 # ==========================================
 # Standard configuration (routing & caching)
@@ -14,6 +15,12 @@ from krait import config
 
 # First, configure the routes
 config.routes = [
+    # First, add routes to the MVC controllers. TODO: use an annotation.
+    config.Route(url="/", ctrl_class=index.IndexController),
+    config.Route(url="/db", ctrl_class=db.DbController),
+    config.Route(url="/http", ctrl_class=http.HttpController),
+    config.Route(url="/ws", ctrl_class=ws.WsPageController),
+    # Then, add special URLs
     config.Route("POST", url="/comment"),  # POSTs must be explicitly routed
     config.Route("WEBSOCKET", url="/ws_socket"),  # Websocket requests must also be explicitly routed.
     config.Route()  # This final route is a default route: all GETs will resolve to files with the same name.
@@ -46,7 +53,7 @@ header_items = [
     ("Your Request", "/http"),
     ("Websockets", "/ws")
 ]
-sqlite_db = os.path.join(krait.site_root, ".private", "db")
+db.sqlite_db = os.path.join(krait.site_root, ".private", "db")
 
 
 # Choose a function to be run when a process shuts down (either the server, or a worker) and register it.
