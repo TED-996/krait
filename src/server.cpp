@@ -20,7 +20,7 @@
 #include "signalManager.h"
 #include "config.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
 
 
@@ -257,14 +257,28 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		std::map<std::string, std::string> params;
 		const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
 
-		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		std::string sourceFile = getFilenameFromTarget(targetReplaced);
-
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
 		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
+		
+		bool skipDenyTest;
+		std::string sourceFile;
+		if (!route.isMvcRoute()) {
+			std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+			sourceFile = getFilenameFromTarget(targetReplaced);
+			skipDenyTest = false;
+		}
+		else {
+			//TODO: refactor, too many responsibilities...
+			//Maybe get a PageRenderer going...
+			Loggers::logInfo("executing ctrl route");
+			PythonModule::main.setGlobal("ctrl", PythonModule::main.callObject(route.getCtrlClass()));
+			sourceFile = PythonModule::main.eval("krait.get_full_path(ctrl.get_view())");
+			skipDenyTest = true;
+		}
 
-		resp = getResponseFromSource(sourceFile, request);
+		Loggers::logInfo(formatString("getting resp from source %1%", sourceFile));
+		resp = getResponseFromSource(sourceFile, request, skipDenyTest);
 	}
 	catch (notFoundError& err) {
 		DBG_FMT("notFound: %1%", err.what());
@@ -323,7 +337,12 @@ std::string replaceParams(std::string target, std::map<std::string, std::string>
 }
 
 
-Response Server::getResponseFromSource(std::string filename, Request& request) {
+Response Server::getResponseFromSource(std::string filename, Request& request, bool skipDenyTest) {
+	if (!skipDenyTest && pathBlocked(filename)) {
+		DBG_FMT("Blocking bf::path %1%", filename);
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
+	}
+
 	filename = expandFilename(filename);
 
 	if (!bf::exists(filename)) {
@@ -388,7 +407,7 @@ void Server::startWebsocketsServer(int clientSocket, Request& request) {
 		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
 		PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
 
-		resp = getResponseFromSource(sourceFile, request);
+		resp = getResponseFromSource(sourceFile, request, false);
 	}
 	catch (notFoundError& ex) {
 		DBG_FMT("notFound: %1%", ex.what());
@@ -419,10 +438,6 @@ std::string Server::expandFilename(std::string filename) {
 	if (bf::is_directory(filename)) {
 		//DBG("Converting to directory automatically");
 		filename = (bf::path(filename) / "index").string(); //Not index.html; taking care below about it
-	}
-	if (pathBlocked(filename)) {
-		DBG_FMT("Blocking bf::path %1%", filename);
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
 	}
 
 	if (!bf::exists(filename)) {

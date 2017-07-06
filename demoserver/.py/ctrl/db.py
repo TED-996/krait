@@ -1,13 +1,17 @@
 import sqlite3
 import krait
 
+
+sqlite_db = None
+
+
 class DbController(object):
-    def __init__(self, db_filename):
+    def __init__(self):
         super(DbController, self).__init__()
 
         self.page_url = "/db"
         self.messages = None
-        self.load_db(db_filename)
+        self.load_db(sqlite_db)
         self.nr_comments = int(krait.cookie.get_cookie("comment_count", 0))
 
     def load_db(self, db_filename):
