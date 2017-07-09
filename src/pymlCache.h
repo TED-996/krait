@@ -1,6 +1,5 @@
 #pragma once
 #include<string>
-#include<boost/pool/object_pool.hpp>
 #include<unordered_map>
 #include<ctime>
 #include <functional>
@@ -9,34 +8,56 @@
 
 class PymlCache : public IPymlCache
 {
+public:
+	struct CacheTag
+	{
+		char data[32];
+
+
+		CacheTag();
+		explicit CacheTag(std::string data);
+		CacheTag(const CacheTag& source);
+		CacheTag(CacheTag&& source) noexcept;
+
+		void setTag(std::string data);
+
+		bool operator== (const CacheTag& other) const;
+		bool operator!= (const CacheTag& other) const;
+		explicit operator std::string() const;
+	};
 private:
 	struct CacheEntry
 	{
 		std::time_t time;
-		PymlFile* item;
-		char tag[33];
+		std::unique_ptr<PymlFile> item;
+		CacheTag tag;
+
+
+		CacheEntry(std::time_t time, std::unique_ptr<PymlFile>&& pymlFile, CacheTag& tag)
+			: time(time),
+			  item(std::move(pymlFile)),
+			  tag(std::move(tag)) {
+		}
 	};
 
+
 public:
-	//typedef PymlFile* (*constructorFunction)(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
-	//typedef void (*cacheEventFunction)(std::string filename);
-	typedef std::function<PymlFile*(std::string, boost::object_pool<PymlFile>&, char*)> constructorFunction;
-	typedef std::function<void(std::string)> cacheEventFunction;
+	typedef std::function<std::unique_ptr<PymlFile>(std::string filename, CacheTag& tag)> constructorFunction;
+	typedef std::function<void(std::string filename)> cacheEventFunction;
 
 private:
-	boost::object_pool<PymlFile> pool;
 	constructorFunction constructor;
 	cacheEventFunction onCacheMiss;
 	bool frozen;
 
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
-	IPymlFile* constructAddNew(std::string filename, std::time_t time);
-	const IPymlFile* replaceWithNewer(std::string filename);
+	IPymlFile& constructAddNew(std::string filename, std::time_t time);
+	const IPymlFile& replaceWithNewer(std::string filename);
 
 public:
 	PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheMiss);
-	const IPymlFile* get(std::string filename) override;
+	const IPymlFile& get(std::string filename) override;
 
 	bool existsNewer(std::string filename, std::time_t time);
 	std::time_t getCacheTime(std::string filename);

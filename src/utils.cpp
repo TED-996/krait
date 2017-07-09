@@ -134,12 +134,11 @@ std::string unixTimeToString(std::time_t timeVal) {
 	return result.str();
 }
 
-void generateTagFromStat(std::string filename, char* dest) {
+std::string generateTagFromStat(std::string filename) {
 	struct stat statResult;
 	if (stat(filename.c_str(), &statResult) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("stat(): generating ETag") << errcodeInfoDef());
 	}
 
-	std::string result = formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
-	strcpy(dest, result.c_str());
+	return formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
 }

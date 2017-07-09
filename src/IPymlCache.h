@@ -4,5 +4,5 @@
 class IPymlCache
 {
 public:
-	virtual const IPymlFile* get(std::string filename) = 0;
+	virtual const IPymlFile& get(std::string filename) = 0;
 };

@@ -25,6 +25,8 @@ private:
 	RegexList publicTargets;
 	RegexList longTermTargets;
 
+	std::string filenameRoot;
+
 	int maxAgeDefault;
 	int maxAgeLongTerm;
 
@@ -33,7 +35,7 @@ private:
 	bool loaded;
 
 public:
-	CacheController(Config& config);
+	CacheController(Config& config, std::string filenameRoot);
 	void load();
 
 	CachePragma getCacheControl(std::string targetFilename, bool defaultIsStore);

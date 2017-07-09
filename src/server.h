@@ -26,7 +26,6 @@ class Server
 
 	Config config;
 	CacheController cacheController;
-	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
 	int socketToClose;
 	bool stdinDisconnected;
@@ -42,22 +41,17 @@ class Server
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
-	void addDefaultHeaders(Response& response, std::string filename, Request& request);
 	Response getResponseFromSource(std::string filename, Request& request, bool skipDenyTest);
 
 	std::string getFilenameFromTarget(std::string target);
 	std::string expandFilename(std::string filename);
 	static bool pathBlocked(std::string filename);
 
-	std::string getContentType(std::string filename);
-	void loadContentTypeList();
-
-	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
 
 	bool canContainPython(std::string filename);
 	void startWebsocketsServer(int clientSocket, Request& request);
 
-	PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
+	std::unique_ptr<PymlFile> constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest);
 	void onServerCacheMiss(std::string filename);
 
 	bool getPymlIsDynamic(std::string filename);

@@ -38,8 +38,7 @@ Server::Server(std::string serverRoot, int port)
 		std::bind(&Server::constructPymlFromFilename,
 		          this,
 		          std::placeholders::_1,
-		          std::placeholders::_2,
-		          std::placeholders::_3),
+		          std::placeholders::_2),
 		std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
 
 	if (Server::instance != nullptr) {
@@ -352,8 +351,7 @@ Response Server::getResponseFromSource(std::string filename, Request& request, b
 	Response result(500, "", true);
 
 	bool isDynamic = getPymlIsDynamic(filename);
-	CacheController::CachePragma cachePragma = cacheController.getCacheControl(
-		relative(filename, serverRoot).string(), !isDynamic);
+	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filename, !isDynamic);
 
 	std::string etag;
 	if (request.headerExists("if-none-match")) {
@@ -475,32 +473,34 @@ std::string Server::expandFilename(std::string filename) {
 IteratorResult Server::getPymlResultRequestCache(std::string filename) {
 	//DBG("Reading pyml cache");
 	interpretCacheRequest = true;
-	const IPymlFile* pymlFile = serverCache.get(filename);
-	return IteratorResult(PymlIterator(pymlFile->getRootItem()));
+	const IPymlFile& pymlFile = serverCache.get(filename);
+	return IteratorResult(PymlIterator(pymlFile.getRootItem()));
 }
 
 bool Server::getPymlIsDynamic(std::string filename) {
 	interpretCacheRequest = true;
-	const IPymlFile* pymlFile = serverCache.get(filename);
-	return pymlFile->isDynamic();
+	const IPymlFile& pymlFile = serverCache.get(filename);
+	return pymlFile.isDynamic();
 }
 
-PymlFile* Server::constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest) {
+std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest) {
 	DBG_FMT("constructFromFilename(%1%)", filename);
 	std::string source = readFromFile(filename);
-	generateTagFromStat(filename, tagDest);
+	tagDest.setTag(generateTagFromStat(filename));
+
 	std::unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
 		DBG("choosing v2 pyml parser");
-		parser = std::unique_ptr<IPymlParser>(new V2PymlParser(serverCache));
+		parser = std::make_unique<V2PymlParser>(serverCache);
 	}
 	else if (ba::ends_with(filename, ".py")) {
-		parser = std::unique_ptr<IPymlParser>(new RawPythonPymlParser(serverCache));
+		parser = std::make_unique<RawPythonPymlParser>(serverCache);
 	}
 	else {
-		parser = std::unique_ptr<IPymlParser>(new RawPymlParser());
+		parser = std::make_unique<RawPymlParser>();
 	}
-	return pool.construct(source.begin(), source.end(), parser);
+	//return pool.construct(source.begin(), source.end(), parser);
+	return std::make_unique<PymlFile>(source.begin(), source.end(), parser);
 }
 
 
@@ -534,88 +534,3 @@ bool Server::pathBlocked(std::string filename) {
 }
 
 
-void Server::addDefaultHeaders(Response& response, std::string filename, Request& request) {
-	if (!response.headerExists("Content-Type")) {
-		response.setHeader("Content-Type", getContentType(filename));
-	}
-	std::time_t timeVal = std::time(NULL);
-	if (timeVal != -1 && !response.headerExists("Date")) {
-		response.setHeader("Date", unixTimeToString(timeVal));
-	}
-}
-
-
-std::string Server::getContentType(std::string filename) {
-	std::string extension;
-
-	if (PythonModule::krait.checkIsNone("_content_type")) {
-		DBG("No content_type set");
-		bf::path filePath(filename);
-		extension = filePath.extension().string();
-		if (extension == ".pyml") {
-			extension = filePath.stem().extension().string();
-		}
-	}
-	else {
-		std::string varContentType = PythonModule::krait.getGlobalStr("_content_type");
-		DBG_FMT("content_type set to %1%", varContentType);
-
-		if (!ba::starts_with(varContentType, "ext/")) {
-			return varContentType;
-		}
-		else {
-			extension = varContentType.substr(3); //strlen("ext")
-			extension[0] = '.'; // /extension to .extension
-		}
-	}
-
-	//DBG_FMT("Extension: %1%", extension);
-
-	auto it = contentTypeByExtension.find(extension);
-	if (it == contentTypeByExtension.end()) {
-		return "application/octet-stream";
-	}
-	else {
-		return it->second;
-	}
-}
-
-void Server::addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma) {
-	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
-
-	if (pragma.isStore) {
-		response.addHeader("etag", "\"" + serverCache.getCacheTag(filename) + "\"");
-	}
-}
-
-void Server::loadContentTypeList() {
-	bf::path contentFilePath = getExecRoot() / "globals" / "mime.types";
-	std::ifstream mimeFile(contentFilePath.string());
-
-	char line[1024];
-	std::string mimeType;
-
-	while (mimeFile.getline(line, 1023)) {
-		if (line[0] == '\0' || line[0] == '#') {
-			continue;
-		}
-
-		const char* separators = " \t\r\n";
-		char* ptr = strtok(line, separators);
-		if (ptr == NULL) {
-			continue;
-		}
-
-		mimeType.assign(ptr);
-		ptr = strtok(NULL, separators);
-		while (ptr != NULL) {
-			//This SHOULD be fine.
-			//Make it an extension (html to .html)
-			*(ptr - 1) = '.';
-			contentTypeByExtension[std::string(ptr - 1)] = mimeType;
-
-			ptr = strtok(NULL, separators);
-		}
-
-	}
-}
