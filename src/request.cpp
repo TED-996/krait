@@ -29,7 +29,7 @@ Request::Request(HttpVerb verb, const std::string& url, const std::string& query
 	this->routeVerb = toRouteVerb(verb);
 }
 
-bool Request::headerExists(std::string name) {
+bool Request::headerExists(std::string name) const {
 	const auto iterFound = headers.find(ba::to_lower_copy(name));
 	return (iterFound != headers.end());
 }

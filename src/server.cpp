@@ -253,9 +253,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 		if (request.getVerb() == HttpVerb::HEAD) {
 			isHead = true;
 		}
-		std::map<std::string, std::string> params;
-		const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
-
+		
 		PythonModule::krait.setGlobalRequest("request", request);
 		PythonModule::krait.setGlobal("url_params", params);
 		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
@@ -295,17 +293,7 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	resp.setConnClose(!keepAlive);
 
 	respondWithObjectRef(clientSocket, resp);
-}
-
-
-std::string Server::getFilenameFromTarget(std::string target) {
-	if (target[0] == '/') {
-		return (serverRoot / target.substr(1)).string();
-	}
-	else {
-		return (serverRoot / target).string();
-	}
-}
+}	
 
 
 std::string replaceParams(std::string target, std::map<std::string, std::string> params) {
@@ -331,58 +319,6 @@ std::string replaceParams(std::string target, std::map<std::string, std::string>
 		oldIt = it;
 	}
 	result += std::string(oldIt, it);
-
-	return result;
-}
-
-
-Response Server::getResponseFromSource(std::string filename, Request& request, bool skipDenyTest) {
-	if (!skipDenyTest && pathBlocked(filename)) {
-		DBG_FMT("Blocking bf::path %1%", filename);
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
-	}
-
-	filename = expandFilename(filename);
-
-	if (!bf::exists(filename)) {
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", filename));
-	}
-
-	Response result(500, "", true);
-
-	bool isDynamic = getPymlIsDynamic(filename);
-	CacheController::CachePragma cachePragma = cacheController.getCacheControl(filename, !isDynamic);
-
-	std::string etag;
-	if (request.headerExists("if-none-match")) {
-		etag = request.getHeader("if-none-match").get();
-		etag = etag.substr(1, etag.length() - 2);
-	}
-	if (cachePragma.isStore && serverCache.checkCacheTag(filename, etag)) {
-		result = Response(304, "", false);
-	}
-	else {
-		IteratorResult pymlResult = getPymlResultRequestCache(filename);
-
-		std::multimap<std::string, std::string> headersMap = PythonModule::krait.getGlobalTupleList("extra_headers");
-		std::unordered_multimap<std::string, std::string> headers(headersMap.begin(), headersMap.end());
-
-
-		if (!PythonModule::krait.checkIsNone("response")) {
-			result = Response(PythonModule::krait.eval("str(response)"));
-			for (const auto& header : headers) {
-				result.addHeader(header.first, header.second);
-			}
-		}
-		else {
-			result = Response(1, 1, 200, headers, pymlResult, false);
-		}
-	}
-
-	addStandardCacheHeaders(result, filename, cachePragma);
-
-
-	addDefaultHeaders(result, filename, request);
 
 	return result;
 }
@@ -429,44 +365,6 @@ void Server::startWebsocketsServer(int clientSocket, Request& request) {
 
 bool Server::canContainPython(std::string filename) {
 	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
-}
-
-
-std::string Server::expandFilename(std::string filename) {
-	if (bf::is_directory(filename)) {
-		//DBG("Converting to directory automatically");
-		filename = (bf::path(filename) / "index").string(); //Not index.html; taking care below about it
-	}
-
-	if (!bf::exists(filename)) {
-		if (bf::exists(filename + ".html")) {
-			//DBG("Adding .html automatically");
-			filename += ".html";
-		}
-		else if (bf::exists(filename + ".htm")) {
-			//DBG("Adding .htm automatically");
-			filename += ".htm";
-		}
-		else if (bf::exists(filename + ".pyml")) {
-			//DBG("Adding .pyml automatically");
-			filename += ".pyml";
-		}
-		else if (bf::exists(filename + ".py")) {
-			filename += ".py";
-		}
-
-		else if (bf::path(filename).extension() == ".html" &&
-			bf::exists(bf::change_extension(filename, ".htm"))) {
-			filename = bf::change_extension(filename, "htm").string();
-			//DBG("Changing extension to .htm");
-		}
-		else if (bf::path(filename).extension() == ".htm" &&
-			bf::exists(bf::change_extension(filename, ".html"))) {
-			filename = bf::change_extension(filename, "html").string();
-			//DBG("Changing extension to .html");
-		}
-	}
-	return filename;
 }
 
 
@@ -521,16 +419,4 @@ void Server::updateParentCaches() {
 		interpretCacheRequest = true;
 	}
 }
-
-bool Server::pathBlocked(std::string filename) {
-	bf::path filePath(filename);
-	for (auto& part : filePath) {
-		if (part.c_str()[0] == '.') {
-			DBG_FMT("BANNED because of part %1%", part.c_str());
-			return true;
-		}
-	}
-	return false;
-}
-
 
