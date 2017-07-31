@@ -16,3 +16,4 @@ std::string readFromFile(std::string filename);
 std::string unixTimeToString(std::time_t timeVal);
 std::time_t stringToUnixTime(std::string str);
 std::string generateTagFromStat(std::string filename);
+std::string randomAlpha(size_t size);

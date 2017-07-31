@@ -242,7 +242,7 @@ bool PythonModule::checkIsNone(std::string name) {
 	}
 }
 
-void PythonModule::setGlobal(std::string name, bp::object value) {
+void PythonModule::setGlobal(const std::string& name, const bp::object& value) {
 	DBG("in setGlobal()");
 	try {
 		moduleObject.attr(name.c_str()) = value;
@@ -255,19 +255,19 @@ void PythonModule::setGlobal(std::string name, bp::object value) {
 }
 
 
-void PythonModule::setGlobal(std::string name, std::string value) {
+void PythonModule::setGlobal(const std::string& name, const std::string& value) {
 	setGlobal(name, bp::str(value));
 }
 
-void PythonModule::setGlobal(std::string name, std::map<std::string, std::string> value) {
+void PythonModule::setGlobal(const std::string& name, const std::map<std::string, std::string>& value) {
 	setGlobal(name, bp::dict(value));
 }
 
-void PythonModule::setGlobal(std::string name, std::multimap<std::string, std::string> value) {
+void PythonModule::setGlobal(const std::string& name, const std::multimap<std::string, std::string>& value) {
 	setGlobal(name, bp::list(value));
 }
 
-void PythonModule::setGlobalRequest(std::string name, Request value) {
+void PythonModule::setGlobalRequest(const std::string& name, const Request& value) {
 	try {
 		setGlobal(name, bp::object(value));
 	}

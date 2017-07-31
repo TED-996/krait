@@ -1,6 +1,8 @@
 #include<fstream>
 #include<sstream>
 #include<locale>
+#include<random>
+#include<chrono>
 #include<boost/date_time/posix_time/posix_time.hpp>
 #include<boost/date_time/local_time_adjustor.hpp>
 #include<boost/date_time/c_local_time_adjustor.hpp>
@@ -141,4 +143,21 @@ std::string generateTagFromStat(std::string filename) {
 	}
 
 	return formatString("%x%x%x", (int)statResult.st_ino, (int)statResult.st_size, (int)statResult.st_mtime);
+}
+
+std::string randomAlpha(size_t size) {
+	static const char values[] =
+		"abcdefghijklmnopqrstuvwxyz"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+	std::uniform_int_distribution<int> distribution(0, size - 1);
+
+	std::string result;
+	result.reserve(size);
+	for (int i = 0; i < size; i++) {
+		result[i] = values[distribution(generator)];
+	}
+
+	return result;
 }

@@ -1,7 +1,6 @@
 #include<boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
 
 #include "response.h"
 #include "except.h"
@@ -24,8 +23,8 @@ static std::unordered_map<int, std::string> statusReasons{
 };
 
 
-Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
-                   std::string body, bool connClose)
+Response::Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
+                   const std::string& body, bool connClose)
 	: bodyIterator(body) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
@@ -40,8 +39,8 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_
 	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
-Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
-                   IteratorResult bodyIterator, bool connClose)
+Response::Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
+                   const IteratorResult& bodyIterator, bool connClose)
 	: bodyIterator(bodyIterator) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
@@ -56,22 +55,30 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, std::unordered_
 	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
-Response::Response(int statusCode, std::string body, bool connClose)
+Response::Response(int statusCode, const std::string& body, bool connClose)
 	: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
 }
 
-Response::Response(int statusCode, IteratorResult body, bool connClose)
-	: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
+Response::Response(int statusCode, const IteratorResult& body, bool connClose)
+	//: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
+	: bodyIterator(body) {
+	this->httpMajor = 1;
+	this->httpMinor = 1;
+	this->statusCode = statusCode;
+	this->fromFullResponse = false;
+	this->connClose = connClose;
+
+	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
-Response::Response(std::string fullResponse)
+Response::Response(const std::string& fullResponse)
 	: bodyIterator("") {
 	this->fromFullResponse = true;
 	parseFullResponse(fullResponse);
 }
 
 
-void Response::parseFullResponse(std::string response) {
+void Response::parseFullResponse(const std::string& response) {
 	size_t statusEnd = response.find("\r\n");
 	statusLine = response.substr(0, statusEnd);
 
@@ -94,7 +101,7 @@ void Response::parseFullResponse(std::string response) {
 }
 
 
-void Response::setBody(std::string body, bool updateLength) {
+void Response::setBody(const std::string& body, bool updateLength) {
 	this->bodyIterator = IteratorResult(body);
 
 	if (updateLength) {
@@ -103,19 +110,19 @@ void Response::setBody(std::string body, bool updateLength) {
 }
 
 
-void Response::addHeader(std::string name, std::string value) {
+void Response::addHeader(const std::string& name, const std::string& value) {
 	boost::to_lower(name);
 	headers.insert(make_pair(name, value));
 }
 
 
-void Response::setHeader(std::string name, std::string value) {
+void Response::setHeader(const std::string& name, const std::string& value) {
 	boost::to_lower(name);
 	removeHeader(name);
 	addHeader(name, value);
 }
 
-void Response::removeHeader(std::string name) {
+void Response::removeHeader(const std::string& name) {
 	boost::to_lower(name);
 	auto its = headers.equal_range(name);
 
@@ -124,14 +131,14 @@ void Response::removeHeader(std::string name) {
 	}
 }
 
-bool Response::headerExists(std::string name) {
+bool Response::headerExists(const std::string& name) {
 	boost::to_lower(name);
 	auto headerIt = headers.find(name);
 
 	return (headerIt != headers.end());
 }
 
-boost::optional<std::string> Response::getHeader(std::string name) {
+boost::optional<std::string> Response::getHeader(const std::string& name) {
 	boost::to_lower(name);
 	auto headerIt = headers.find(name);
 

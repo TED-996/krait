@@ -1,6 +1,7 @@
 #pragma once
 #include <stack>
 #include <string>
+#include <boost/pool/object_pool.hpp>
 #include "pymlItems.h"
 #include "IPymlCache.h"
 #include "IPymlParser.h"
@@ -246,11 +247,10 @@ public:
 class V2PymlParser : public IV2PymlParser
 {
 private:
-	const PymlItem* rootItem;
+	std::unique_ptr<const IPymlItem> rootItem;
 
 	std::stack<PymlWorkingItem> itemStack;
-	PymlItemPool pool;
-	boost::object_pool<PymlWorkingItem> workingItemPool;
+	boost::object_pool<PymlWorkingItem> workingItemPool;  //TODO: Migrate to unique ptrs or something
 
 	IPymlCache& cache;
 
@@ -276,21 +276,21 @@ private:
 	static V2PymlParserFsm parserFsm;
 
 public:
-	void addPymlWorkingStr(const std::string& str);
-	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code);
-	void addPymlWorkingEmbed(const std::string& filename);
-	void addPymlWorkingCtrl(const std::string& ctrlCode);
-	void pushPymlWorkingIf(const std::string& condition);
-	bool addSeqToPymlWorkingIf();
-	void pushPymlWorkingFor();
-	void addCodeToPymlWorkingFor(int where, const std::string& code);
-	bool addSeqToPymlWorkingFor();
-	void pushPymlWorkingForIn(std::string entry, std::string collection);
-	void pushPymlWorkingSeq();
-	void addPymlStackTop();
+	void addPymlWorkingStr(const std::string& str) override;
+	void addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) override;
+	void addPymlWorkingEmbed(const std::string& filename) override;
+	void addPymlWorkingCtrl(const std::string& ctrlCode) override;
+	void pushPymlWorkingIf(const std::string& condition) override;
+	bool addSeqToPymlWorkingIf() override;
+	void pushPymlWorkingFor() override;
+	void addCodeToPymlWorkingFor(int where, const std::string& code) override;
+	bool addSeqToPymlWorkingFor() override;
+	void pushPymlWorkingForIn(std::string entry, std::string collection) override;
+	void pushPymlWorkingSeq() override;
+	void addPymlStackTop() override;
 
 	V2PymlParser(IPymlCache& cache);
 
-	void consume(std::string::iterator start, std::string::iterator end);
-	const IPymlItem* getParsed();
+	void consume(std::string::iterator start, std::string::iterator end) override;
+	std::unique_ptr<const IPymlItem> getParsed() override;
 };

@@ -1,9 +1,9 @@
 #pragma once
-#include<string>
-#include<vector>
-#include<boost/pool/object_pool.hpp>
-#include<boost/variant.hpp>
-#include"IPymlCache.h"
+#include <string>
+#include <vector>
+#include <boost/python/object.hpp>
+#include <boost/variant.hpp>
+#include "IPymlCache.h"
 
 
 class PymlItem : public IPymlItem
@@ -52,17 +52,16 @@ public:
 
 class PymlItemSeq : public PymlItem
 {
-	std::vector<const PymlItem*> items;
+	std::vector<std::unique_ptr<const IPymlItem>> items;
 public:
-	PymlItemSeq(const std::vector<const PymlItem*>& items) {
-		this->items = items;
+	PymlItemSeq(const std::vector<std::unique_ptr<const IPymlItem>>& items){
+		for (const auto& it : items) {
+			this->items.push_back(std::move(it));
+		}
 	}
 
 	std::string runPyml() const override;
 	bool isDynamic() const override;
-
-	const PymlItem* tryCollapse() const;
-
 	const IPymlItem* getNext(const IPymlItem* last) const override;
 };
 
@@ -135,14 +134,12 @@ public:
 class PymlItemIf : public PymlItem
 {
 	std::string conditionCode;
-	const PymlItem* itemIfTrue;
-	const PymlItem* itemIfFalse;
+	std::unique_ptr<const IPymlItem> itemIfTrue;
+	std::unique_ptr<const IPymlItem> itemIfFalse;
 
 public:
-	PymlItemIf(const std::string& conditionCode, const PymlItem* itemIfTrue, const PymlItem* itemIfFalse) {
-		this->conditionCode = conditionCode;
-		this->itemIfTrue = itemIfTrue;
-		this->itemIfFalse = itemIfFalse;
+	PymlItemIf(const std::string& conditionCode, std::unique_ptr<const IPymlItem> itemIfTrue, std::unique_ptr<const IPymlItem> itemIfFalse)
+		: conditionCode(conditionCode), itemIfTrue(std::move(itemIfTrue)), itemIfFalse(std::move(itemIfFalse)) {
 	}
 
 	std::string runPyml() const override;
@@ -161,14 +158,14 @@ class PymlItemFor : public PymlItem
 	std::string conditionCode;
 	std::string updateCode;
 
-	const PymlItem* loopItem;
+	std::unique_ptr<const IPymlItem> loopItem;
 
 public:
-	PymlItemFor(const std::string& initCode, const std::string& conditionCode, const std::string& updateCode, const PymlItem* loopItem) {
-		this->initCode = initCode;
-		this->conditionCode = conditionCode;
-		this->updateCode = updateCode;
-		this->loopItem = loopItem;
+	PymlItemFor(std::string initCode, std::string conditionCode, std::string updateCode, std::unique_ptr<const IPymlItem> loopItem)
+		: initCode(initCode),
+		  conditionCode(conditionCode),
+		  updateCode(updateCode),
+		  loopItem(std::move(loopItem)) {
 	}
 
 	std::string runPyml() const override;
@@ -185,11 +182,11 @@ class PymlItemEmbed : public PymlItem
 {
 private:
 	std::string filename;
-	IPymlCache* cache;
+	IPymlCache& cache;
 
 public:
 	PymlItemEmbed(std::string filename, IPymlCache& cache)
-		: filename(filename), cache(&cache) {
+		: filename(filename), cache(cache) {
 	}
 
 	std::string runPyml() const override;
@@ -199,20 +196,32 @@ public:
 	bool isDynamic() const override;
 };
 
-
-struct PymlItemPool
+class PymlItemSetCallable : public PymlItem
 {
-	boost::object_pool<PymlItem> itemPool;
-	boost::object_pool<PymlItemStr> strPool;
-	boost::object_pool<PymlItemSeq> seqPool;
-	boost::object_pool<PymlItemPyEval> pyEvalPool;
-	boost::object_pool<PymlItemPyEvalRaw> pyEvalRawPool;
-	boost::object_pool<PymlItemPyExec> pyExecPool;
-	boost::object_pool<PymlItemIf> ifExecPool;
-	boost::object_pool<PymlItemFor> forExecPool;
-	boost::object_pool<PymlItemEmbed> embedPool;
-};
+private:
+	const boost::python::object& callable;
+	std::string destination;
 
+public:
+
+	PymlItemSetCallable(const boost::python::object& callable, const std::string& destination)
+		: callable(callable),
+		  destination(destination) {
+	}
+
+	std::string runPyml() const override;
+
+	bool isDynamic() const override {
+		return true;
+	}
+
+	const IPymlItem* getNext(const IPymlItem* last) const override {
+		if (last == NULL) {
+			runPyml();
+		}
+		return NULL;
+	}
+};
 
 struct PymlWorkingItem
 {
@@ -280,5 +289,5 @@ struct PymlWorkingItem
 		return boost::get<T>(&data);
 	}
 
-	const PymlItem* getItem(PymlItemPool& pool) const;
+	std::unique_ptr<const IPymlItem> getItem() const;
 };

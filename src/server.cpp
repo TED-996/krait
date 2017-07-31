@@ -32,14 +32,16 @@ Server* Server::instance = nullptr;
 
 Server::Server(std::string serverRoot, int port)
 	:
+	serverRoot(bf::path(serverRoot)),
 	config(),
-	cacheController(config),
+	cacheController(config, serverRoot),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
 		          this,
 		          std::placeholders::_1,
 		          std::placeholders::_2),
-		std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)) {
+		std::bind(&Server::onServerCacheMiss, this, std::placeholders::_1)),
+	responseBuilder(this->serverRoot, config, cacheController, serverCache){
 
 	if (Server::instance != nullptr) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Multiple Server instances!"));
@@ -71,10 +73,6 @@ Server::Server(std::string serverRoot, int port)
 	}
 
 	DBG("python initialized");
-
-	loadContentTypeList();
-
-	DBG("mime.types initialized.");
 
 	config.load();
 	cacheController.load();
@@ -250,36 +248,8 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	bool isHead = false;
 
 	try {
-		if (request.getVerb() == HttpVerb::HEAD) {
-			isHead = true;
-		}
-		
-		PythonModule::krait.setGlobalRequest("request", request);
-		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
-		
-		bool skipDenyTest;
-		std::string sourceFile;
-		if (!route.isMvcRoute()) {
-			std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-			sourceFile = getFilenameFromTarget(targetReplaced);
-			skipDenyTest = false;
-		}
-		else {
-			//TODO: refactor, too many responsibilities...
-			//Maybe get a PageRenderer going...
-			Loggers::logInfo("executing ctrl route");
-			PythonModule::main.setGlobal("ctrl", PythonModule::main.callObject(route.getCtrlClass()));
-			sourceFile = PythonModule::main.eval("krait.get_full_path(ctrl.get_view())");
-			skipDenyTest = true;
-		}
-
-		Loggers::logInfo(formatString("getting resp from source %1%", sourceFile));
-		resp = getResponseFromSource(sourceFile, request, skipDenyTest);
-	}
-	catch (notFoundError& err) {
-		DBG_FMT("notFound: %1%", err.what());
-		resp = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
+		interpretCacheRequest = true;
+		resp = responseBuilder.buildResponse(request);
 	}
 	catch (rootException& ex) {
 		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
@@ -326,7 +296,7 @@ std::string replaceParams(std::string target, std::map<std::string, std::string>
 
 void Server::startWebsocketsServer(int clientSocket, Request& request) {
 	Response resp(500, "", true);
-
+	// TODO: split off websockets
 	try {
 		request.setRouteVerb(RouteVerb::WEBSOCKET);
 
@@ -336,10 +306,10 @@ void Server::startWebsocketsServer(int clientSocket, Request& request) {
 		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
 		std::string sourceFile = getFilenameFromTarget(targetReplaced);
 
-		PythonModule::krait.setGlobalRequest("request", request);
-		PythonModule::krait.setGlobal("url_params", params);
-		PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
-		PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
+		//PythonModule::krait.setGlobalRequest("request", request);
+		//PythonModule::krait.setGlobal("url_params", params);
+		//PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
+		//PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
 
 		resp = getResponseFromSource(sourceFile, request, false);
 	}
@@ -362,23 +332,8 @@ void Server::startWebsocketsServer(int clientSocket, Request& request) {
 	}
 }
 
-
 bool Server::canContainPython(std::string filename) {
 	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
-}
-
-
-IteratorResult Server::getPymlResultRequestCache(std::string filename) {
-	//DBG("Reading pyml cache");
-	interpretCacheRequest = true;
-	const IPymlFile& pymlFile = serverCache.get(filename);
-	return IteratorResult(PymlIterator(pymlFile.getRootItem()));
-}
-
-bool Server::getPymlIsDynamic(std::string filename) {
-	interpretCacheRequest = true;
-	const IPymlFile& pymlFile = serverCache.get(filename);
-	return pymlFile.isDynamic();
 }
 
 std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest) {

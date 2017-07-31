@@ -17,7 +17,7 @@ public:
 	IteratorResult(PymlIterator iterator);
 	IteratorResult(std::string fullString);
 
-	size_t getTotalLength() {
+	size_t getTotalLength() const {
 		return totalLength;
 	}
 

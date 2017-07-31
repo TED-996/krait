@@ -65,7 +65,7 @@ str: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.
 If None, the server deduces it from the original route target's extension.
 """
 
-extra_headers = None
+extra_headers = []
 """
 list of (str, str): Extra response headers to set without overriding the entire response.
 """

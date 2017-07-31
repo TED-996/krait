@@ -12,7 +12,7 @@ V2PymlParserFsm V2PymlParser::parserFsm;
 
 V2PymlParser::V2PymlParser(IPymlCache& cache)
 	: cache(cache) {
-	rootItem = NULL;
+	rootItem = nullptr;
 	krItIndex = 0;
 }
 
@@ -31,7 +31,7 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 	while (start != end) {
 		//DBG_FMT("In state %1%: consuming ch %2%", parserFsm.getState(), *start);
 		parserFsm.consumeOne(*start);
-		start++;
+		++start;
 	}
 
 	parserFsm.doFinalPass();
@@ -46,13 +46,17 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Error parsing pyml file: after consuming file, working item is not PymlWorkingItem::SeqData."));
 	}
 
-	const PymlItem* result = itemStack.top().getItem(pool);
-	rootItem = result;
+	rootItem = itemStack.top().getItem();
 }
 
 
-const IPymlItem* V2PymlParser::getParsed() {
-	return rootItem;
+std::unique_ptr<const IPymlItem> V2PymlParser::getParsed() {
+	if (rootItem == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml parser: root null (double consumption)"));
+	}
+
+
+	return std::move(rootItem);
 }
 
 

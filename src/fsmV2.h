@@ -58,6 +58,7 @@ private:
 
 public:
 	FsmV2(size_t nrStates, size_t nrBulkStates);
+	virtual ~FsmV2() = default;
 
 	void reset();
 
@@ -103,6 +104,7 @@ public:
 class FsmTransition
 {
 public:
+	virtual ~FsmTransition() = default;
 	virtual bool isMatch(char chr, FsmV2& fsm) = 0;
 	virtual size_t getNextState(FsmV2& fsm) = 0;
 

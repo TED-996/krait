@@ -4,9 +4,25 @@
 #include "cacheController.h"
 #include "pymlCache.h"
 #include "response.h"
+#include "pageResponseRenderer.h"
 
 class ResponseBuilder
 {
+private:
+	struct PreResponseSource
+	{
+		std::string symFilename;
+		boost::variant<std::string, const boost::python::object&> source;
+
+
+		PreResponseSource(std::string symFilename, boost::variant<std::string, boost::python::object&> source)
+			: symFilename(std::move(symFilename)),
+			source(std::move(source)) {
+		}
+	};
+
+	PageResponseRenderer renderer;
+
 	Config& config;
 	CacheController& cacheController;
 	PymlCache& pymlCache;
@@ -14,7 +30,7 @@ class ResponseBuilder
 
 	boost::filesystem::path siteRoot;
 
-	std::string getSourceFromRequest(Request& request);
+	PreResponseSource getSourceFromRequest(Request& request);
 	std::string getFilenameFromTarget(const std::string& target) const;
 	static bool pathBlocked(const std::string& path);
 	std::string expandFilename(std::string filename) const;
@@ -26,6 +42,18 @@ class ResponseBuilder
 	
 	std::string getContentType(std::string filename);
 	void loadContentTypeList(std::string filename);
+
+	bool buildResponseInternal(Request& request, Response& response, bool isWebsockets);
 public:
+
+	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache)
+		: renderer(pymlCache),
+		  config(config),
+		  cacheController(cacheController),
+		  pymlCache(pymlCache),
+		  siteRoot(siteRoot){
+	}
+
 	Response buildResponse(Request& request);
+	Response buildWebsocketsResponse(Request& request);
 };

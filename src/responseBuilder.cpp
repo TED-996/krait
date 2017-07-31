@@ -8,73 +8,102 @@
 #define DBG_DISABLE
 #include "dbg.h"
 #include "logger.h"
+#include "mvcPymlFile.h"
 
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
 
-Response ResponseBuilder::buildResponse(Request& request) {
-	Response response(500, "", true);
-
+bool ResponseBuilder::buildResponseInternal(Request& request, Response& response, bool isWebsockets) {
 	bool isHead = (request.getVerb() == HttpVerb::HEAD);
+	bool okResponse;
 
 	try {
-
-		std::string filename = getSourceFromRequest(request);
-		const IPymlFile& pymlFile = getPymlFromCache(filename);
-		bool isDynamic = pymlFile.isDynamic();
-		CacheController::CachePragma cachePragma = cacheController.getCacheControl(filename, !isDynamic);
-
+		PreResponseSource source = getSourceFromRequest(request);
+		bool isDynamic;
+		
 		std::string etag;
 		if (request.headerExists("if-none-match")) {
 			etag = request.getHeader("if-none-match").get();
 			etag = etag.substr(1, etag.length() - 2);
 		}
 
-		if (cachePragma.isStore && pymlCache.checkCacheTag(filename, etag)) {
+		std::string* sourceFilename = boost::get<std::string>(&source.source);
+		const boost::python::object* sourceObject = boost::get<boost::python::object>(&source.source);
+		boost::optional<const IPymlFile&> pymlFile = boost::none;
+		std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
+
+		if (sourceFilename != nullptr) {
+			pymlFile = getPymlFromCache(source.symFilename);
+			isDynamic = pymlFile->isDynamic();
+		}
+		else {
+			isDynamic = true;
+			mvcFileStorage = std::make_unique<MvcPymlFile>(*sourceObject, pymlCache);
+			pymlFile = *mvcFileStorage.get();
+		}
+		
+		CacheController::CachePragma cachePragma = cacheController.getCacheControl(source.symFilename, !isDynamic);
+
+		if (cachePragma.isStore && pymlCache.checkCacheTag(source.symFilename, etag)) {
 			response = Response(304, "", false);
 		}
+		else {
+			renderer.render(pymlFile.get(), request, response); //TODO: modularize the Python variable setting/retrieving
+		}
 
-		addDefaultHeaders(response, filename, request, cachePragma);
+		addDefaultHeaders(response, source.symFilename, request, cachePragma);
+		okResponse = true;
+	}
+	catch(notFoundError) {
+		Loggers::logInfo(formatString("Not found. No more data available."));
+		response = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
+		okResponse = false;
 	}
 
 	if (isHead) {
 		response.setBody("", false);
 	}
 
+	return okResponse;
+}
+
+Response ResponseBuilder::buildWebsocketsResponse(Request& request) {
+	Response response(500, "", true);
+	request.setRouteVerb(RouteVerb::WEBSOCKET);
+	
+	buildResponseInternal(request, response, true);
+
 	return response;
 }
 
 std::string replaceParams(std::string target, std::map<std::string, std::string> params);
 
-std::string ResponseBuilder::getSourceFromRequest(Request& request) {
+ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(Request& request) {
 	std::map<std::string, std::string> params;
 	const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
 	
-	bool isFromFile;
-	std::string sourceFile;
+	PreResponseSource result("", "");
+
 	if (!route.isMvcRoute()) {
 		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		sourceFile = getFilenameFromTarget(targetReplaced);
-		isFromFile = false;
+		result.symFilename = expandFilename(getFilenameFromTarget(targetReplaced));
+		result.source = result.symFilename;
 	}
 	else {
-		//TODO: see how to set better... Will not be working for now.
-		//WARNING: NOT OK at the moment: caching/etc is looked up for the TEMPLATE, not the URL!
 		//PythonModule::main.setGlobal("ctrl", PythonModule::main.callObject(route.getCtrlClass()));
 		//sourceFile = PythonModule::main.eval("krait.get_full_path(ctrl.get_view())");
-		//TODO: struct ResponseSource { symFilename, (filename | mvcControllerClass) }
-		isFromFile = true;
+		result.symFilename = getFilenameFromTarget(request.getUrl());
+		result.source = route.getCtrlClass();
 	}
 
-	if (!isFromFile && pathBlocked(sourceFile)) {
-		Loggers::logInfo(formatString("Tried accessing path %1%, BLOCKED.", sourceFile));
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", sourceFile));
+	if (pathBlocked(result.symFilename)) {
+		Loggers::logInfo(formatString("Tried accessing path %1%, BLOCKED.", result.symFilename));
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", result.symFilename));
 	}
 
-	std::string filename = expandFilename(sourceFile);
 
-	return filename;
+	return result;
 }
 
 

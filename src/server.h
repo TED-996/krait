@@ -11,6 +11,7 @@
 #include "pymlCache.h"
 #include "cacheController.h"
 #include "config.h"
+#include "responseBuilder.h"
 
 
 class Server
@@ -33,6 +34,8 @@ class Server
 	StringPiper cacheRequestPipe;
 	bool interpretCacheRequest;
 	PymlCache serverCache;
+
+	ResponseBuilder responseBuilder;
 
 	bool shutdownRequested;
 

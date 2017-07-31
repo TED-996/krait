@@ -131,7 +131,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\config.cpp" />
-    <ClCompile Include="src\pageRenderer.cpp" />
+    <ClCompile Include="src\mvcPymlFile.cpp" />
+    <ClCompile Include="src\pageResponseRenderer.cpp" />
+    <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
     <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
@@ -168,8 +170,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\config.h" />
-    <ClInclude Include="src\IResponseRenderer.h" />
-    <ClInclude Include="src\pageRenderer.h" />
+    <ClInclude Include="src\mvcPymlFile.h" />
+    <ClInclude Include="src\pageResponseRenderer.h" />
+    <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\responseBuilder.h" />
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
