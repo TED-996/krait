@@ -44,21 +44,12 @@ class Server
 
 	void serveClientStart(int clientSocket);
 	void serveRequest(int clientSocket, Request& request);
-	Response getResponseFromSource(std::string filename, Request& request, bool skipDenyTest);
-
-	std::string getFilenameFromTarget(std::string target);
-	std::string expandFilename(std::string filename);
-	static bool pathBlocked(std::string filename);
-
 
 	bool canContainPython(std::string filename);
-	void startWebsocketsServer(int clientSocket, Request& request);
+	void serveRequestWebsockets(int clientSocket, Request& request);
 
 	std::unique_ptr<PymlFile> constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest);
 	void onServerCacheMiss(std::string filename);
-
-	bool getPymlIsDynamic(std::string filename);
-	IteratorResult getPymlResultRequestCache(std::string filename);
 
 	void updateParentCaches();
 

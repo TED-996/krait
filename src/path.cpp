@@ -20,7 +20,7 @@ bf::path getExecRoot() {
 	return bf::path(exePath).parent_path();
 }
 
-bf::path getCreateDataRoot() {
+bf::path getShareRoot() {
 	return getExecRoot();
 }
 

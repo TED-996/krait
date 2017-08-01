@@ -174,12 +174,12 @@ std::string PythonModule::eval(std::string code) {
 	catch (bp::error_already_set const&) {
 		DBG("Python error in pythonEval()!");
 
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("TODO()") << pyCodeInfo(code));
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("eval()") << pyCodeInfo(code));
 	}
 }
 
 
-bp::object PythonModule::evalToObject(std::string code) {
+bp::object PythonModule::evalToObject(std::string code) { //TODO: references!
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);

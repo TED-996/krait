@@ -20,7 +20,7 @@ class Response
 	bool fromFullResponse;
 
 	void parseFullResponse(const  std::string& response);
-	boost::optional<std::string> getHeader(const std::string& name);
+	boost::optional<std::string> getHeader(std::string name);
 
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
@@ -46,13 +46,13 @@ public:
 
 	void setBody(const std::string& body, bool updateLength);
 
-	void addHeader(const std::string& name, const std::string& value);
-	void setHeader(const std::string& name, const std::string& value);
-	void removeHeader(const std::string& name);
+	void addHeader(std::string name, const std::string& value);
+	void setHeader(std::string name, const std::string& value);
+	void removeHeader(std::string name);
 
 	void setConnClose(bool connClose);
 
-	bool headerExists(const std::string& name);
+	bool headerExists(std::string name);
 
 	std::string getResponseHeaders();
 	const std::string* getBodyNext();

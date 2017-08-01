@@ -56,7 +56,14 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, const std::unor
 }
 
 Response::Response(int statusCode, const std::string& body, bool connClose)
-	: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
+	: bodyIterator(body) {
+	this->httpMajor = 1;
+	this->httpMinor = 1;
+	this->statusCode = statusCode;
+	this->fromFullResponse = false;
+	this->connClose = connClose;
+
+	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
 Response::Response(int statusCode, const IteratorResult& body, bool connClose)
@@ -91,8 +98,8 @@ void Response::parseFullResponse(const std::string& response) {
 		size_t nextIdx = headersStr.find("\r\n", idx + 2);
 		size_t colonIdx = headersStr.find(": ", idx);
 
-		headers.insert(std::make_pair(boost::trim_copy(boost::to_lower_copy(headersStr.substr(idx, colonIdx - idx))),
-		                              boost::trim_copy(headersStr.substr(colonIdx + 2, nextIdx - (colonIdx + 2)))));
+		headers.insert(std::make_pair(b::trim_copy(b::to_lower_copy(headersStr.substr(idx, colonIdx - idx))),
+		                              b::trim_copy(headersStr.substr(colonIdx + 2, nextIdx - (colonIdx + 2)))));
 
 		idx = nextIdx;
 	}
@@ -110,20 +117,20 @@ void Response::setBody(const std::string& body, bool updateLength) {
 }
 
 
-void Response::addHeader(const std::string& name, const std::string& value) {
-	boost::to_lower(name);
+void Response::addHeader(std::string name, const std::string& value) {
+	b::to_lower(name);
 	headers.insert(make_pair(name, value));
 }
 
 
-void Response::setHeader(const std::string& name, const std::string& value) {
-	boost::to_lower(name);
+void Response::setHeader(std::string name, const std::string& value) {
+	b::to_lower(name);
 	removeHeader(name);
 	addHeader(name, value);
 }
 
-void Response::removeHeader(const std::string& name) {
-	boost::to_lower(name);
+void Response::removeHeader(std::string name) {
+	b::to_lower(name);
 	auto its = headers.equal_range(name);
 
 	if (its.first != headers.end()) {
@@ -131,15 +138,15 @@ void Response::removeHeader(const std::string& name) {
 	}
 }
 
-bool Response::headerExists(const std::string& name) {
-	boost::to_lower(name);
+bool Response::headerExists(std::string name) {
+	b::to_lower(name);
 	auto headerIt = headers.find(name);
 
 	return (headerIt != headers.end());
 }
 
-boost::optional<std::string> Response::getHeader(const std::string& name) {
-	boost::to_lower(name);
+b::optional<std::string> Response::getHeader(std::string name) {
+	b::to_lower(name);
 	auto headerIt = headers.find(name);
 
 	if (headerIt == headers.end()) {
@@ -152,8 +159,8 @@ boost::optional<std::string> Response::getHeader(const std::string& name) {
 
 void Response::setConnClose(bool connClose) {
 	this->connClose = connClose;
-	boost::optional<std::string> header = getHeader("Connection");
-	if (header == boost::none || header.get() == "close" || header.get() == "keep-alive") {
+	b::optional<std::string> header = getHeader("Connection");
+	if (header == b::none || header.get() == "close" || header.get() == "keep-alive") {
 		if (connClose) {
 			setHeader("Connection", "close");
 		}
@@ -174,13 +181,13 @@ std::string Response::getResponseHeaders() {
 		statusLine = this->statusLine;
 	}
 	else {
-		statusLine = (boost::format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(statusCode)).str();
+		statusLine = (b::format("HTTP/%1%.%2% %3% %4%") % httpMajor % httpMinor % statusCode % getStatusReason(statusCode)).str();
 	}
 	std::vector<std::string> headerStrings;
 
-	boost::format headerFormat = boost::format("%1%: %2%");
+	b::format headerFormat = b::format("%1%: %2%");
 	for (auto header : headers) {
-		headerStrings.push_back((boost::format(headerFormat) % formatTitleCase(header.first) % header.second).str());
+		headerStrings.push_back((b::format(headerFormat) % formatTitleCase(header.first) % header.second).str());
 	}
 	headerStrings.push_back(std::string());
 

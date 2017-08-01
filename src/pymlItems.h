@@ -54,10 +54,8 @@ class PymlItemSeq : public PymlItem
 {
 	std::vector<std::unique_ptr<const IPymlItem>> items;
 public:
-	PymlItemSeq(const std::vector<std::unique_ptr<const IPymlItem>>& items){
-		for (const auto& it : items) {
-			this->items.push_back(std::move(it));
-		}
+	PymlItemSeq(std::vector<std::unique_ptr<const IPymlItem>>&& items)
+		: items(std::move(items)) {
 	}
 
 	std::string runPyml() const override;
@@ -138,7 +136,7 @@ class PymlItemIf : public PymlItem
 	std::unique_ptr<const IPymlItem> itemIfFalse;
 
 public:
-	PymlItemIf(const std::string& conditionCode, std::unique_ptr<const IPymlItem> itemIfTrue, std::unique_ptr<const IPymlItem> itemIfFalse)
+	PymlItemIf(const std::string& conditionCode, std::unique_ptr<const IPymlItem>&& itemIfTrue, std::unique_ptr<const IPymlItem>&& itemIfFalse)
 		: conditionCode(conditionCode), itemIfTrue(std::move(itemIfTrue)), itemIfFalse(std::move(itemIfFalse)) {
 	}
 
@@ -161,7 +159,7 @@ class PymlItemFor : public PymlItem
 	std::unique_ptr<const IPymlItem> loopItem;
 
 public:
-	PymlItemFor(std::string initCode, std::string conditionCode, std::string updateCode, std::unique_ptr<const IPymlItem> loopItem)
+	PymlItemFor(std::string initCode, std::string conditionCode, std::string updateCode, std::unique_ptr<const IPymlItem>&& loopItem)
 		: initCode(initCode),
 		  conditionCode(conditionCode),
 		  updateCode(updateCode),
@@ -282,7 +280,7 @@ struct PymlWorkingItem
 	boost::variant<NoneData, StrData, SeqData, PyCodeData, IfData, ForData, EmbedData> data;
 
 	Type type;
-	PymlWorkingItem(Type type);
+	explicit PymlWorkingItem(Type type);
 
 	template<typename T>
 	T* getData() {

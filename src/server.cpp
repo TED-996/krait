@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <ctime>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -10,9 +9,7 @@
 #include "server.h"
 #include "except.h"
 #include "pythonModule.h"
-#include "path.h"
 #include "logger.h"
-#include "pymlIterator.h"
 #include "rawPymlParser.h"
 #include "v2PymlParser.h"
 #include "websocketsServer.h"
@@ -159,8 +156,6 @@ void Server::tryCheckStdinClosed() const {
 	}
 }
 
-std::string replaceParams(std::string target, std::map<std::string, std::string> params);
-
 void Server::serveClientStart(int clientSocket) {
 	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
@@ -193,7 +188,7 @@ void Server::serveClientStart(int clientSocket) {
 
 				try {
 					if (request.isUpgrade("websocket")) {
-						startWebsocketsServer(clientSocket, request);
+						serveRequestWebsockets(clientSocket, request);
 					}
 					else {
 						serveRequest(clientSocket, request);
@@ -263,59 +258,13 @@ void Server::serveRequest(int clientSocket, Request& request) {
 	resp.setConnClose(!keepAlive);
 
 	respondWithObjectRef(clientSocket, resp);
-}	
-
-
-std::string replaceParams(std::string target, std::map<std::string, std::string> params) {
-	auto it = target.begin();
-	auto oldIt = it;
-	std::string result;
-
-	while ((it = find(it, target.end(), '{')) != target.end()) {
-		result += std::string(oldIt, it);
-		auto endIt = find(it, target.end(), '}');
-		if (endIt == target.end()) {
-			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: unmatched paranthesis in route target %1%", target));
-		}
-
-		std::string paramName(it + 1, endIt);
-		auto paramFound = params.find(paramName);
-		if (paramFound == params.end()) {
-			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: parameter name %1% in route target %2% not found",
-				paramName, target));
-		}
-		result += paramFound->second;
-		++it;
-		oldIt = it;
-	}
-	result += std::string(oldIt, it);
-
-	return result;
 }
 
-
-void Server::startWebsocketsServer(int clientSocket, Request& request) {
+void Server::serveRequestWebsockets(int clientSocket, Request& request) {
 	Response resp(500, "", true);
-	// TODO: split off websockets
 	try {
-		request.setRouteVerb(RouteVerb::WEBSOCKET);
-
-		std::map<std::string, std::string> params;
-		const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
-
-		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		std::string sourceFile = getFilenameFromTarget(targetReplaced);
-
-		//PythonModule::krait.setGlobalRequest("request", request);
-		//PythonModule::krait.setGlobal("url_params", params);
-		//PythonModule::krait.setGlobal("extra_headers", std::multimap<std::string, std::string>());
-		//PythonModule::websockets.run("request = WebsocketsRequest(krait.request)");
-
-		resp = getResponseFromSource(sourceFile, request, false);
-	}
-	catch (notFoundError& ex) {
-		DBG_FMT("notFound: %1%", ex.what());
-		resp = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
+		interpretCacheRequest = true;
+		resp = responseBuilder.buildWebsocketsResponse(request);
 	}
 	catch (rootException& ex) {
 		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);

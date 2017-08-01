@@ -5,22 +5,43 @@
 #include "pymlCache.h"
 #include "response.h"
 #include "pageResponseRenderer.h"
+#include "pythonApiManager.h"
 
 class ResponseBuilder
 {
 private:
 	struct PreResponseSource
 	{
-		std::string symFilename;
-		boost::variant<std::string, const boost::python::object&> source;
+		const std::string symFilename;
+		const boost::optional<std::string> sourceFilename;
+		const boost::optional<const boost::python::object&> sourceObject;
 
+		PreResponseSource(const std::string& symFilename, const std::string& sourceFilename)
+			: symFilename(symFilename),
+			  sourceFilename(sourceFilename),
+			  sourceObject(boost::none) {
+		}
 
-		PreResponseSource(std::string symFilename, boost::variant<std::string, boost::python::object&> source)
-			: symFilename(std::move(symFilename)),
-			source(std::move(source)) {
+		PreResponseSource(const std::string& symFilename, const boost::python::object& sourceObject)
+			: symFilename(symFilename),
+			  sourceFilename(boost::none),
+			  sourceObject(std::move(boost::optional<const boost::python::object&>(sourceObject))) {
+		}
+
+		PreResponseSource(PreResponseSource&& other) noexcept
+			: symFilename(std::move(other.symFilename)),
+			sourceFilename(std::move(other.sourceFilename)),
+			sourceObject(std::move(other.sourceObject)) {
+		}
+
+		PreResponseSource() 
+			: symFilename(""),
+			  sourceFilename(boost::none),
+			  sourceObject(boost::none) {
 		}
 	};
 
+	PythonApiManager apiManager;
 	PageResponseRenderer renderer;
 
 	Config& config;
@@ -46,13 +67,7 @@ private:
 	bool buildResponseInternal(Request& request, Response& response, bool isWebsockets);
 public:
 
-	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache)
-		: renderer(pymlCache),
-		  config(config),
-		  cacheController(cacheController),
-		  pymlCache(pymlCache),
-		  siteRoot(siteRoot){
-	}
+	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache);
 
 	Response buildResponse(Request& request);
 	Response buildWebsocketsResponse(Request& request);

@@ -35,7 +35,7 @@ IPymlFile& PymlCache::constructAddNew(std::string filename, std::time_t time) {
 		std::forward_as_tuple(filename),
 		std::forward_as_tuple(time, std::move(result), tag)
 	);
-	return *result;
+	return *cacheMap[filename].item;
 }
 
 const IPymlFile& PymlCache::replaceWithNewer(std::string filename) {

@@ -155,7 +155,7 @@ std::string randomAlpha(size_t size) {
 
 	std::string result;
 	result.reserve(size);
-	for (int i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++) {
 		result[i] = values[distribution(generator)];
 	}
 

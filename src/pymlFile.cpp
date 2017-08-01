@@ -11,7 +11,7 @@ PymlFile::PymlFile(std::string::iterator sourceStart,
 	//DBG("preConsume");
 	//DBG_FMT("parser: %1%", parser.get());
 	this->parser->consume(sourceStart, sourceEnd);
-	rootItem = this->parser->getParsed();
+	rootItem = std::move(this->parser->getParsed());
 }
 
 std::string PymlFile::runPyml() const {

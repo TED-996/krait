@@ -5,6 +5,7 @@
 class PythonApiManager
 {
 public:
-	void set(const Request& request, bool isDynamic, bool isWebsockets);
-	bool getResponse(Response& response);
+	void set(const Request& request, bool isWebsockets);
+	void getResponse(Response& response);
+	void addHeaders(Response& response);
 };

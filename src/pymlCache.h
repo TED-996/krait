@@ -38,6 +38,8 @@ private:
 			  item(std::move(pymlFile)),
 			  tag(std::move(tag)) {
 		}
+		CacheEntry() = default;
+		CacheEntry(CacheEntry&& entry) = default;
 	};
 
 

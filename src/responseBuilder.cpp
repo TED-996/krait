@@ -4,8 +4,10 @@
 #include "responseBuilder.h"
 #include "pythonModule.h"
 #include "utils.h"
+#include "path.h"
 
-#define DBG_DISABLE
+
+//#define DBG_DISABLE
 #include "dbg.h"
 #include "logger.h"
 #include "mvcPymlFile.h"
@@ -14,12 +16,23 @@ namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
 
+ResponseBuilder::ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache)
+	: config(config),
+	  cacheController(cacheController),
+	  pymlCache(pymlCache),
+	  siteRoot(siteRoot) {
+	loadContentTypeList((getShareRoot() / "globals" / "mime.types").string());
+}
+
+
 bool ResponseBuilder::buildResponseInternal(Request& request, Response& response, bool isWebsockets) {
 	bool isHead = (request.getVerb() == HttpVerb::HEAD);
 	bool okResponse;
+	std::string symFilename = "<unavailable>";
 
 	try {
-		PreResponseSource source = getSourceFromRequest(request);
+		PreResponseSource source = std::move(getSourceFromRequest(request));
+		symFilename = source.symFilename;
 		bool isDynamic;
 		
 		std::string etag;
@@ -28,19 +41,20 @@ bool ResponseBuilder::buildResponseInternal(Request& request, Response& response
 			etag = etag.substr(1, etag.length() - 2);
 		}
 
-		std::string* sourceFilename = boost::get<std::string>(&source.source);
-		const boost::python::object* sourceObject = boost::get<boost::python::object>(&source.source);
 		boost::optional<const IPymlFile&> pymlFile = boost::none;
 		std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
 
-		if (sourceFilename != nullptr) {
-			pymlFile = getPymlFromCache(source.symFilename);
+		if (source.sourceFilename) {
+			pymlFile = getPymlFromCache(source.sourceFilename.get());
 			isDynamic = pymlFile->isDynamic();
 		}
-		else {
+		else if(source.sourceObject) {
 			isDynamic = true;
-			mvcFileStorage = std::make_unique<MvcPymlFile>(*sourceObject, pymlCache);
+			mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
 			pymlFile = *mvcFileStorage.get();
+		}
+		else {
+			BOOST_THROW_EXCEPTION(serverError() << stringInfo("ResponseBuilder::getSourceFromRequest returned empty PreResponseSource."));
 		}
 		
 		CacheController::CachePragma cachePragma = cacheController.getCacheControl(source.symFilename, !isDynamic);
@@ -49,14 +63,23 @@ bool ResponseBuilder::buildResponseInternal(Request& request, Response& response
 			response = Response(304, "", false);
 		}
 		else {
-			renderer.render(pymlFile.get(), request, response); //TODO: modularize the Python variable setting/retrieving
+			if (isDynamic) {
+				apiManager.set(request, isWebsockets);
+			}
+
+			renderer.render(pymlFile.get(), request, response);
+
+			if (isDynamic) {
+				apiManager.getResponse(response);
+				apiManager.addHeaders(response);
+			}
 		}
 
 		addDefaultHeaders(response, source.symFilename, request, cachePragma);
 		okResponse = true;
 	}
 	catch(notFoundError) {
-		Loggers::logInfo(formatString("Not found. No more data available."));
+		Loggers::logInfo(formatString("Not found building %1%", symFilename)); //TODO: encapsulate some info in NotFoundError
 		response = Response(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
 		okResponse = false;
 	}
@@ -66,6 +89,14 @@ bool ResponseBuilder::buildResponseInternal(Request& request, Response& response
 	}
 
 	return okResponse;
+}
+
+Response ResponseBuilder::buildResponse(Request& request) {
+	Response response(500, "", true);
+
+	buildResponseInternal(request, response, false);
+
+	return response;
 }
 
 Response ResponseBuilder::buildWebsocketsResponse(Request& request) {
@@ -83,27 +114,30 @@ ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(Request
 	std::map<std::string, std::string> params;
 	const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
 	
-	PreResponseSource result("", "");
+	std::string symFilename;
 
 	if (!route.isMvcRoute()) {
 		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
-		result.symFilename = expandFilename(getFilenameFromTarget(targetReplaced));
-		result.source = result.symFilename;
+		symFilename = expandFilename(getFilenameFromTarget(targetReplaced));
 	}
 	else {
-		//PythonModule::main.setGlobal("ctrl", PythonModule::main.callObject(route.getCtrlClass()));
-		//sourceFile = PythonModule::main.eval("krait.get_full_path(ctrl.get_view())");
-		result.symFilename = getFilenameFromTarget(request.getUrl());
-		result.source = route.getCtrlClass();
+		symFilename = getFilenameFromTarget(request.getUrl());
 	}
 
-	if (pathBlocked(result.symFilename)) {
-		Loggers::logInfo(formatString("Tried accessing path %1%, BLOCKED.", result.symFilename));
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", result.symFilename));
+	if (pathBlocked(symFilename)) {
+		Loggers::logInfo(formatString("Tried accessing path %1%, BLOCKED.", symFilename));
+		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", symFilename));
 	}
 
-
-	return result;
+	if (!route.isMvcRoute()) {
+		std::string targetReplaced = replaceParams(route.getTarget(request.getUrl()), params);
+		symFilename = expandFilename(getFilenameFromTarget(targetReplaced));
+		return PreResponseSource(symFilename, symFilename);
+	}
+	else {
+		symFilename = getFilenameFromTarget(request.getUrl());
+		return PreResponseSource(symFilename, route.getCtrlClass());
+	}
 }
 
 
@@ -187,7 +221,7 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 	std::string extension;
 
 	if (PythonModule::krait.checkIsNone("_content_type")) {
-		DBG("No content_type set");
+		DBG("No krait content_type set");
 		bf::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
@@ -196,9 +230,10 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 	}
 	else {
 		std::string varContentType = PythonModule::krait.getGlobalStr("_content_type");
-		DBG_FMT("content_type set to %1%", varContentType);
+		DBG_FMT("response builder: content_type set to %1%", varContentType);
 
 		if (!ba::starts_with(varContentType, "ext/")) {
+			DBG_FMT("Content-type: %1%", varContentType);
 			return varContentType;
 		}
 		else {
@@ -207,13 +242,15 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 		}
 	}
 
-	//DBG_FMT("Extension: %1%", extension);
+	DBG_FMT("Extension: %1%", extension);
 
 	auto it = contentTypeByExtension.find(extension);
 	if (it == contentTypeByExtension.end()) {
+		DBG("Content-type: application/octet-stream");
 		return "application/octet-stream";
 	}
 	else {
+		DBG_FMT("Content-type: %1%", it->second);
 		return it->second;
 	}
 }
@@ -222,6 +259,9 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 void ResponseBuilder::loadContentTypeList(std::string filename) {
 	//bf::path contentFilePath = getExecRoot() / "globals" / "mime.types";
 	std::ifstream mimeFile(filename);
+	if (!mimeFile) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("MIME types file missing! Filename: %1%", filename));
+	}
 
 	char line[1024];
 	std::string mimeType;

@@ -13,16 +13,20 @@ void RawPythonPymlParser::consume(std::string::iterator start, std::string::iter
 	auto embedSetupExec = std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.push_ctrl(krait.mvc.init_ctrl)");
 	auto embedCleanupExec = std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.pop_ctrl()");
 	auto viewEmbed = std::make_unique<PymlItemEmbed>("krait.get_full_path(ctrl.get_view())", cache);
-	auto embedRootSeq = std::make_unique<PymlItemSeq>(std::vector<std::unique_ptr<const IPymlItem>>({
-		std::move(embedSetupExec),
-		std::move(viewEmbed),
-		std::move(embedCleanupExec)
-	}));
+
+	std::vector<std::unique_ptr<const IPymlItem>> embedRootSeqVector;
+	embedRootSeqVector.emplace_back(std::move(embedSetupExec));
+	embedRootSeqVector.emplace_back(std::move(viewEmbed));
+	embedRootSeqVector.emplace_back(std::move(embedCleanupExec));
+
+	auto embedRootSeq = std::make_unique<PymlItemSeq>(std::move(embedRootSeqVector));
 	auto ctrlCondition = std::make_unique<PymlItemIf>("krait.mvc.init_ctrl is not None", std::move(embedRootSeq), nullptr);
-	rootSeq = std::make_unique<PymlItemSeq>(std::vector<std::unique_ptr<const IPymlItem>>({
-		std::move(mainExec),
-		std::move(ctrlCondition)
-	}));
+
+	std::vector<std::unique_ptr<const IPymlItem>> rootSeqVector;
+	rootSeqVector.emplace_back(std::move(mainExec));
+	rootSeqVector.emplace_back(std::move(ctrlCondition));
+
+	rootSeq = std::make_unique<PymlItemSeq>(std::move(rootSeqVector));
 }
 
 std::unique_ptr<const IPymlItem> RawPythonPymlParser::getParsed() {

@@ -137,6 +137,8 @@ std::string PymlItemSetCallable::runPyml() const {
 	PythonModule::main.setGlobal(tempName, callable());
 	PythonModule::main.run(formatString("%1% = %2%", destination, tempName));
 	PythonModule::main.run(formatString("del %1%", tempName));
+
+	return "";
 }
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
@@ -200,7 +202,7 @@ public:
 		if (items.size() == 1) {
 			return std::unique_ptr<const IPymlItem>(std::move(items[0]));
 		}
-		return std::make_unique<const PymlItemSeq>(items);
+		return std::make_unique<const PymlItemSeq>(std::move(items));
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::PyCodeData pyCodeData) {
@@ -225,7 +227,7 @@ public:
 			itemIfFalse = ifData.itemIfFalse->getItem();
 		}
 
-		return std::make_unique<PymlItemIf>(PythonModule::prepareStr(ifData.condition), itemIfTrue, itemIfFalse);
+		return std::make_unique<PymlItemIf>(PythonModule::prepareStr(ifData.condition), std::move(itemIfTrue), std::move(itemIfFalse));
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::ForData forData) {
@@ -235,7 +237,7 @@ public:
 			 PythonModule::prepareStr(forData.initCode),
 			 PythonModule::prepareStr(forData.conditionCode),
 			 PythonModule::prepareStr(forData.updateCode),
-			 loopItem);
+			 std::move(loopItem));
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::EmbedData embedData) {
