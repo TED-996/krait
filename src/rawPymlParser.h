@@ -4,11 +4,11 @@
 
 class RawPymlParser : public IPymlParser
 {
-	PymlItemStr pymlItem;
+	std::unique_ptr<const PymlItemStr> pymlItem;
 
 public:
 	RawPymlParser();
 
 	void consume(std::string::iterator start, std::string::iterator end);
-	const IPymlItem* getParsed();
+	std::unique_ptr<const IPymlItem> getParsed() override;
 };

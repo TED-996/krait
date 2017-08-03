@@ -83,7 +83,7 @@
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
-    <AdditionalOptions>-d__clang__</AdditionalOptions>
+    <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
@@ -102,7 +102,7 @@
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
-    <AdditionalOptions>-d__clang__</AdditionalOptions>
+    <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
@@ -121,7 +121,7 @@
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
-    <AdditionalOptions>-d__clang__</AdditionalOptions>
+    <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
@@ -131,6 +131,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\config.cpp" />
+    <ClCompile Include="src\mvcPymlFile.cpp" />
+    <ClCompile Include="src\pageResponseRenderer.cpp" />
+    <ClCompile Include="src\pythonApiManager.cpp" />
+    <ClCompile Include="src\responseBuilder.cpp" />
     <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
     <ClCompile Include="src\commander.cpp" />
@@ -166,6 +170,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\mvcPymlFile.h" />
+    <ClInclude Include="src\pageResponseRenderer.h" />
+    <ClInclude Include="src\pythonApiManager.h" />
+    <ClInclude Include="src\responseBuilder.h" />
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
     <ClInclude Include="src\commander.h" />

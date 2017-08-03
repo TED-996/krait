@@ -174,12 +174,12 @@ std::string PythonModule::eval(std::string code) {
 	catch (bp::error_already_set const&) {
 		DBG("Python error in pythonEval()!");
 
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("TODO()") << pyCodeInfo(code));
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("eval()") << pyCodeInfo(code));
 	}
 }
 
 
-bp::object PythonModule::evalToObject(std::string code) {
+bp::object PythonModule::evalToObject(std::string code) { //TODO: references!
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
@@ -242,7 +242,7 @@ bool PythonModule::checkIsNone(std::string name) {
 	}
 }
 
-void PythonModule::setGlobal(std::string name, bp::object value) {
+void PythonModule::setGlobal(const std::string& name, const bp::object& value) {
 	DBG("in setGlobal()");
 	try {
 		moduleObject.attr(name.c_str()) = value;
@@ -255,19 +255,19 @@ void PythonModule::setGlobal(std::string name, bp::object value) {
 }
 
 
-void PythonModule::setGlobal(std::string name, std::string value) {
+void PythonModule::setGlobal(const std::string& name, const std::string& value) {
 	setGlobal(name, bp::str(value));
 }
 
-void PythonModule::setGlobal(std::string name, std::map<std::string, std::string> value) {
+void PythonModule::setGlobal(const std::string& name, const std::map<std::string, std::string>& value) {
 	setGlobal(name, bp::dict(value));
 }
 
-void PythonModule::setGlobal(std::string name, std::multimap<std::string, std::string> value) {
+void PythonModule::setGlobal(const std::string& name, const std::multimap<std::string, std::string>& value) {
 	setGlobal(name, bp::list(value));
 }
 
-void PythonModule::setGlobalRequest(std::string name, Request value) {
+void PythonModule::setGlobalRequest(const std::string& name, const Request& value) {
 	try {
 		setGlobal(name, bp::object(value));
 	}

@@ -49,11 +49,11 @@ public:
 	boost::python::object callObject(boost::python::object obj, boost::python::object arg);
 	boost::python::object callObject(boost::python::object obj);
 
-	void setGlobal(std::string name, std::string value);
-	void setGlobal(std::string name, std::map<std::string, std::string> value);
-	void setGlobal(std::string name, std::multimap<std::string, std::string> value);
-	void setGlobal(std::string name, boost::python::object value);
-	void setGlobalRequest(std::string name, Request value);
+	void setGlobal(const std::string& name, const std::string& value);
+	void setGlobal(const std::string& name, const std::map<std::string, std::string>& value);
+	void setGlobal(const std::string& name, const std::multimap<std::string, std::string>& value);
+	void setGlobal(const std::string& name, const boost::python::object& value);
+	void setGlobalRequest(const std::string&, const Request& value);
 
 	std::string getGlobalStr(std::string name);
 	std::map<std::string, std::string> getGlobalMap(std::string name);

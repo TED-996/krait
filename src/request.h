@@ -21,7 +21,7 @@ public:
 	Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
 
-	bool headerExists(std::string name);
+	bool headerExists(std::string name) const;
 	const boost::optional<std::string> getHeader(const std::string& name) const;
 
 	const HttpVerb getVerb() const {

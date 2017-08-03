@@ -11,7 +11,7 @@
 class PymlFile : public IPymlFile
 {
 private:
-	const IPymlItem* rootItem;
+	std::unique_ptr<const IPymlItem> rootItem;
 	std::unique_ptr<IPymlParser> parser;
 
 public:
@@ -26,6 +26,6 @@ public:
 	std::string runPyml() const;
 
 	const IPymlItem* getRootItem() const {
-		return (IPymlItem*)rootItem;
+		return rootItem.get();
 	}
 };

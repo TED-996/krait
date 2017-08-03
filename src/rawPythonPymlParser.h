@@ -5,16 +5,10 @@
 class RawPythonPymlParser : public IPymlParser
 {
 	IPymlCache& cache;
-	PymlItemPyExec mainExec;
-	PymlItemSeq rootSeq;
-	PymlItemIf ctrlCondition;
-	PymlItemSeq embedRootSeq;
-	PymlItemPyExec embedSetupExec;
-	PymlItemEmbed viewEmbed;
-	PymlItemPyExec embedCleanupExec;
+	std::unique_ptr<const PymlItemSeq> rootSeq;
 public:
 	RawPythonPymlParser(IPymlCache& cache);
 	void consume(std::string::iterator start, std::string::iterator end) override;
 
-	const IPymlItem* getParsed() override;
+	std::unique_ptr<const IPymlItem> getParsed() override;
 };

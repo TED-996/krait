@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <boost/optional.hpp>
 #include "iteratorResult.h"
 
@@ -20,17 +19,17 @@ class Response
 	std::string statusLine;
 	bool fromFullResponse;
 
-	void parseFullResponse(std::string response);
+	void parseFullResponse(const  std::string& response);
 	boost::optional<std::string> getHeader(std::string name);
 
 public:
-	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
-	         std::string body, bool connClose);
-	Response(std::string fullResponse);
-	Response(int httpMajor, int httpMinor, int statusCode, std::unordered_multimap<std::string, std::string> headers,
-	         IteratorResult bodyIterator, bool connClose);
-	Response(int statusCode, std::string body, bool connClose);
-	Response(int statusCode, IteratorResult bodyIterator, bool connClose);
+	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
+	         const std::string& body, bool connClose);
+	explicit Response(const std::string& fullResponse);
+	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
+	         const IteratorResult& bodyIterator, bool connClose);
+	Response(int statusCode, const std::string& body, bool connClose);
+	Response(int statusCode, const IteratorResult& bodyIterator, bool connClose);
 
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;
@@ -45,10 +44,10 @@ public:
 		return statusCode;
 	}
 
-	void setBody(std::string body, bool updateLength);
+	void setBody(const std::string& body, bool updateLength);
 
-	void addHeader(std::string name, std::string value);
-	void setHeader(std::string name, std::string value);
+	void addHeader(std::string name, const std::string& value);
+	void setHeader(std::string name, const std::string& value);
 	void removeHeader(std::string name);
 
 	void setConnClose(bool connClose);

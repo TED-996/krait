@@ -1,20 +1,23 @@
-#include"cacheController.h"
-#include"utils.h"
-#include"formatHelper.h"
-#include"pythonModule.h"
+#include <boost/filesystem.hpp>
+#include "cacheController.h"
+#include "utils.h"
+#include "formatHelper.h"
+#include "pythonModule.h"
 
 #define DBG_DISABLE
-#include"dbg.h"
+#include "dbg.h"
 
 namespace bp = boost::python;
 
 
-CacheController::CacheController(Config& config)
+CacheController::CacheController(Config& config, std::string filenameRoot)
 	:
 	noStoreTargets(),
 	privateTargets(),
 	publicTargets(),
-	longTermTargets() {
+	longTermTargets(),
+	filenameRoot(filenameRoot) {
+
 	maxAgeDefault = -1;
 	maxAgeLongTerm = -1;
 
@@ -38,7 +41,9 @@ CacheController::CachePragma CacheController::getCacheControl(std::string target
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Cache controller not loaded. Call load() first."));
 	}
 
-	std::pair<std::string, bool> cacheKey = make_pair(targetFilename, defaultIsStore);
+	std::string relFilename = boost::filesystem::relative(targetFilename, filenameRoot).string();
+
+	std::pair<std::string, bool> cacheKey = std::make_pair(relFilename, defaultIsStore);
 
 	const auto it = pragmaCache.find(cacheKey);
 	if (it != pragmaCache.end()) {
@@ -50,24 +55,24 @@ CacheController::CachePragma CacheController::getCacheControl(std::string target
 	result.isStore = defaultIsStore;
 	result.isCache = defaultIsStore;
 	result.isRevalidate = true;
-	if (noStoreTargets.isMatch(targetFilename)) {
+	if (noStoreTargets.isMatch(relFilename)) {
 		result.isStore = false;
 		result.isCache = false;
 		result.isRevalidate = true;
 	}
-	if (privateTargets.isMatch(targetFilename)) {
+	if (privateTargets.isMatch(relFilename)) {
 		result.isPrivate = true;
 		result.isCache = true;
 		result.isStore = true;
 	}
-	if (publicTargets.isMatch(targetFilename)) {
+	if (publicTargets.isMatch(relFilename)) {
 		result.isPrivate = false;
 		result.isCache = true;
 		result.isStore = true;
 	}
 
 	//Modifiers (some assume stuff so just add them.)
-	if (longTermTargets.isMatch(targetFilename)) {
+	if (longTermTargets.isMatch(relFilename)) {
 		result.isLongTerm = true;
 		result.isCache = true;
 		result.isStore = true;
