@@ -131,7 +131,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\config.cpp" />
+    <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
+    <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
@@ -145,7 +147,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\main_cmdr.cpp" />
     <ClCompile Include="src\main_tests.cpp" />
-    <ClCompile Include="src\network.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\path_tests.cpp" />
     <ClCompile Include="src\pymlCache.cpp" />
@@ -170,7 +171,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\IManagedSocket.h" />
+    <ClInclude Include="src\INetworkManager.h" />
+    <ClInclude Include="src\managedSocket.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
+    <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\responseBuilder.h" />
@@ -190,7 +195,6 @@
     <ClInclude Include="src\IPymlParser.h" />
     <ClInclude Include="src\iteratorResult.h" />
     <ClInclude Include="src\logger.h" />
-    <ClInclude Include="src\network.h" />
     <ClInclude Include="src\path.h" />
     <ClInclude Include="src\pymlCache.h" />
     <ClInclude Include="src\pymlFile.h" />

@@ -17,8 +17,9 @@
 #include "signalManager.h"
 #include "config.h"
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include"dbg.h"
+#include "networkManager.h"
 
 
 namespace b = boost;
@@ -32,6 +33,8 @@ Server::Server(std::string serverRoot, int port)
 	serverRoot(bf::path(serverRoot)),
 	config(),
 	cacheController(config, serverRoot),
+	networkManager(std::make_unique<INetworkManager>(std::move(NetworkManager::fromAnyOnPort(port)))),
+	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
 		          this,
@@ -46,21 +49,10 @@ Server::Server(std::string serverRoot, int port)
 	Server::instance = this;
 
 	this->serverRoot = bf::path(serverRoot);
-	socketToClose = -1;
-
+	
 	DBG("routes got");
 
-	try {
-		this->serverSocket = getServerSocket(port, false, true);
-	}
-	catch (networkError err) {
-		Loggers::errLogger.log("Could not get server socket.");
-		exit(1);
-	}
-	socketToClose = this->serverSocket;
-
-	DBG("server socket got");
-
+	
 	try {
 		PythonModule::initModules(serverRoot);
 	}
@@ -83,14 +75,11 @@ Server::Server(std::string serverRoot, int port)
 
 
 Server::~Server() {
-	if (socketToClose != -1) {
-		close(socketToClose);
-	}
 }
 
 void Server::runServer() {
 	try {
-		setSocketListen(this->serverSocket);
+		networkManager->listen(5); //TODO: backlog size?
 	}
 	catch (networkError err) {
 		Loggers::errLogger.log("Could not set server to listen.");
@@ -116,35 +105,35 @@ void Server::cleanup() {
 
 void Server::tryAcceptConnection() {
 	const int timeout = 100;
-	int clientSocket = -1;
+	std::unique_ptr<IManagedSocket> newClient;
 	try {
-		clientSocket = getNewClient(serverSocket, timeout);
+		newClient = std::move(networkManager->acceptTimeout(timeout));
 	}
 	catch (networkError err) {
 		Loggers::errLogger.log("Could not get new client.");
 		exit(1);
 	}
 
-	if (clientSocket == -1) {
+	if (newClient == nullptr) {
 		return;
 	}
 
 	pid_t pid = fork();
 	if (pid == -1) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("fork(): creating process to serve socket. Is the system out of resources?") <<
-			errcodeInfoDef());
+		BOOST_THROW_EXCEPTION(syscallError()
+			<< stringInfo("fork(): creating process to serve socket. Is the system out of resources?") << errcodeInfoDef());
 	}
 	if (pid == 0) {
 		SignalManager::clearPids();
-		socketToClose = clientSocket;
+		clientSocket = std::move(newClient);
+		networkManager.reset(); // Destruct the network manager to close the socket.
 
-		closeSocket(serverSocket);
 		cacheRequestPipe.closeRead();
 
-		serveClientStart(clientSocket);
+		serveClientStart();
 		exit(255); //The function above should call exit()!
 	}
-	closeSocket(clientSocket);
+	newClient.reset(); // Destruct the new client to close the socket.
 
 	SignalManager::addPid((int)pid);
 }
@@ -156,14 +145,14 @@ void Server::tryCheckStdinClosed() const {
 	}
 }
 
-void Server::serveClientStart(int clientSocket) {
+void Server::serveClientStart() {
 	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
 	keepAliveTimeoutSec = maxKeepAliveSec;
 
 	try {
 		while (true) {
-			b::optional<Request> requestOpt = getRequestFromSocket(clientSocket, keepAliveTimeoutSec * 1000);
+			b::optional<Request> requestOpt = clientSocket->getRequestTimeout(keepAliveTimeoutSec * 1000);
 			Loggers::logInfo(formatString("request got"));
 			if (!requestOpt) {
 				Loggers::logInfo(formatString("Requests finished."));
@@ -188,23 +177,26 @@ void Server::serveClientStart(int clientSocket) {
 
 				try {
 					if (request.isUpgrade("websocket")) {
-						serveRequestWebsockets(clientSocket, request);
+						serveRequestWebsockets(request);
 					}
 					else {
-						serveRequest(clientSocket, request);
+						serveRequest(request);
 					}
 
 					Loggers::logInfo("Serving a request finished.");
 				}
 				catch (networkError&) {
-					Loggers::errLogger.log("Could not respond to client request.");
+					Loggers::errLogger.log("Could not respond to client request (network error - disconnected?).");
+					clientSocket.reset();
 					exit(1);
 				}
 				catch (pythonError& err) {
 					Loggers::errLogger.log(formatString("Python error:\n%1%", err.what()));
+					clientSocket.reset();
 					exit(1);
 				}
-				close(clientSocket);
+				
+				clientSocket.reset();
 				exit(0);
 			}
 			else {
@@ -223,21 +215,20 @@ void Server::serveClientStart(int clientSocket) {
 	}
 	catch (rootException& ex) {
 		if (isHead) {
-			respondWithObject(clientSocket, Response(500, "", true));
+			clientSocket->respondWithObject(std::move(Response(500, "", true)));
 		}
 		else {
-			respondWithObject(clientSocket, Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
+			clientSocket->respondWithObject(std::move(Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true)));
 		}
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
 
-	close(clientSocket);
-
+	clientSocket.reset();
 	exit(0);
 }
 
-void Server::serveRequest(int clientSocket, Request& request) {
+void Server::serveRequest(Request& request) {
 	Response resp(500, "", true);
 
 	bool isHead = false;
@@ -257,10 +248,10 @@ void Server::serveRequest(int clientSocket, Request& request) {
 
 	resp.setConnClose(!keepAlive);
 
-	respondWithObjectRef(clientSocket, resp);
+	clientSocket->respondWithObject(std::move(resp));
 }
 
-void Server::serveRequestWebsockets(int clientSocket, Request& request) {
+void Server::serveRequestWebsockets(Request& request) {
 	Response resp(500, "", true);
 	try {
 		interpretCacheRequest = true;
@@ -272,12 +263,12 @@ void Server::serveRequestWebsockets(int clientSocket, Request& request) {
 	}
 
 	if (resp.getStatusCode() >= 200 && resp.getStatusCode() < 300) {
-		WebsocketsServer server(clientSocket);
+		WebsocketsServer server(*clientSocket);
 		server.start(request);
 	}
 	else {
 		resp.setConnClose(!keepAlive);
-		respondWithObjectRef(clientSocket, resp);
+		clientSocket->respondWithObject(std::move(resp));
 	}
 }
 
@@ -301,7 +292,7 @@ std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename
 	else {
 		parser = std::make_unique<RawPymlParser>();
 	}
-	//return pool.construct(source.begin(), source.end(), parser);
+
 	return std::make_unique<PymlFile>(source.begin(), source.end(), parser);
 }
 

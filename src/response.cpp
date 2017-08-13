@@ -173,9 +173,7 @@ void Response::setConnClose(bool connClose) {
 std::string getStatusReason(int statusCode);
 std::string formatTitleCase(std::string str);
 
-std::string Response::getResponseHeaders() {
-	setConnClose(connClose);
-
+std::string Response::getResponseHeaders() const {
 	std::string statusLine;
 	if (fromFullResponse) {
 		statusLine = this->statusLine;
@@ -186,9 +184,16 @@ std::string Response::getResponseHeaders() {
 	std::vector<std::string> headerStrings;
 
 	b::format headerFormat = b::format("%1%: %2%");
-	for (auto header : headers) {
-		headerStrings.push_back((b::format(headerFormat) % formatTitleCase(header.first) % header.second).str());
+
+	if (connClose) {
+		headerStrings.push_back("Connection: close");
 	}
+	for (auto header : headers) {
+		if (b::to_lower_copy(header.first) != "connection") {
+			headerStrings.push_back((b::format(headerFormat) % formatTitleCase(header.first) % header.second).str());
+		}
+	}
+
 	headerStrings.push_back(std::string());
 
 	std::string headersAll = b::algorithm::join(headerStrings, "\r\n");

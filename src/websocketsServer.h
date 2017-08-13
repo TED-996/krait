@@ -2,12 +2,13 @@
 #include <string>
 #include "websocketsTypes.h"
 #include "request.h"
+#include "IManagedSocket.h"
 
 
 class WebsocketsServer
 {
 private:
-	int clientSocket;
+	IManagedSocket& managedSocket;
 	bool closed;
 
 	boost::optional<WebsocketsMessage> read(int timeoutMs);

@@ -2,7 +2,6 @@
 #include <boost/archive/iterators/transform_width.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include "websocketsServer.h"
-#include "network.h"
 #include "pythonModule.h"
 #include "logger.h"
 #include "formatHelper.h"
@@ -10,13 +9,13 @@
 #define DBG_DISABLE
 #include "dbg.h"
 
-WebsocketsServer::WebsocketsServer(int clientSocket) {
-	this->clientSocket = clientSocket;
+WebsocketsServer::WebsocketsServer(IManagedSocket& clientSocket)
+	: clientSocket(clientSocket){
 	this->closed = false;
 }
 
 boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
-	boost::optional<WebsocketsFrame> frameOptional = getWebsocketsFrameTimeout(clientSocket, timeoutMs);
+	boost::optional<WebsocketsFrame> frameOptional = clientSocket.getWebsocketsFrameTimeout(timeoutMs);
 	if (!frameOptional) {
 		return boost::none;
 	}
@@ -32,7 +31,7 @@ boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
 		bool messageFinished = frame.isFin;
 
 		while (!messageFinished) {
-			frame = getWebsocketsFrame(clientSocket);
+			frame = clientSocket.getWebsocketsFrame();
 			if (frame.opcode == WebsocketsOpcode::Ping) {
 				handlePing(frame);
 			}
@@ -81,7 +80,7 @@ void WebsocketsServer::write(WebsocketsMessage message) {
 		}
 		frame.message.assign(message.message, msgIdx, frameLen);
 
-		sendWebsocketsFrame(clientSocket, frame);
+		clientSocket.sendWebsocketsFrame(frame);
 
 		msgIdx += frameLen;
 		frame.opcode = Continuation;
@@ -95,7 +94,8 @@ void WebsocketsServer::sendPing() {
 	pingFrame.isFin = true;
 	pingFrame.message = "";
 
-	sendWebsocketsFrame(clientSocket, pingFrame);
+	clientSocket.sendWebsocketsFrame(pingFrame);
+
 
 	//TODO: remember that we're waiting for a ping.
 }
@@ -106,7 +106,7 @@ void WebsocketsServer::sendClose() {
 	closeFrame.isFin = true;
 	closeFrame.message = "";
 
-	sendWebsocketsFrame(clientSocket, closeFrame);
+	clientSocket.sendWebsocketsFrame(closeFrame);
 }
 
 void WebsocketsServer::handlePing(WebsocketsFrame ping) {
@@ -114,7 +114,7 @@ void WebsocketsServer::handlePing(WebsocketsFrame ping) {
 	pongFrame.opcode = WebsocketsOpcode::Pong;
 	pongFrame.isFin = true;
 	pongFrame.message = ping.message;
-	sendWebsocketsFrame(clientSocket, pongFrame);
+	clientSocket.sendWebsocketsFrame(pongFrame);
 }
 
 void WebsocketsServer::handleClose(WebsocketsFrame close) {
@@ -197,7 +197,7 @@ std::string encode64(const std::string& val);
 
 bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 	if (PythonModule::websockets.checkIsNone("response")) {
-		respondWithObject(clientSocket, Response(400, "", true));
+		clientSocket.respondWithObject(std::move(Response(400, "", true)));
 		return false;
 	}
 
@@ -211,18 +211,17 @@ bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 	}
 
 	if (!key) {
-		respondWithObject(clientSocket, Response(1, 1, 400, std::unordered_multimap<std::string, std::string>(), "", true));
+		clientSocket.respondWithObject(std::move(Response(1, 1, 400, std::unordered_multimap<std::string, std::string>(), "", true)));
 		return false;
 	}
 	if (!version || version.get() != "13") {
-		respondWithObject(clientSocket, Response(
-			                  1,
-			                  1,
-			                  400,
-			                  std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
-			                  "",
-			                  true
-		                  ));
+		clientSocket.respondWithObject(std::move(Response(
+			1,
+			1,
+			400,
+			std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
+			"",
+			true)));
 		return false;
 	}
 
@@ -256,14 +255,13 @@ bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 		outHeaders.insert(make_pair("Sec-WebSocket-Protocol", protocol.get()));
 	}
 
-	respondWithObject(clientSocket, Response(
-		                  1,
-		                  1,
-		                  101,
-		                  outHeaders,
-		                  "",
-		                  false
-	                  ));
+	clientSocket.respondWithObject(std::move(Response(
+		1,
+		1,
+		101,
+		outHeaders,
+		"",
+		false)));
 
 	return true;
 }

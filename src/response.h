@@ -54,6 +54,6 @@ public:
 
 	bool headerExists(std::string name);
 
-	std::string getResponseHeaders();
+	std::string getResponseHeaders() const;
 	const std::string* getBodyNext();
 };
