@@ -76,9 +76,9 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 			}
 		}
 
-		addDefaultHeaders(*response, source.symFilename, request, cachePragma);
+		addDefaultHeaders(*response, source.symFilename, request, cachePragma, isDynamic);
 	}
-	catch(notFoundError) {
+	catch(notFoundError&) {
 		Loggers::logInfo(formatString("Not found building %1%", symFilename)); //TODO: encapsulate some info in NotFoundError
 		response = std::make_unique<Response>(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
@@ -102,7 +102,7 @@ std::unique_ptr<Response> ResponseBuilder::buildWebsocketsResponse(Request& requ
 	return buildResponseInternal(request, true);
 }
 
-std::string replaceParams(std::string target, std::map<std::string, std::string>& params);
+std::string replaceParams(const std::string& target, std::map<std::string, std::string>& params);
 
 ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(const Request& request) const {
 	std::map<std::string, std::string> params;
@@ -145,64 +145,60 @@ std::string ResponseBuilder::getFilenameFromTarget(const std::string& target) co
 }
 
 
-std::string ResponseBuilder::expandFilename(std::string filename) const {
-	if (bf::is_directory(filename)) {
-		//DBG("Converting to directory automatically");
-		filename = (bf::path(filename) / "index").string(); //Not index.html; taking care below about it
+std::string ResponseBuilder::expandFilename(const std::string& sourceFilename) const {
+	std::string workingFilename = sourceFilename;
+	if (bf::is_directory(workingFilename)) {
+		//Converting to directory automatically.
+		//Not index.html; taking care below about it (might be .pyml or .py, for example)
+		workingFilename = (bf::path(workingFilename) / "index").string();
 	}
 
-	if (!bf::exists(filename)) {
-		if (bf::exists(filename + ".html")) {
-			//DBG("Adding .html automatically");
-			filename += ".html";
+	if (!bf::exists(workingFilename)) {
+		if (bf::exists(workingFilename + ".html")) {
+			workingFilename += ".html";
 		}
-		else if (bf::exists(filename + ".htm")) {
-			//DBG("Adding .htm automatically");
-			filename += ".htm";
+		else if (bf::exists(workingFilename + ".htm")) {
+			workingFilename += ".htm";
 		}
-		else if (bf::exists(filename + ".pyml")) {
-			//DBG("Adding .pyml automatically");
-			filename += ".pyml";
+		else if (bf::exists(workingFilename + ".pyml")) {
+			workingFilename += ".pyml";
 		}
-		else if (bf::exists(filename + ".py")) {
-			filename += ".py";
+		else if (bf::exists(workingFilename + ".py")) {
+			workingFilename += ".py";
 		}
 
-		else if (bf::path(filename).extension() == ".html" &&
-			bf::exists(bf::change_extension(filename, ".htm"))) {
-			filename = bf::change_extension(filename, "htm").string();
-			//DBG("Changing extension to .htm");
+		else if (bf::path(workingFilename).extension() == ".html" &&
+			bf::exists(bf::change_extension(workingFilename, ".htm"))) {
+			workingFilename = bf::change_extension(workingFilename, "htm").string();
 		}
-		else if (bf::path(filename).extension() == ".htm" &&
-			bf::exists(bf::change_extension(filename, ".html"))) {
-			filename = bf::change_extension(filename, "html").string();
-			//DBG("Changing extension to .html");
+		else if (bf::path(workingFilename).extension() == ".htm" &&
+			bf::exists(bf::change_extension(workingFilename, ".html"))) {
+			workingFilename = bf::change_extension(workingFilename, "html").string();
 		}
 	}
-	return filename;
+	return workingFilename;
 }
 
-const IPymlFile& ResponseBuilder::getPymlFromCache(std::string filename) const {
+const IPymlFile& ResponseBuilder::getPymlFromCache(const std::string& filename) const {
 	return pymlCache.get(filename);
 }
  
-void ResponseBuilder::addDefaultHeaders(Response& response, std::string filename,
-		const Request& request, CacheController::CachePragma cachePragma) {
+void ResponseBuilder::addDefaultHeaders(Response& response, const std::string& filename,
+		const Request& request, CacheController::CachePragma cachePragma, bool isDynamic) {
 
 	addCacheHeaders(response, filename, cachePragma);
 
 	if (!response.headerExists("Content-Type")) {
-		response.setHeader("Content-Type", getContentType(filename));
+		response.setHeader("Content-Type", getContentType(filename, isDynamic));
 	}
 
-	std::time_t timeVal = std::time(NULL);
+	std::time_t timeVal = std::time(nullptr);
 	if (timeVal != -1 && !response.headerExists("Date")) {
 		response.setHeader("Date", unixTimeToString(timeVal));
 	}
 }
 
-
-void ResponseBuilder::addCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma) const {
+void ResponseBuilder::addCacheHeaders(Response& response, const std::string& filename, CacheController::CachePragma pragma) const {
 	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
 
 	if (pragma.isStore) {
@@ -211,10 +207,10 @@ void ResponseBuilder::addCacheHeaders(Response& response, std::string filename, 
 }
 
 
-std::string ResponseBuilder::getContentType(std::string filename) {
+std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
 	std::string extension;
 
-	if (PythonModule::krait.checkIsNone("_content_type")) {
+	if (!isDynamic || PythonModule::krait.checkIsNone("_content_type")) {
 		bf::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
@@ -229,11 +225,11 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 		}
 		else {
 			extension = varContentType.substr(3); //strlen("ext")
-			extension[0] = '.'; // /extension to .extension
+			extension[0] = '.'; // /"extension" to ".extension"
 		}
 	}
 
-	auto it = contentTypeByExtension.find(extension);
+	const auto& it = contentTypeByExtension.find(extension);
 	if (it == contentTypeByExtension.end()) {
 		return "application/octet-stream";
 	}
@@ -243,8 +239,7 @@ std::string ResponseBuilder::getContentType(std::string filename) {
 }
 
 
-void ResponseBuilder::loadContentTypeList(std::string filename) {
-	//bf::path contentFilePath = getExecRoot() / "globals" / "mime.types";
+void ResponseBuilder::loadContentTypeList(const std::string& filename) {
 	std::ifstream mimeFile(filename);
 	if (!mimeFile) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("MIME types file missing! Filename: %1%", filename));
@@ -260,25 +255,24 @@ void ResponseBuilder::loadContentTypeList(std::string filename) {
 
 		const char* separators = " \t\r\n";
 		char* ptr = strtok(line, separators);
-		if (ptr == NULL) {
+		if (ptr == nullptr) {
 			continue;
 		}
 
 		mimeType.assign(ptr);
-		ptr = strtok(NULL, separators);
-		while (ptr != NULL) {
-			//This SHOULD be fine.
+		ptr = strtok(nullptr, separators);
+		while (ptr != nullptr) {
+			//This SHOULD be fine. This ptr is definitely not the first character in the char[].
 			//Make it an extension (html to .html)
 			*(ptr - 1) = '.';
 			contentTypeByExtension[std::string(ptr - 1)] = mimeType;
 
-			ptr = strtok(NULL, separators);
+			ptr = strtok(nullptr, separators);
 		}
-
 	}
 }
 
-std::string replaceParams(std::string target, std::map<std::string, std::string>& params) {
+std::string replaceParams(const std::string& target, std::map<std::string, std::string>& params) {
 	auto it = target.begin();
 	auto oldIt = it;
 	std::string result;

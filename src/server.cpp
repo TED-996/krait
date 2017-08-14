@@ -251,37 +251,38 @@ void Server::serveRequest(Request& request) {
 
 	resp->setConnClose(!keepAlive);
 
-	clientSocket->respondWithObject(std::move(*resp.get()));
+	clientSocket->respondWithObject(std::move(*resp));
 }
 
 void Server::serveRequestWebsockets(Request& request) {
-	Response resp(500, "", true);
+	std::unique_ptr<Response> resp;
+
 	try {
 		interpretCacheRequest = true;
 		resp = responseBuilder.buildWebsocketsResponse(request);
 	}
 	catch (rootException& ex) {
-		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		resp = std::make_unique<Response>(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
-	if (resp.getStatusCode() >= 200 && resp.getStatusCode() < 300) {
+	if (resp->getStatusCode() >= 200 && resp->getStatusCode() < 300) {
 		WebsocketsServer server(*clientSocket);
 		server.start(request);
 	}
 	else {
-		resp.setConnClose(!keepAlive);
-		clientSocket->respondWithObject(std::move(resp));
+		resp->setConnClose(!keepAlive);
+		clientSocket->respondWithObject(std::move(*resp));
 	}
 }
 
-bool Server::canContainPython(std::string filename) {
+bool Server::canContainPython(const std::string& filename) {
 	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
 }
 
-std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest) {
+std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest) {
 	DBG_FMT("constructFromFilename(%1%)", filename);
-	std::string source = readFromFile(filename);
+	std::string source = readFromFile(filename); //TODO: expensive.
 	tagDest.setTag(generateTagFromStat(filename));
 
 	std::unique_ptr<IPymlParser> parser;
@@ -300,7 +301,7 @@ std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename
 }
 
 
-void Server::onServerCacheMiss(std::string filename) {
+void Server::onServerCacheMiss(const std::string& filename) {
 	if (interpretCacheRequest) {
 		cacheRequestPipe.pipeWrite(filename);
 		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
@@ -308,13 +309,15 @@ void Server::onServerCacheMiss(std::string filename) {
 }
 
 void Server::updateParentCaches() {
+	interpretCacheRequest = false;
+
 	while (cacheRequestPipe.pipeAvailable()) {
 		std::string filename = cacheRequestPipe.pipeRead();
-		DBG("next cache add is in parent");
+		DBG("Server: next cache add is in parent");
 
-		interpretCacheRequest = false;
 		serverCache.get(filename);
-		interpretCacheRequest = true;
 	}
+
+	interpretCacheRequest = true;
 }
 

@@ -47,11 +47,11 @@ class Server
 	void serveClientStart();
 	void serveRequest(Request& request);
 
-	bool canContainPython(std::string filename);
+	bool canContainPython(const std::string& filename);
 	void serveRequestWebsockets(Request& request);
 
-	std::unique_ptr<PymlFile> constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest);
-	void onServerCacheMiss(std::string filename);
+	std::unique_ptr<PymlFile> constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest);
+	void onServerCacheMiss(const std::string& filename);
 
 	void updateParentCaches();
 

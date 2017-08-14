@@ -44,8 +44,8 @@ private:
 
 
 public:
-	typedef std::function<std::unique_ptr<PymlFile>(std::string filename, CacheTag& tag)> constructorFunction;
-	typedef std::function<void(std::string filename)> cacheEventFunction;
+	typedef std::function<std::unique_ptr<PymlFile>(const std::string& filename, CacheTag& tag)> constructorFunction;
+	typedef std::function<void(const std::string& filename)> cacheEventFunction;
 
 private:
 	constructorFunction constructor;
