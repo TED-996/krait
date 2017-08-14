@@ -3,10 +3,8 @@
 #include "pythonModule.h"
 #include "mvcPymlFile.h"
 
-bool PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request, Response& destination) {
-	IteratorResult iterResult(PymlIterator(pymlSource.getRootItem()));
+std::unique_ptr<Response> PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request) {
+	IteratorResult iterResult(std::move(PymlIterator(pymlSource.getRootItem())));
 
-	destination = Response(200, iterResult, false);
-
-	return true;
+	return std::make_unique<Response>(200, std::move(iterResult), false);
 }

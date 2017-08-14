@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include<cstddef>
-#include <boost/optional/optional.hpp>
+#include <memory>
 #include "request.h"
 #include "websocketsTypes.h"
 #include "pageResponseRenderer.h"
@@ -16,8 +16,8 @@ public:
 	virtual ~IManagedSocket() = default;
 
 	virtual void initialize() = 0;
-	virtual Request getRequest() = 0;
-	virtual boost::optional<Request> getRequestTimeout(int timeoutMs) = 0;
+	virtual std::unique_ptr<Request> getRequest() = 0;
+	virtual std::unique_ptr<Request> getRequestTimeout(int timeoutMs) = 0;
 
 	virtual WebsocketsFrame getWebsocketsFrame() = 0;
 	virtual boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int timeoutMs) = 0;

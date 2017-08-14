@@ -5,7 +5,8 @@
 class PythonApiManager
 {
 public:
-	void set(const Request& request, bool isWebsockets);
-	void getResponse(Response& response);
-	void addHeaders(Response& response);
+	void set(const Request& request, bool isWebsockets) const;
+	std::unique_ptr<Response> getCustomResponse() const;
+	bool isCustomResponse() const;
+	void addHeaders(Response& response) const;
 };

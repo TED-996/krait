@@ -3,24 +3,27 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-IteratorResult::IteratorResult(PymlIterator iterator) {
-	exhaustIterator(iterator);
+IteratorResult::IteratorResult(PymlIterator&& iterator) {
+	exhaustIterator(std::move(iterator));
 }
 
 IteratorResult::IteratorResult(std::string fullString) {
-	strIterated.push_back(ValueOrPtr<std::string>(fullString));
+	strIterated.emplace_back(std::make_unique<const std::string>(fullString));
 
 	currentIdx = 0;
 	totalLength = fullString.length();
 }
 
 
-void IteratorResult::exhaustIterator(PymlIterator& iterator) {
+IteratorResult::IteratorResult(IteratorResult&& other) noexcept
+	: strIterated(std::move(other.strIterated)), totalLength(other.totalLength), currentIdx(other.currentIdx){
+}
+
+void IteratorResult::exhaustIterator(PymlIterator&& iterator) {
 	totalLength = 0;
 	while (*iterator != NULL) {
 		if (iterator.isTmpStr(*iterator)) {
 			strIterated.push_back(ValueOrPtr<std::string>(**iterator));
-			//DBG_FMT("added to storage: %1%", *strIterated[strIterated.size() - 1].get());
 		}
 		else {
 			strIterated.push_back(ValueOrPtr<std::string>(*iterator));

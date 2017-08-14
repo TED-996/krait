@@ -7,8 +7,8 @@
 namespace b = boost;
 
 
-Route::Route(RouteVerb verb, boost::optional<boost::regex> urlRegex, boost::optional<std::string> urlRaw,
-             boost::optional<std::string> target, boost::optional<boost::python::object> ctrlClass)
+Route::Route(RouteVerb verb, const boost::optional<boost::regex>& urlRegex, const boost::optional<std::string>& urlRaw,
+             const boost::optional<std::string>& target, const boost::optional<boost::python::object>& ctrlClass)
 	: verb(verb), urlRegex(urlRegex), urlRaw(urlRaw), target(target), ctrlClass(ctrlClass) {
 }
 
@@ -22,7 +22,7 @@ const std::string& Route::getTarget(const std::string& defaultTarget) const {
 	}
 }
 
-bool Route::isMatch(RouteVerb verb, std::string url, std::map<std::string, std::string>& outParams) const {
+bool Route::isMatch(RouteVerb verb, const std::string& url, std::map<std::string, std::string>& outParams) const {
 	outParams.clear();
 
 	if (this->verb != RouteVerb::ANY && verb != this->verb) {
@@ -59,7 +59,7 @@ std::vector<Route> Route::getDefaultRoutes() {
 	return std::vector<Route>{Route(RouteVerb::GET, boost::none, boost::none, boost::none, boost::none)};
 }
 
-const Route& Route::getRouteMatch(const std::vector<Route>& routes, RouteVerb verb, std::string url,
+const Route& Route::getRouteMatch(const std::vector<Route>& routes, RouteVerb verb, const std::string& url,
                                   std::map<std::string, std::string>& outParams) {
 	for (const Route& route : routes) {
 		if (route.isMatch(verb, url, outParams)) {

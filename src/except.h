@@ -7,18 +7,17 @@
 
 
 typedef boost::error_info<struct tag_string_info, const std::string> stringInfo;
-typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo; //TODO: make default
+typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo;
 typedef boost::error_info<struct tag_pycode_info, const std::string> pyCodeInfo;
 typedef boost::error_info<struct tag_pyerr_info, const std::string> pyErrorInfo;
 typedef boost::error_info<struct tag_origin_method, const std::string> originCallInfo;
 
-stringInfo stringInfoFromFormat(std::string format, ...);
 pyErrorInfo getPyErrorInfo();
 errcodeInfo errcodeInfoDef();
 
 struct rootException : virtual boost::exception, virtual std::exception
 {
-	const char* what() const noexcept {
+	const char* what() const noexcept override {
 		return boost::diagnostic_information_what(*this);
 	}
 };

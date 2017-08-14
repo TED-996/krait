@@ -51,7 +51,7 @@ private:
 
 	boost::filesystem::path siteRoot;
 
-	PreResponseSource getSourceFromRequest(Request& request);
+	PreResponseSource getSourceFromRequest(const Request& request) const;
 	std::string getFilenameFromTarget(const std::string& target) const;
 	static bool pathBlocked(const std::string& path);
 	std::string expandFilename(std::string filename) const;
@@ -64,11 +64,11 @@ private:
 	std::string getContentType(std::string filename);
 	void loadContentTypeList(std::string filename);
 
-	bool buildResponseInternal(Request& request, Response& response, bool isWebsockets);
+	std::unique_ptr<Response> buildResponseInternal(const Request& request, bool isWebsockets);
 public:
 
 	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache);
 
-	Response buildResponse(Request& request);
-	Response buildWebsocketsResponse(Request& request);
+	std::unique_ptr<Response> buildResponse(Request& request);
+	std::unique_ptr<Response> buildWebsocketsResponse(Request& request);
 };

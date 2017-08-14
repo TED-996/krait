@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "pymlIterator.h"
 #include "valueOrPtr.h"
 
@@ -11,11 +12,12 @@ private:
 	size_t totalLength;
 	size_t currentIdx;
 
-	void exhaustIterator(PymlIterator& iterator);
+	void exhaustIterator(PymlIterator&& iterator);
 
 public:
-	IteratorResult(PymlIterator iterator);
+	IteratorResult(PymlIterator&& iterator);
 	IteratorResult(std::string fullString);
+	IteratorResult(IteratorResult&& other) noexcept;
 
 	size_t getTotalLength() const {
 		return totalLength;

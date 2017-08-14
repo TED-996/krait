@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <memory>
 #include "request.h"
 #include "IPymlFile.h"
 #include "response.h"
@@ -6,5 +7,5 @@
 class PageResponseRenderer
 {
 public:
-	bool render(const IPymlFile& pymlSource, const Request& request, Response& destination);
+	std::unique_ptr<Response> render(const IPymlFile& pymlSource, const Request& request);
 };

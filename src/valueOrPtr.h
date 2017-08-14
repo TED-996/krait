@@ -9,14 +9,14 @@ private:
 	bool isValue;
 
 public:
-	ValueOrPtr(const T* ptr) {
+	explicit ValueOrPtr(const T* ptr) {
 		this->ptr = ptr;
-		this->valuePtr = NULL;
+		this->valuePtr = nullptr;
 		this->isValue = false;
 	}
 
-	ValueOrPtr(const T value) {
-		this->ptr = NULL;
+	explicit ValueOrPtr(const T& value) {
+		this->ptr = nullptr;
 		this->valuePtr = new T(value);
 		this->isValue = true;
 	}
@@ -29,27 +29,27 @@ public:
 			this->valuePtr = new T(*source.valuePtr);
 		}
 		else {
-			this->valuePtr = NULL;
+			this->valuePtr = nullptr;
 		}
 	}
 
-	ValueOrPtr(ValueOrPtr&& source) {
+	ValueOrPtr(ValueOrPtr&& source) noexcept {
 		this->isValue = source.isValue;
 		this->ptr = source.ptr;
 		this->valuePtr = source.valuePtr;
 
 		source.isValue = true;
-		source.valuePtr = NULL;
-		source.ptr = NULL;
+		source.valuePtr = nullptr;
+		source.ptr = nullptr;
 	}
 
 	~ValueOrPtr() {
-		if (this->isValue && this->valuePtr != NULL) {
+		if (this->isValue && this->valuePtr != nullptr) {
 			delete this->valuePtr;
 		}
 		this->isValue = true;
-		this->ptr = NULL;
-		this->valuePtr = NULL;
+		this->ptr = nullptr;
+		this->valuePtr = nullptr;
 	}
 
 	const T* get() const {
