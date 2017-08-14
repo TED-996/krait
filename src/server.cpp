@@ -33,7 +33,7 @@ Server::Server(std::string serverRoot, int port)
 	serverRoot(bf::path(serverRoot)),
 	config(),
 	cacheController(config, serverRoot),
-	networkManager(std::make_unique<INetworkManager>(std::move(NetworkManager::fromAnyOnPort(port)))),
+	networkManager(std::make_unique<NetworkManager>(std::move(NetworkManager::fromAnyOnPort(port)))),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,

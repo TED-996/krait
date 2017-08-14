@@ -1,7 +1,6 @@
 #include<boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
-
 #include "response.h"
 #include "except.h"
 
@@ -138,14 +137,14 @@ void Response::removeHeader(std::string name) {
 	}
 }
 
-bool Response::headerExists(std::string name) {
+bool Response::headerExists(std::string name) const {
 	b::to_lower(name);
 	auto headerIt = headers.find(name);
 
 	return (headerIt != headers.end());
 }
 
-b::optional<std::string> Response::getHeader(std::string name) {
+b::optional<std::string> Response::getHeader(std::string name) const {
 	b::to_lower(name);
 	auto headerIt = headers.find(name);
 
@@ -170,6 +169,14 @@ void Response::setConnClose(bool connClose) {
 	}
 }
 
+bool Response::isSpecialConnHeader() const {
+	b::optional<std::string> header = getHeader("Connection");
+	if (header == b::none || header.get() == "close") {
+		return false;
+	}
+	return true;
+}
+
 std::string getStatusReason(int statusCode);
 std::string formatTitleCase(std::string str);
 
@@ -185,11 +192,13 @@ std::string Response::getResponseHeaders() const {
 
 	b::format headerFormat = b::format("%1%: %2%");
 
-	if (connClose) {
+	bool specialConnHeader = isSpecialConnHeader();
+	if (connClose && !specialConnHeader) {
 		headerStrings.push_back("Connection: close");
 	}
 	for (auto header : headers) {
-		if (b::to_lower_copy(header.first) != "connection") {
+		//We skip "connection" (already added) for connection:close; otherwise we keep it
+		if (specialConnHeader || b::to_lower_copy(header.first) != "connection") {
 			headerStrings.push_back((b::format(headerFormat) % formatTitleCase(header.first) % header.second).str());
 		}
 	}

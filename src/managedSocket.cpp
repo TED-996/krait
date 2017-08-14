@@ -105,7 +105,7 @@ Request ManagedSocket::getRequest() {
 
 void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
 	const void* ptr = response;
-	const void* const end = response + size;
+	const void* const end = (const void*)((const char*)response + size);
 
 	while(ptr < end) {
 		int bytesWritten = write(ptr, (const char*)end - (const char*)ptr);

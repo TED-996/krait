@@ -20,7 +20,8 @@ class Response
 	bool fromFullResponse;
 
 	void parseFullResponse(const  std::string& response);
-	boost::optional<std::string> getHeader(std::string name);
+	boost::optional<std::string> getHeader(std::string name) const;
+	bool isSpecialConnHeader() const;
 
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
@@ -40,7 +41,7 @@ public:
 		this->statusCode = statusCode;
 	}
 
-	int getStatusCode() {
+	int getStatusCode() const {
 		return statusCode;
 	}
 
@@ -52,7 +53,7 @@ public:
 
 	void setConnClose(bool connClose);
 
-	bool headerExists(std::string name);
+	bool headerExists(std::string name) const;
 
 	std::string getResponseHeaders() const;
 	const std::string* getBodyNext();

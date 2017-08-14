@@ -6,22 +6,30 @@
 #include "except.h"
 #include "managedSocket.h"
 
+#include"dbg.h"
+
 
 NetworkManager::NetworkManager(int socket){
 	this->socket = socket;
 	this->listening = false;
+
+	DBG("NM normal ctor");
 }
 
 
-NetworkManager::NetworkManager(NetworkManager&& source) {
+NetworkManager::NetworkManager(NetworkManager&& source) noexcept {
 	this->socket = source.socket;
 	this->listening = source.listening;
 
 	source.socket = InvalidSocket;
 	source.listening = false;
+
+	DBG_FMT("NM move ctor: sd %1%, listening %2%", this->socket, this->listening);
 }
 
 NetworkManager::~NetworkManager() {
+	DBG_FMT("NM dtor, sd %1%, listening %2%", this->socket, this->listening);
+
 	if (this->socket != InvalidSocket) {
 		close(socket);
 		this->socket = InvalidSocket;
@@ -38,6 +46,7 @@ NetworkManager NetworkManager::fromAnyOnPort(short port) {
 	serverSockaddr.sin_port = htons(port);
 
 	int sd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	DBG_FMT("NM static factory; port %1%, sd %2%", port, sd);
 	if (sd == -1) {
 		BOOST_THROW_EXCEPTION(networkError()
 			<< stringInfo("getListenSocket: could not create socket in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
@@ -66,14 +75,18 @@ void NetworkManager::initialize() {
 }
 
 bool NetworkManager::listen(size_t backlog) {
-	if (socket == InvalidSocket) {
+	DBG_FMT("NM listen, sd %1%, listening %2%, backlog %3%", this->socket, this->listening, backlog);
+	if (this->socket == InvalidSocket) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (listen) after deconstruction."));
 	}
 	if (listening) {
 		return true; //Make it idempotent.
 	}
 
-	this->listening = (::listen(this->socket, (int)backlog) != 0);
+	this->listening = (::listen(this->socket, (int)backlog) == 0);
+	if (!this->listening) {
+		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("listen(): Setting socket to listening.") << errcodeInfoDef());
+	}
 	return this->listening;
 }
 

@@ -9,7 +9,7 @@
 #include "signalManager.h"
 #include "except.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 namespace bpo = boost::program_options;
@@ -22,6 +22,8 @@ int main(int argc, char* argv[]) {
 	std::string stderrName;
 	int port;
 	std::string siteRoot;
+
+	DBG("Krait debugging is active.");
 
 	bpo::options_description genericDesc("Generic options");
 	genericDesc.add_options()
