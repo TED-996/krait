@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <boost/filesystem/path.hpp>
 #include "except.h"
-#include "network.h"
 #include "response.h"
 #include "pymlFile.h"
 #include "stringPiper.h"
@@ -12,6 +11,7 @@
 #include "cacheController.h"
 #include "config.h"
 #include "responseBuilder.h"
+#include "INetworkManager.h"
 
 
 class Server
@@ -28,7 +28,9 @@ class Server
 	Config config;
 	CacheController cacheController;
 
-	int socketToClose;
+	std::unique_ptr<INetworkManager> networkManager;
+	std::unique_ptr<IManagedSocket> clientSocket;
+
 	bool stdinDisconnected;
 
 	StringPiper cacheRequestPipe;
@@ -42,11 +44,11 @@ class Server
 	void tryAcceptConnection();
 	void tryCheckStdinClosed() const;
 
-	void serveClientStart(int clientSocket);
-	void serveRequest(int clientSocket, Request& request);
+	void serveClientStart();
+	void serveRequest(Request& request);
 
 	bool canContainPython(std::string filename);
-	void serveRequestWebsockets(int clientSocket, Request& request);
+	void serveRequestWebsockets(Request& request);
 
 	std::unique_ptr<PymlFile> constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest);
 	void onServerCacheMiss(std::string filename);
