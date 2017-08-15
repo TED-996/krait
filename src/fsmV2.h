@@ -24,7 +24,7 @@ private:
 		* if not consume: repeat
 		* if not skipThis: store
 	 */
-	std::vector<std::vector<std::shared_ptr<FsmTransition>>> transitions;
+	std::vector<std::vector<std::unique_ptr<FsmTransition>>> transitions;
 	std::vector<std::vector<fsmAction>> stateActions;
 	std::vector<std::vector<fsmAction>> finalActions;
 
@@ -196,7 +196,7 @@ class ActionFsmTransition : public FsmTransition
 {
 private:
 	FsmV2::fsmAction action;
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	ActionFsmTransition(FsmTransition* transition, FsmV2::fsmAction action)
 		: action(action), transition(transition) {
@@ -224,7 +224,7 @@ class SavepointSetFsmTransition : public FsmTransition
 {
 private:
 	size_t offset;
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	SavepointSetFsmTransition(FsmTransition* transition, size_t offset = 0)
 		: offset(offset), transition(transition) {
@@ -251,7 +251,7 @@ public:
 class SavepointRevertFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	SavepointRevertFsmTransition(FsmTransition* transition)
 		: transition(transition) {
@@ -278,7 +278,7 @@ public:
 class DiscardFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	DiscardFsmTransition(FsmTransition* transition)
 		: transition(transition) {
@@ -305,7 +305,7 @@ public:
 class PushFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	PushFsmTransition(FsmTransition* transition)
 		: transition(transition) {
@@ -333,7 +333,7 @@ public:
 class SkipFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	SkipFsmTransition(FsmTransition* transition)
 		: transition(transition) {
@@ -378,7 +378,7 @@ public:
 class OrFinalFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 public:
 	OrFinalFsmTransition(FsmTransition* transition)
 		: transition(transition) {
@@ -404,7 +404,7 @@ public:
 class AndConditionFsmTransition : public FsmTransition
 {
 private:
-	std::shared_ptr<FsmTransition> transition;
+	std::unique_ptr<FsmTransition> transition;
 	std::function<bool(char, FsmV2&)> condition;
 public:
 	AndConditionFsmTransition(FsmTransition* transition, std::function<bool(char, FsmV2&)> condition)

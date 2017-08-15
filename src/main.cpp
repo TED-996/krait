@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 	int port;
 	std::string siteRoot;
 
-	DBG("Krait debugging is active.");
+	DBG("Krait debug messaging is active.");
 
 	bpo::options_description genericDesc("Generic options");
 	genericDesc.add_options()

@@ -51,7 +51,6 @@ std::string PymlItemPyEvalRaw::runPyml() const {
 
 
 std::string PymlItemPyExec::runPyml() const {
-	//DBG_FMT("running pyExec: %1%", code);
 	PythonModule::main.run(code);
 	return "";
 }
@@ -143,7 +142,6 @@ std::string PymlItemSetCallable::runPyml() const {
 
 PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
 	: data(NoneData()) {
-	//DBG_FMT("In PymlWorkingItem constructor; type = %1%", (int)type);
 	this->type = type;
 	if (type == Type::None) {
 	}

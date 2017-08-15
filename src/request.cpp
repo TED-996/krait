@@ -15,7 +15,7 @@ namespace ba = boost::algorithm;
 Request::Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
                  const std::map<std::string, std::string>& headers, const std::string& body) {
 	this->verb = verb;
-	this->url = url;
+	this->url = url; 
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->headers = std::map<std::string, std::string>();
@@ -29,12 +29,21 @@ Request::Request(HttpVerb verb, const std::string& url, const std::string& query
 	this->routeVerb = toRouteVerb(verb);
 }
 
+
+Request::Request(Request&& other)
+	: url(std::move(other.url)), headers(other.headers), body(other.body), queryString(std::move(other.queryString)) {
+	this->verb = other.verb;
+	this->httpMajor = other.httpMajor;
+	this->httpMinor = other.httpMinor;
+	this->routeVerb = other.routeVerb;
+}
+
 bool Request::headerExists(std::string name) const {
 	const auto iterFound = headers.find(ba::to_lower_copy(name));
 	return (iterFound != headers.end());
 }
 
-const boost::optional<std::string> Request::getHeader(const std::string& name) const {
+boost::optional<std::string> Request::getHeader(const std::string& name) const {
 	const auto iterFound = headers.find(ba::to_lower_copy(name));
 	if (iterFound == headers.end()) {
 		return boost::none;

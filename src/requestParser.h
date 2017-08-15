@@ -1,6 +1,7 @@
 #pragma once
 #include<string>
 #include<map>
+#include<memory>
 #include"request.h"
 
 
@@ -38,5 +39,5 @@ public:
 		return finished;
 	}
 
-	Request getRequest();
+	std::unique_ptr<Request> getRequest();
 };

@@ -28,9 +28,9 @@ public:
 	         const std::string& body, bool connClose);
 	explicit Response(const std::string& fullResponse);
 	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
-	         const IteratorResult& bodyIterator, bool connClose);
+	         IteratorResult&& bodyIterator, bool connClose);
 	Response(int statusCode, const std::string& body, bool connClose);
-	Response(int statusCode, const IteratorResult& bodyIterator, bool connClose);
+	Response(int statusCode, IteratorResult&& bodyIterator, bool connClose);
 
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;

@@ -17,7 +17,7 @@
 #include "signalManager.h"
 #include "config.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
 #include "networkManager.h"
 
@@ -81,7 +81,7 @@ void Server::runServer() {
 	try {
 		networkManager->listen(5); //TODO: backlog size?
 	}
-	catch (networkError err) {
+	catch (const networkError&) {
 		Loggers::errLogger.log("Could not set server to listen.");
 		exit(1);
 	}
@@ -109,7 +109,7 @@ void Server::tryAcceptConnection() {
 	try {
 		newClient = std::move(networkManager->acceptTimeout(timeout));
 	}
-	catch (networkError err) {
+	catch (const networkError& err) {
 		Loggers::errLogger.log("Could not get new client.");
 		exit(1);
 	}
@@ -152,21 +152,24 @@ void Server::serveClientStart() {
 
 	try {
 		while (true) {
-			b::optional<Request> requestOpt = clientSocket->getRequestTimeout(keepAliveTimeoutSec * 1000);
-			Loggers::logInfo(formatString("request got"));
-			if (!requestOpt) {
+			std::unique_ptr<Request> requestPtr = clientSocket->getRequestTimeout(keepAliveTimeoutSec * 1000);
+			if (requestPtr == nullptr) {
 				Loggers::logInfo(formatString("Requests finished."));
 				break;
 			}
-			Request& request = *requestOpt;
+			Request& request = *requestPtr;
+			Loggers::logInfo(formatString("REQUEST: %1% %2%", httpVerbToString(request.getVerb()), request.getUrl()));
 
-			Loggers::logInfo(formatString("Request URL is %1%", request.getUrl()));
 			if (request.getVerb() == HttpVerb::HEAD) {
 				isHead = true;
 			}
+
+			/*
+			If-Modified-Since unsuported.
 			if (request.headerExists("If-Modified-Since")) {
-				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%", *request.getHeader("If-Modified-Since")));
+				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%. Unsupported.", *request.getHeader("If-Modified-Since")));
 			}
+			*/
 
 			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
 			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket");
@@ -174,7 +177,6 @@ void Server::serveClientStart() {
 			pid_t childPid = fork();
 			if (childPid == 0) {
 				SignalManager::clearPids();
-
 				try {
 					if (request.isUpgrade("websocket")) {
 						serveRequestWebsockets(request);
@@ -202,7 +204,7 @@ void Server::serveClientStart() {
 			else {
 				SignalManager::addPid((int)childPid);
 				SignalManager::waitChild((int)childPid);
-				Loggers::logInfo("Rejoined with forked request server.");
+				Loggers::logInfo("Rejoined with single request server.");
 			}
 
 			if (!keepAlive) {
@@ -229,61 +231,60 @@ void Server::serveClientStart() {
 }
 
 void Server::serveRequest(Request& request) {
-	Response resp(500, "", true);
+	std::unique_ptr<Response> resp;
 
 	bool isHead = false;
 
 	try {
 		interpretCacheRequest = true;
-		resp = responseBuilder.buildResponse(request);
+		resp = std::move(responseBuilder.buildResponse(request));
 	}
 	catch (rootException& ex) {
-		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		resp = std::make_unique<Response>(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
 	if (isHead) {
-		resp.setBody(std::string(), false);
+		resp->setBody(std::string(), false);
 	}
 
-	resp.setConnClose(!keepAlive);
+	resp->setConnClose(!keepAlive);
 
-	clientSocket->respondWithObject(std::move(resp));
+	clientSocket->respondWithObject(std::move(*resp));
 }
 
 void Server::serveRequestWebsockets(Request& request) {
-	Response resp(500, "", true);
+	std::unique_ptr<Response> resp;
+
 	try {
 		interpretCacheRequest = true;
 		resp = responseBuilder.buildWebsocketsResponse(request);
 	}
 	catch (rootException& ex) {
-		resp = Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
+		resp = std::make_unique<Response>(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
 
-	if (resp.getStatusCode() >= 200 && resp.getStatusCode() < 300) {
+	if (resp->getStatusCode() >= 200 && resp->getStatusCode() < 300) {
 		WebsocketsServer server(*clientSocket);
 		server.start(request);
 	}
 	else {
-		resp.setConnClose(!keepAlive);
-		clientSocket->respondWithObject(std::move(resp));
+		resp->setConnClose(!keepAlive);
+		clientSocket->respondWithObject(std::move(*resp));
 	}
 }
 
-bool Server::canContainPython(std::string filename) {
+bool Server::canContainPython(const std::string& filename) {
 	return ba::ends_with(filename, ".html") || ba::ends_with(filename, ".htm") || ba::ends_with(filename, ".pyml");
 }
 
-std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename, PymlCache::CacheTag& tagDest) {
-	DBG_FMT("constructFromFilename(%1%)", filename);
-	std::string source = readFromFile(filename);
+std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest) {
+	std::string source = readFromFile(filename); //TODO: expensive, chunk.
 	tagDest.setTag(generateTagFromStat(filename));
 
 	std::unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
-		DBG("choosing v2 pyml parser");
 		parser = std::make_unique<V2PymlParser>(serverCache);
 	}
 	else if (ba::ends_with(filename, ".py")) {
@@ -297,7 +298,7 @@ std::unique_ptr<PymlFile> Server::constructPymlFromFilename(std::string filename
 }
 
 
-void Server::onServerCacheMiss(std::string filename) {
+void Server::onServerCacheMiss(const std::string& filename) {
 	if (interpretCacheRequest) {
 		cacheRequestPipe.pipeWrite(filename);
 		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
@@ -305,13 +306,15 @@ void Server::onServerCacheMiss(std::string filename) {
 }
 
 void Server::updateParentCaches() {
+	interpretCacheRequest = false;
+
 	while (cacheRequestPipe.pipeAvailable()) {
 		std::string filename = cacheRequestPipe.pipeRead();
-		DBG("next cache add is in parent");
+		DBG("Server: next cache add is in parent");
 
-		interpretCacheRequest = false;
 		serverCache.get(filename);
-		interpretCacheRequest = true;
 	}
+
+	interpretCacheRequest = true;
 }
 

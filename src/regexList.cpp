@@ -22,7 +22,6 @@ RegexList RegexList::fromFile(std::string filename) {
 	else {
 		while (getline(fin, line)) {
 			boost::trim_right_if(line, boost::is_any_of("\r\n"));
-			//DBG_FMT("cache line is %1%", line);
 			resultVector.push_back(boost::regex(line));
 		}
 	}

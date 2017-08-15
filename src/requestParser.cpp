@@ -167,9 +167,7 @@ void RequestParser::saveHeader(std::string name, std::string value) {
 
 
 void RequestParser::consume(char* data, int dataLen) {
-	//DBG_FMT("Consuming string of length %1% (real len %2%)", dataLen, strlen(data));
 	for (int i = 0; i < dataLen; i++) {
-		//DBG_FMT("i = %1%; chr = %2%", i, int(data[i]));
 		bool consume = consumeOne(data[i]);
 		if (!consume) {
 			i--;
@@ -180,7 +178,7 @@ void RequestParser::consume(char* data, int dataLen) {
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
 
-Request RequestParser::getRequest() {
+std::unique_ptr<Request> RequestParser::getRequest() {
 	std::map<std::string, HttpVerb> stringVerbMapping = {
 		{"GET", HttpVerb::GET},
 		{"HEAD", HttpVerb::HEAD},
@@ -212,34 +210,27 @@ Request RequestParser::getRequest() {
 		url.erase(queryStringStart);
 	}
 
-	return Request(verb, url, queryString, httpMajor, httpMinor, headers, body);
+	return std::make_unique<Request>(verb, url, queryString, httpMajor, httpMinor, headers, body);
 }
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
-	//DBG_FMT("Version: %1%", httpVersion);
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
-		//DBG_FMT("Version fail: %1% doesn't start with 'HTTP/'", httpVersion);
 		return false;
 	}
 
 	std::string versionPart = httpVersion.substr(strlen("HTTP/"));
-	//DBG_FMT("Version part: %1%", versionPart);
-
+	
 	if (versionPart.size() != 3) {
-		//DBG_FMT("Version fail: %1%'s part %2% doesn't have 3 characters", httpVersion, versionPart);
 		return false;
 	}
 
 	size_t idx = 0;
 	*httpMajor = std::stoi(versionPart, &idx, 10);
 	if (idx != 1 || versionPart[1] != '.') {
-		//DBG_FMT("Version fail: %1%'s part %2% doesn't start with a single digit or doesn't have the slash", httpVersion,
-		//        versionPart);
 		return false;
 	}
 	*httpMinor = stoi(versionPart.substr(2), &idx, 10);
 	if (idx != 1) {
-		//DBG_FMT("Version fail: %1%'s part %2% doesn't end with a single digit (idx = %3%)", httpVersion, versionPart, idx);
 		return false;
 	}
 

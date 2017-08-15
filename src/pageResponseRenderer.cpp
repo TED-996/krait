@@ -3,10 +3,11 @@
 #include "pythonModule.h"
 #include "mvcPymlFile.h"
 
-bool PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request, Response& destination) {
-	IteratorResult iterResult(PymlIterator(pymlSource.getRootItem()));
+//#define DBG_DISABLE
+#include "dbg.h"
 
-	destination = Response(200, iterResult, false);
-
-	return true;
+std::unique_ptr<Response> PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request) {
+	IteratorResult iterResult(std::move(PymlIterator(pymlSource.getRootItem())));
+	
+	return std::make_unique<Response>(200, std::move(iterResult), false);
 }

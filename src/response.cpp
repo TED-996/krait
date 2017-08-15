@@ -39,8 +39,8 @@ Response::Response(int httpMajor, int httpMinor, int statusCode, const std::unor
 }
 
 Response::Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
-                   const IteratorResult& bodyIterator, bool connClose)
-	: bodyIterator(bodyIterator) {
+                   IteratorResult&& bodyIterator, bool connClose)
+	: bodyIterator(std::move(bodyIterator)) {
 	this->httpMajor = httpMajor;
 	this->httpMinor = httpMinor;
 	this->statusCode = statusCode;
@@ -65,9 +65,9 @@ Response::Response(int statusCode, const std::string& body, bool connClose)
 	setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
 }
 
-Response::Response(int statusCode, const IteratorResult& body, bool connClose)
+Response::Response(int statusCode, IteratorResult&& body, bool connClose)
 	//: Response(1, 1, statusCode, std::unordered_multimap<std::string, std::string>(), body, connClose) {
-	: bodyIterator(body) {
+	: bodyIterator(std::move(body)) {
 	this->httpMajor = 1;
 	this->httpMinor = 1;
 	this->statusCode = statusCode;
@@ -108,7 +108,7 @@ void Response::parseFullResponse(const std::string& response) {
 
 
 void Response::setBody(const std::string& body, bool updateLength) {
-	this->bodyIterator = IteratorResult(body);
+	this->bodyIterator = std::move(IteratorResult(body));
 
 	if (updateLength) {
 		setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));

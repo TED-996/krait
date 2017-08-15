@@ -19,7 +19,7 @@ public:
 	virtual void pushPymlWorkingFor() = 0;
 	virtual void addCodeToPymlWorkingFor(int where, const std::string& code) = 0;
 	virtual bool addSeqToPymlWorkingFor() = 0;
-	virtual void pushPymlWorkingForIn(std::string entry, std::string collection) = 0;
+	virtual void pushPymlWorkingForIn(const std::string& entry, const std::string& collection) = 0;
 	virtual void pushPymlWorkingSeq() = 0;
 	virtual void addPymlStackTop() = 0;
 };
@@ -32,11 +32,10 @@ private:
 	{
 	protected:
 		IV2PymlParser** parser;
-		std::shared_ptr<FsmTransition> base;
+		std::unique_ptr<FsmTransition> base;
 	public:
 		PymlRootTransition(IV2PymlParser** parser, FsmTransition* base)
-			:
-			parser(parser), base(base) {
+			: parser(parser), base(base) {
 		}
 
 		bool isMatch(char chr, FsmV2& fsm) override {
@@ -60,8 +59,7 @@ private:
 	{
 	public:
 		PymlAddStrTransition(IV2PymlParser** parser, FsmTransition* base)
-			:
-			PymlRootTransition(parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -120,8 +118,7 @@ private:
 	{
 	public:
 		PymlAddFor3Transition(IV2PymlParser** parser, FsmTransition* base)
-			: PymlRootTransition(
-				parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -141,8 +138,7 @@ private:
 	{
 	public:
 		PymlAddForInTransition(IV2PymlParser** parser, FsmTransition* base)
-			: PymlRootTransition(
-				parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -160,8 +156,7 @@ private:
 	{
 	public:
 		PymlAddIfTransition(IV2PymlParser** parser, FsmTransition* base)
-			: PymlRootTransition(
-				parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -178,8 +173,7 @@ private:
 	{
 	public:
 		PymlAddElseTransition(IV2PymlParser** parser, FsmTransition* base)
-			: PymlRootTransition(
-				parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -212,8 +206,7 @@ private:
 	{
 	public:
 		PymlFinishIfTransition(IV2PymlParser** parser, FsmTransition* base)
-			: PymlRootTransition(
-				parser, base) {
+			: PymlRootTransition(parser, base) {
 		}
 
 		void execute(FsmV2& fsm) override {
@@ -285,7 +278,7 @@ public:
 	void pushPymlWorkingFor() override;
 	void addCodeToPymlWorkingFor(int where, const std::string& code) override;
 	bool addSeqToPymlWorkingFor() override;
-	void pushPymlWorkingForIn(std::string entry, std::string collection) override;
+	void pushPymlWorkingForIn(const std::string& entry, const std::string& collection) override;
 	void pushPymlWorkingSeq() override;
 	void addPymlStackTop() override;
 

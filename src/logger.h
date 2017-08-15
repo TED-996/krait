@@ -13,7 +13,7 @@ class LoggerOut
 public:
 	LoggerOut();
 	LoggerOut(int pipeIn);
-	LoggerOut(int pipeIn, std::string filename);
+	LoggerOut(int pipeIn, const std::string& filename);
 
 	~LoggerOut() {
 		close();
@@ -46,8 +46,8 @@ public:
 
 	void log(const char* buffer, size_t size);
 	void log(const char* str);
-	void log(const std::string str);
-	void log(const boost::format fmt);
+	void log(const std::string& str);
+	void log(const boost::format& fmt);
 
 	void close();
 };
@@ -63,8 +63,8 @@ public:
 	static void setInfoLogger(int infoPipe);
 	static void setErrLogger(int errPipe);
 
-	static void logInfo(std::string message);
-	static void logErr(std::string message);
+	static void logInfo(const std::string& message);
+	static void logErr(const std::string& message);
 
 	static LoggerIn& getInfoLogger() {
 		return infoLogger;

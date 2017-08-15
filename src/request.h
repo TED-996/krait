@@ -20,11 +20,12 @@ private:
 public:
 	Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
+	Request(Request&& other);
 
 	bool headerExists(std::string name) const;
-	const boost::optional<std::string> getHeader(const std::string& name) const;
+	boost::optional<std::string> getHeader(const std::string& name) const;
 
-	const HttpVerb getVerb() const {
+	HttpVerb getVerb() const {
 		return verb;
 	};
 
@@ -32,11 +33,11 @@ public:
 		return url;
 	}
 
-	const int getHttpMajor() const {
+	int getHttpMajor() const {
 		return httpMajor;
 	}
 
-	const int getHttpMinor() const {
+	int getHttpMinor() const {
 		return httpMinor;
 	}
 
@@ -48,7 +49,7 @@ public:
 		return body;
 	}
 
-	const std::string getQueryString() const {
+	std::string getQueryString() const {
 		return queryString;
 	}
 

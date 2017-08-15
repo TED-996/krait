@@ -11,14 +11,15 @@ private:
 public:
 	PymlIterator(const IPymlItem* rootItem);
 	PymlIterator(const PymlIterator& other);
+	PymlIterator(PymlIterator&& other) noexcept;
 
-	const std::string* operator*();
+	const std::string* operator*() const;
 
 	PymlIterator& operator++();
 
-	bool compareWith(std::string other);
-
-	bool isTmpStr(const std::string* strPtr) {
+	bool compareWith(std::string targetStr);
+	
+	bool isTmpStr(const std::string* strPtr) const {
 		return strPtr == &tmpStr;
 	}
 };

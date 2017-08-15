@@ -51,24 +51,25 @@ private:
 
 	boost::filesystem::path siteRoot;
 
-	PreResponseSource getSourceFromRequest(Request& request);
+	PreResponseSource getSourceFromRequest(const Request& request) const;
 	std::string getFilenameFromTarget(const std::string& target) const;
 	static bool pathBlocked(const std::string& path);
-	std::string expandFilename(std::string filename) const;
+	std::string expandFilename(const std::string& filename) const;
 
-	const IPymlFile& getPymlFromCache(std::string filename) const;
+	const IPymlFile& getPymlFromCache(const std::string& filename) const;
 
-	void addDefaultHeaders(Response& response, std::string filename, const Request& request, CacheController::CachePragma cachePragma);
-	void addCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma) const;
+	void addDefaultHeaders(Response& response, const std::string& filename, const Request& request,
+		CacheController::CachePragma cachePragma, bool isDynamic);
+	void addCacheHeaders(Response& response, const std::string& filename, CacheController::CachePragma pragma) const;
 	
-	std::string getContentType(std::string filename);
-	void loadContentTypeList(std::string filename);
+	std::string getContentType(const std::string& filename, bool isDynamic);
+	void loadContentTypeList(const std::string& filename);
 
-	bool buildResponseInternal(Request& request, Response& response, bool isWebsockets);
+	std::unique_ptr<Response> buildResponseInternal(const Request& request, bool isWebsockets);
 public:
 
 	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache);
 
-	Response buildResponse(Request& request);
-	Response buildWebsocketsResponse(Request& request);
+	std::unique_ptr<Response> buildResponse(Request& request);
+	std::unique_ptr<Response> buildWebsocketsResponse(Request& request);
 };

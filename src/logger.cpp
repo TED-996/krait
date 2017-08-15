@@ -27,11 +27,11 @@ void Loggers::setErrLogger(int errPipe) {
 	infoLogger = LoggerIn(errPipe);
 }
 
-void Loggers::logInfo(std::string message) {
+void Loggers::logInfo(const std::string& message) {
 	infoLogger.log(message);
 }
 
-void Loggers::logErr(std::string message) {
+void Loggers::logErr(const std::string& message) {
 	errLogger.log(message);
 }
 
@@ -45,7 +45,7 @@ LoggerOut::LoggerOut(int pipeIn)
 }
 
 
-LoggerOut::LoggerOut(int pipeIn, std::string filename)
+LoggerOut::LoggerOut(int pipeIn, const std::string& filename)
 	: outfile(filename) {
 	this->pipeIn = pipeIn;
 }
@@ -135,11 +135,11 @@ void LoggerIn::log(const char* str) {
 }
 
 
-void LoggerIn::log(const std::string str) {
+void LoggerIn::log(const std::string& str) {
 	log(str.c_str(), str.length());
 }
 
-void LoggerIn::log(const boost::format fmt) {
+void LoggerIn::log(const boost::format& fmt) {
 	log(fmt.str());
 }
 

@@ -72,7 +72,7 @@ bool ManagedSocket::readExactly(void* destination, size_t nBytes) {
 	return true;
 }
 
-Request ManagedSocket::getRequest() {
+std::unique_ptr<Request> ManagedSocket::getRequest() {
 	RequestParser parser;
 
 	char buffer[4096];
@@ -121,7 +121,7 @@ void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
 	}
 }
 
-boost::optional<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
+std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 	RequestParser parser;
 	char buffer[4096];
 	int pollResult;
@@ -137,7 +137,7 @@ boost::optional<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 		}
 		int bytesRead = read(buffer, sizeof(buffer));
 		if (bytesRead == 0) {
-			return boost::none;
+			return nullptr;
 		}
 		if (bytesRead < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -160,7 +160,7 @@ boost::optional<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 	}
 
 	if (!parser.isFinished()) {
-		return boost::none;
+		return nullptr;
 	}
 
 	return parser.getRequest();
