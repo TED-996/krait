@@ -116,13 +116,14 @@ class DocsTest(unittest.TestCase):
 
         for html_file, to_search in files.iteritems():
             try:
-                self.driver.get(url_base + html_file)
+                full_url = url_base + html_file
+                self.driver.get(full_url)
             except WebDriverException as ex:
                 self.fail("Could not get local docs.\nError: {}".format(ex))
 
             for search_item in to_search:
                 self.assertIn(search_item, self.driver.page_source,
-                              "`{}` not found in docs page.".format(search_item))
+                              "`{}` not found in docs page {}.".format(search_item, full_url))
 
             print "Tested docs page {} successfully.".format(url_base + html_file)
 

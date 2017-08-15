@@ -19,7 +19,7 @@ public:
 	virtual void pushPymlWorkingFor() = 0;
 	virtual void addCodeToPymlWorkingFor(int where, const std::string& code) = 0;
 	virtual bool addSeqToPymlWorkingFor() = 0;
-	virtual void pushPymlWorkingForIn(std::string entry, std::string collection) = 0;
+	virtual void pushPymlWorkingForIn(const std::string& entry, const std::string& collection) = 0;
 	virtual void pushPymlWorkingSeq() = 0;
 	virtual void addPymlStackTop() = 0;
 };

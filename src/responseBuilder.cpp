@@ -5,13 +5,12 @@
 #include "pythonModule.h"
 #include "utils.h"
 #include "path.h"
+#include "logger.h"
+#include "mvcPymlFile.h"
 
 
 //#define DBG_DISABLE
 #include "dbg.h"
-#include "logger.h"
-#include "mvcPymlFile.h"
-
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
@@ -32,6 +31,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 
 	try {
 		PreResponseSource source = std::move(getSourceFromRequest(request));
+		
 		symFilename = source.symFilename;
 		bool isDynamic;
 		
@@ -42,6 +42,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 		}
 
 		boost::optional<const IPymlFile&> pymlFile;
+		std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
 
 		if (source.sourceFilename) {
 			pymlFile = getPymlFromCache(source.sourceFilename.get());
@@ -49,15 +50,15 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 		}
 		else if(source.sourceObject) {
 			isDynamic = true;
-			std::unique_ptr<MvcPymlFile> mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
-			pymlFile = *mvcFileStorage.get();
+			mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
+			pymlFile = *mvcFileStorage;
 		}
 		else {
 			BOOST_THROW_EXCEPTION(serverError() << stringInfo("ResponseBuilder::getSourceFromRequest returned empty PreResponseSource."));
 		}
 		
 		CacheController::CachePragma cachePragma = cacheController.getCacheControl(source.symFilename, !isDynamic);
-
+		
 		if (cachePragma.isStore && pymlCache.checkCacheTag(source.symFilename, etag)) {
 			response = std::make_unique<Response>(304, "", false);
 		}
@@ -66,7 +67,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 				apiManager.set(request, isWebsockets);
 			}
 
-			response = std::move(renderer.render(pymlFile.get(), request));
+			response = std::move(renderer.render(*pymlFile, request));
 
 			if (isDynamic) {
 				if (apiManager.isCustomResponse()) {
@@ -91,8 +92,6 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 }
 
 std::unique_ptr<Response> ResponseBuilder::buildResponse(Request& request) {
-	std::unique_ptr<Response> response = std::make_unique<Response>(500, "", true);
-
 	return buildResponseInternal(request, false);
 }
 

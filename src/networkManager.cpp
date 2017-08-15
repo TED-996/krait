@@ -6,7 +6,7 @@
 #include "except.h"
 #include "managedSocket.h"
 
-#define DBG_DISABLE;
+#define DBG_DISABLE
 #include"dbg.h"
 
 
@@ -69,7 +69,6 @@ void NetworkManager::initialize() {
 }
 
 bool NetworkManager::listen(size_t backlog) {
-	DBG_FMT("NM listen, sd %1%, listening %2%, backlog %3%", this->socket, this->listening, backlog);
 	if (this->socket == InvalidSocket) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (listen) after deconstruction."));
 	}

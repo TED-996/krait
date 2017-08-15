@@ -17,7 +17,7 @@
 #include "signalManager.h"
 #include "config.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
 #include "networkManager.h"
 
@@ -177,7 +177,6 @@ void Server::serveClientStart() {
 			pid_t childPid = fork();
 			if (childPid == 0) {
 				SignalManager::clearPids();
-
 				try {
 					if (request.isUpgrade("websocket")) {
 						serveRequestWebsockets(request);
@@ -205,7 +204,7 @@ void Server::serveClientStart() {
 			else {
 				SignalManager::addPid((int)childPid);
 				SignalManager::waitChild((int)childPid);
-				Loggers::logInfo("Rejoined with forked request server.");
+				Loggers::logInfo("Rejoined with single request server.");
 			}
 
 			if (!keepAlive) {
@@ -281,13 +280,11 @@ bool Server::canContainPython(const std::string& filename) {
 }
 
 std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest) {
-	DBG_FMT("constructFromFilename(%1%)", filename);
-	std::string source = readFromFile(filename); //TODO: expensive.
+	std::string source = readFromFile(filename); //TODO: expensive, chunk.
 	tagDest.setTag(generateTagFromStat(filename));
 
 	std::unique_ptr<IPymlParser> parser;
 	if (canContainPython(filename)) {
-		DBG("choosing v2 pyml parser");
 		parser = std::make_unique<V2PymlParser>(serverCache);
 	}
 	else if (ba::ends_with(filename, ".py")) {

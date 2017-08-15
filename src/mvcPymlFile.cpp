@@ -19,10 +19,10 @@ void MvcPymlFile::setRootItem() {
 	std::vector<std::unique_ptr<const IPymlItem>> rootSeq;
 	
 	//Warning, this may break if set_init_ctrl does something else!
-	rootSeq.emplace_back(std::make_unique<PymlItemSetCallable>(ctrlClass, "krait.mvc.init_ctrl"));
-	rootSeq.emplace_back(std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.push_ctrl(krait.mvc.init_ctrl)"));
-	rootSeq.emplace_back(std::make_unique<PymlItemEmbed>("krait.get_full_path(ctrl.get_view())", cache));
-	rootSeq.emplace_back(std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.pop_ctrl()"));
+	rootSeq.push_back(std::make_unique<PymlItemSetCallable>(ctrlClass, "krait.mvc.init_ctrl"));
+	rootSeq.push_back(std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.push_ctrl(krait.mvc.init_ctrl)"));
+	rootSeq.push_back(std::make_unique<PymlItemEmbed>("krait.get_full_path(ctrl.get_view())", cache));
+	rootSeq.push_back(std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.pop_ctrl()"));
 
 	rootItem = std::make_unique<PymlItemSeq>(std::move(rootSeq));
 }

@@ -251,16 +251,16 @@ void V2PymlParser::pushPymlWorkingForIn(const std::string& entry, const std::str
 	}
 
 	std::string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
-	boost::trim(entry);
-	boost::trim(collection);
+	std::string entryTrimmed = boost::trim_copy(entry);
+	std::string collectionTrimmed = boost::trim_copy(collection);
 
 	//1: krIterator; 2: collection;;; 3: entry
 	std::string initCode = (boost::format("%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
-		% krIterator % collection % entry).str();
+		% krIterator % collectionTrimmed % entryTrimmed).str();
 	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
 	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %2% = %1%.value")
-		% krIterator % entry).str();
-	//TODO: delete the IteratorWrapper! over time these add up!
+		% krIterator % entryTrimmed).str();
+	//TODO: delete the IteratorWrapper! over time these add up (esp. with runtime reuse)!
 
 	pushPymlWorkingFor();
 	addCodeToPymlWorkingFor(0, initCode);

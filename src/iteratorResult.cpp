@@ -8,7 +8,7 @@ IteratorResult::IteratorResult(PymlIterator&& iterator) {
 }
 
 IteratorResult::IteratorResult(std::string fullString) {
-	strIterated.emplace_back(std::make_unique<const std::string>(fullString));
+	strIterated.emplace_back(fullString);
 
 	currentIdx = 0;
 	totalLength = fullString.length();
@@ -17,6 +17,15 @@ IteratorResult::IteratorResult(std::string fullString) {
 
 IteratorResult::IteratorResult(IteratorResult&& other) noexcept
 	: strIterated(std::move(other.strIterated)), totalLength(other.totalLength), currentIdx(other.currentIdx){
+}
+
+IteratorResult& IteratorResult::operator=(IteratorResult&& other) noexcept {
+	if (this == &other)
+		return *this;
+	strIterated = std::move(other.strIterated);
+	totalLength = other.totalLength;
+	currentIdx = other.currentIdx;
+	return *this;
 }
 
 void IteratorResult::exhaustIterator(PymlIterator&& iterator) {

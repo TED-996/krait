@@ -23,8 +23,8 @@ public:
 	~ManagedSocket() override;
 
 	void initialize() override;
-	Request getRequest() override;
-	boost::optional<Request> getRequestTimeout(int timeoutMs) override;
+	std::unique_ptr<Request> getRequest() override;
+	std::unique_ptr<Request> getRequestTimeout(int timeoutMs) override;
 	WebsocketsFrame getWebsocketsFrame() override;
 	boost::optional<WebsocketsFrame> getWebsocketsFrameTimeout(int timeoutMs) override;
 	void sendWebsocketsFrame(WebsocketsFrame& frame) override;

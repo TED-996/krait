@@ -11,7 +11,6 @@ std::list<int> SignalManager::childPids;
 
 
 void SignalManager::registerSignal(std::unique_ptr<SignalHandler>&& signal) {
-	//DBG("in signal ctor");
 	std::vector<int> newSignalNumbers = signal->getSignals();
 
 	for (int signalNumber : newSignalNumbers) {
@@ -28,8 +27,6 @@ void SignalManager::registerSignal(std::unique_ptr<SignalHandler>&& signal) {
 	}
 
 	signals.push_back(std::move(signal));
-
-	//DBG("after signal ctor");
 }
 
 void SignalManager::unregisterSignal(const std::unique_ptr<SignalHandler>& signal) {

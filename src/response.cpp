@@ -108,7 +108,7 @@ void Response::parseFullResponse(const std::string& response) {
 
 
 void Response::setBody(const std::string& body, bool updateLength) {
-	this->bodyIterator = IteratorResult(body);
+	this->bodyIterator = std::move(IteratorResult(body));
 
 	if (updateLength) {
 		setHeader("Content-Length", std::to_string(bodyIterator.getTotalLength()));
