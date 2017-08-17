@@ -20,7 +20,7 @@ private:
 public:
 	Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
-	Request(Request&& other);
+	Request(Request&& other) noexcept;
 
 	bool headerExists(std::string name) const;
 	boost::optional<std::string> getHeader(const std::string& name) const;

@@ -30,7 +30,7 @@ Request::Request(HttpVerb verb, const std::string& url, const std::string& query
 }
 
 
-Request::Request(Request&& other)
+Request::Request(Request&& other) noexcept
 	: url(std::move(other.url)), headers(other.headers), body(other.body), queryString(std::move(other.queryString)) {
 	this->verb = other.verb;
 	this->httpMajor = other.httpMajor;
