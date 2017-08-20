@@ -4,7 +4,7 @@
 #include "requestParser.h"
 #include "fsm.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 namespace b = boost;
@@ -21,81 +21,77 @@ RequestParser::RequestParser() {
 
 
 bool RequestParser::consumeOne(char chr) {
-	if (chr == '\0') {
-		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Got null character!"));
-	}
-
 	FsmStart(int, state, char, chr, workingStr, sizeof(workingStr), workingIdx, workingBackBuffer, NULL, NULL)
-			StatesBegin(0) { //Before any; skipping spaces before HTTP method
+		StatesBegin(0) { //Before any; skipping spaces before HTTP method
 			SaveStart()
 			TransIf(' ', stCurrent, true)
 			TransElse(1, true)
 		}
-			StatesNext(1) { //Reading HTTP Method
+		StatesNext(1) { //Reading HTTP Method
 			TransIf(' ', 2, true)
 			TransElse(stCurrent, true)
 			SaveThisIfSame()
 		}
-			StatesNext(2) { //Finished reading HTTP method; skipping spaces before URL
+		StatesNext(2) { //Finished reading HTTP method; skipping spaces before URL
 			SaveStoreOne(methodString)
 			SaveStart()
 			TransIf(' ', stCurrent, true)
 			TransElse(3, true)
 		}
-			StatesNext(3) { //Reading URL
+		StatesNext(3) { //Reading URL
 			TransIf(' ', 4, true)
 			TransElse(stCurrent, true)
 			SaveThisIfSame()
 		}
-			StatesNext(4) { //Finished reading URL; skipping before HTTP version
+		StatesNext(4) { //Finished reading URL; skipping before HTTP version
 			SaveStoreOne(url)
 			SaveStart()
 			TransIf(' ', stCurrent, true)
 			TransElse(5, true)
 		}
-			StatesNext(5) { //Reading HTTP version
+		StatesNext(5) { //Reading HTTP version
 			TransIf('\r', 6, true)
 			TransElse(stCurrent, true)
 			SaveThisIfSame()
 		}
-			StatesNext(6) { //After HTTP version
+		StatesNext(6) { //After HTTP version
 			SaveStore(httpVersion)
 			TransIf('\n', 7, true)
 			TransElseError()
 		}
-			StatesNext(7) { //Header start or CRLF; TODO: Some headers start with space!
+		StatesNext(7) { //Header start or CRLF; TODO: Some headers start with space!
 			TransIf('\r', 20, true)
 			TransElse(8, false)
 		}
-			StatesNext(8) { //Starting header name
+		StatesNext(8) { //Starting header name
 			SaveStart()
 			TransAlways(9, true)
 		}
-			StatesNext(9) //Consuming header name
+		StatesNext(9) //Consuming header name
 			TransIf(':', 10, true)
 			TransElse(stCurrent, true)
 			SaveThisIfSame()
-			StatesNext(10) { //After header name
+		StatesNext(10) { //After header name
 			SaveStore(workingHeaderName)
 			TransIf(' ', 11, true)
 			TransElseError()
 		}
-			StatesNext(11) { //Starting header value
+		StatesNext(11) { //Starting header value
 			SaveStart()
 			TransAlways(12, true)
 		}
-			StatesNext(12) { //Consuming header value
+		StatesNext(12) { //Consuming header value
 			TransIf('\r', 13, true)
 			TransElse(stCurrent, true)
 			SaveThisIfSame()
 		}
-			StatesNext(13) { //inside CRLF before a header
+		StatesNext(13) { //inside CRLF before a header
 			SaveStore(workingHeaderValue);
 			saveHeader(workingHeaderName, workingHeaderValue);
 			TransIf('\n', 7, true)
 			TransElseError()
 		}
-			StatesNext(20) {//inside CRLF before body / end:
+		StatesNext(20) {//inside CRLF before body / end:
 			TransIf('\n', 21, true)
 			TransElseError()
 
@@ -104,9 +100,9 @@ bool RequestParser::consumeOne(char chr) {
 				finished = true;
 			}
 		}
-			StatesNext(21) { //First character of body
+		StatesNext(21) { //First character of body
 			if (finished) {
-				BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Request already finished, but received data!"));
+				BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("RequestParser: request already finished, but received data!"));
 			}
 			SaveStart()
 			TransAlways(22, true)
@@ -118,7 +114,7 @@ bool RequestParser::consumeOne(char chr) {
 				TransAlways(25, true)
 			}
 		}
-			StatesNext(22) { //Characters of body
+		StatesNext(22) { //Characters of body
 			SaveThis()
 
 			bodyLeft--;
@@ -128,11 +124,10 @@ bool RequestParser::consumeOne(char chr) {
 				TransAlways(25, true)
 			}
 		}
-			StatesNext(25) {
+		StatesNext(25) {
 			BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Request already finished, but received data!"));
-
 		}
-			StatesEnd()
+		StatesEnd()
 	FsmEnd()
 }
 
@@ -177,6 +172,8 @@ void RequestParser::consume(char* data, int dataLen) {
 
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor);
+void urlDecode(std::string& str);
+
 
 std::unique_ptr<Request> RequestParser::getRequest() {
 	std::map<std::string, HttpVerb> stringVerbMapping = {
@@ -192,7 +189,7 @@ std::unique_ptr<Request> RequestParser::getRequest() {
 
 	auto verbIt = stringVerbMapping.find(methodString);
 	if (verbIt == stringVerbMapping.end()) {
-		BOOST_THROW_EXCEPTION(httpParseError() << stringInfoFromFormat("HTTP method %1% not recognized.", methodString));
+		BOOST_THROW_EXCEPTION(httpParseError() << stringInfoFromFormat("Parsing HTTP method: method %1% not recognized.", methodString));
 	}
 	HttpVerb verb = verbIt->second;
 
@@ -200,7 +197,7 @@ std::unique_ptr<Request> RequestParser::getRequest() {
 	int httpMajor = 1;
 
 	if (!parseHttpVersion(httpVersion, &httpMajor, &httpMinor)) {
-		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("HTTP version not recognized."));
+		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Parsing HTTP version: version not recognized."));
 	}
 
 	std::string queryString;
@@ -209,9 +206,11 @@ std::unique_ptr<Request> RequestParser::getRequest() {
 		queryString = url.substr(queryStringStart + 1);
 		url.erase(queryStringStart);
 	}
+	urlDecode(url);
 
 	return std::make_unique<Request>(verb, url, queryString, httpMajor, httpMinor, headers, body);
 }
+
 
 bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
 	if (!boost::starts_with(httpVersion, "HTTP/")) {
@@ -235,4 +234,61 @@ bool parseHttpVersion(std::string httpVersion, int* httpMajor, int* httpMinor) {
 	}
 
 	return true;
+}
+
+void urlDecode(std::string& str) {
+	size_t offset = 0;
+
+	bool inEscapeSeq = false;
+	int escapeValueDigits = 0;
+	int escapeValue = 0;
+	
+	for (size_t i = 0; i < str.length(); i++) {
+		if (!inEscapeSeq) {
+			if (str[i] == '%') {
+				inEscapeSeq = true;
+				escapeValueDigits = 0;
+				escapeValue = 0;
+			}
+			else if (offset != 0) {
+				str[i - offset] = str[i];
+			}
+		}
+		else {
+			const char ch = str[i];
+			int chValue;
+			
+			if (ch >= '0' && ch <= '9') {
+				chValue = ch - '0';
+			}
+			else if (ch >= 'a' && ch <= 'f') {
+				chValue = ch - 'a' + 10;
+			}
+			else if (ch >= 'A' && ch <= 'F') {
+				chValue = ch - 'A' + 10;
+			}
+			else {
+				DBG_FMT("URL unquoting error: character '%1%' in string '%2%' not hexadecimal.", ch, str);
+				BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("URL unquoting: non-hex character."));
+			}
+
+			if (escapeValueDigits == 0) {
+				escapeValue = chValue << 4;
+			}
+			else {
+				escapeValue |= chValue;
+			}
+
+			escapeValueDigits++;
+			if (escapeValueDigits == 2) {
+				//%12, str[i] was '2' => '%' is str[i - 2]
+				offset += 2;
+
+				str[i - offset] = (char)escapeValue;
+				inEscapeSeq = false;
+			}
+		}
+	}
+
+	str.resize(str.length() - offset); // IMPORTANT: Offset and NewSize must be kept in sync!
 }

@@ -19,6 +19,7 @@ config.routes = [
     config.Route(url="/", ctrl_class=index.IndexController),
     config.Route(url="/db", ctrl_class=db.DbController),
     config.Route(url="/http", ctrl_class=http.HttpController),
+    config.Route(regex="/http\\+.*", ctrl_class=http.HttpController),
     config.Route(url="/ws", ctrl_class=ws.WsPageController),
     # Then, add special URLs
     config.Route("POST", url="/comment"),  # POSTs must be explicitly routed

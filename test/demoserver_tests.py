@@ -190,6 +190,14 @@ class DemoserverTests(unittest.TestCase):
         self.assertIn("GET /http HTTP/1.1", self.driver.page_source,
                       "GET line missing from HTTP request readback.")
 
+        self.driver_get("/http%2Btest%25%20%20%25")
+        self.check_header("/http")
+        self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
+        self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
+                      "`This is an approximation of your HTTP request:` missing.")
+        self.assertIn("GET /http%2Btest%25%20%20%25 HTTP/1.1", self.driver.page_source,
+                      "URL quoting error.")
+
     def test_ws(self):
         self.driver_get("/ws")
 
