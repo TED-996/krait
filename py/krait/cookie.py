@@ -51,7 +51,12 @@ class Cookie:
         Returns
             str: The cookie in standard HTTP ``Set-Cookie` syntax.
         """
-        return "; ".join(["{}={}".format(self.name, self.value)] + [str(a) for a in self.attributes])
+        if not self.name:
+            main_name = self.value;
+        else:
+            main_name = self.name + "+" + str(self.value)
+
+        return "; ".join([main_name] + [str(a) for a in self.attributes])
 
     def add_attribute(self, attribute):
         """
@@ -340,7 +345,10 @@ def _split_equals(item):
     Returns:
         (str, str): the ``(name, value)`` tuple.
     """
-    sep_idx = item.index("=")
+    sep_idx = item.find("=")
+    if sep_idx == -1:
+        return "", item
+
     return item[:sep_idx], item[sep_idx + 1:]
 
 

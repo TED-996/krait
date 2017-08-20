@@ -133,7 +133,7 @@ bool PymlItemEmbed::isDynamic() const {
 std::string PymlItemSetCallable::runPyml() const {
 	std::string tempName = "__kr_int_" + randomAlpha(32);
 
-	PythonModule::main.setGlobal(tempName, callable());
+	PythonModule::main.setGlobal(tempName, PythonModule::main.callObject(callable));
 	PythonModule::main.run(formatString("%1% = %2%", destination, tempName));
 	PythonModule::main.run(formatString("del %1%", tempName));
 
