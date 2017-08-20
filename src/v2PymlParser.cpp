@@ -369,7 +369,7 @@ void V2PymlParserFsm::init() {
 	// @else
 	addBulkParser(atRoot2, elseRoot, evalRoot, "else");
 	// Finish @else:
-	add(elseRoot, new PymlAddElseTransition(&parser, new Simple(':', start)));
+	add(elseRoot, new PymlAddElseTransition(&parser, new Skip(new Simple(':', start))));
 	// Optionally consume whitespace
 	add(elseRoot, new Whitespace(elseRoot));
 	// Otherwise, if's a simple eval

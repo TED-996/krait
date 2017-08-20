@@ -41,6 +41,16 @@ class DemoserverTests(unittest.TestCase):
         self.assertIn("Welcome to Krait!", self.driver.page_source, "`Welcome to Krait!` missing.")
         self.assertIn("Why choose Krait?", self.driver.page_source, "`Why choose Krait?` missing.")
 
+        self.assertEquals(self.driver.page_source.count("demo-alert-div"), 3,
+                          "Alert count not 3. Fors/Ifs are broken.")
+        self.assertNotIn("There are no alerts", self.driver.page_source,
+                         "'No alerts' message, should not appear. Ifs are broken.")
+
+        self.assertIn("This is the 3rd alert. This one is special.", self.driver.page_source,
+                      "Special alert (under else branch) missing. Ifs are broken.")
+        self.assertNotIn("False is True! Run for your life!", self.driver.page_source,
+                         "'False is True' message, should not appear. Ifs are broken.")
+
     def test_db(self):
         self.driver_get("/db")
 

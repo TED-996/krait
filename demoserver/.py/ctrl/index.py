@@ -1,13 +1,11 @@
 import time
-import random
-
 
 class IndexController(object):
     def __init__(self):
         super(IndexController, self).__init__()
 
         self.page_url = "/"
-        self.alerts_exist = random.randrange(2)
+        self.alerts_exist = True
         self.suffixes = {
             1: "st",
             2: "nd",
