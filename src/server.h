@@ -19,7 +19,6 @@ class Server
 	static Server* instance;
 
 	boost::filesystem::path serverRoot;
-	int serverSocket;
 
 	const int maxKeepAliveSec = 60;
 	int keepAliveTimeoutSec;

@@ -30,7 +30,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 	std::unique_ptr<Response> response = nullptr;
 
 	try {
-		PreResponseSource source = std::move(getSourceFromRequest(request));
+		PreResponseSource source = getSourceFromRequest(request);
 		
 		symFilename = source.symFilename;
 		bool isDynamic;
@@ -67,11 +67,11 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 				apiManager.set(request, isWebsockets);
 			}
 
-			response = std::move(renderer.render(*pymlFile, request));
+			response = renderer.render(*pymlFile, request);
 
 			if (isDynamic) {
 				if (apiManager.isCustomResponse()) {
-					response = std::move(apiManager.getCustomResponse());
+					response = apiManager.getCustomResponse();
 				}
 				apiManager.addHeaders(*response);
 			}

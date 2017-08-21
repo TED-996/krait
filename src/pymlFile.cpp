@@ -9,7 +9,7 @@ PymlFile::PymlFile(std::string::iterator sourceStart,
                    std::unique_ptr<IPymlParser>& parser)
 	: parser(std::move(parser)) {
 	this->parser->consume(sourceStart, sourceEnd);
-	rootItem = std::move(this->parser->getParsed());
+	rootItem = this->parser->getParsed();
 }
 
 std::string PymlFile::runPyml() const {

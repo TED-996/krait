@@ -33,7 +33,7 @@ Server::Server(std::string serverRoot, int port)
 	serverRoot(bf::path(serverRoot)),
 	config(),
 	cacheController(config, serverRoot),
-	networkManager(std::make_unique<NetworkManager>(std::move(NetworkManager::fromAnyOnPort(port)))),
+	networkManager(std::make_unique<NetworkManager>(NetworkManager::fromAnyOnPort(port))),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
@@ -107,7 +107,7 @@ void Server::tryAcceptConnection() {
 	const int timeout = 100;
 	std::unique_ptr<IManagedSocket> newClient;
 	try {
-		newClient = std::move(networkManager->acceptTimeout(timeout));
+		newClient = networkManager->acceptTimeout(timeout);
 	}
 	catch (const networkError& err) {
 		Loggers::errLogger.log("Could not get new client.");
@@ -217,10 +217,10 @@ void Server::serveClientStart() {
 	}
 	catch (rootException& ex) {
 		if (isHead) {
-			clientSocket->respondWithObject(std::move(Response(500, "", true)));
+			clientSocket->respondWithObject(Response(500, "", true));
 		}
 		else {
-			clientSocket->respondWithObject(std::move(Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true)));
+			clientSocket->respondWithObject(Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
 		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
 	}
@@ -237,7 +237,7 @@ void Server::serveRequest(Request& request) {
 
 	try {
 		interpretCacheRequest = true;
-		resp = std::move(responseBuilder.buildResponse(request));
+		resp = responseBuilder.buildResponse(request);
 	}
 	catch (rootException& ex) {
 		resp = std::make_unique<Response>(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true);

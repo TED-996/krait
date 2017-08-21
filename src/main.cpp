@@ -83,9 +83,9 @@ int main(int argc, char* argv[]) {
 
 	startCommanderProcess();
 	
-	SignalManager::registerSignal(std::move(std::unique_ptr<ShtudownSignalHandler>(new ShtudownSignalHandler())));
-	SignalManager::registerSignal(std::move(std::unique_ptr<StopSignalHandler>(new StopSignalHandler())));
-	SignalManager::registerSignal(std::move(std::unique_ptr<KillSignalHandler>(new KillSignalHandler())));
+	SignalManager::registerSignal(std::make_unique<ShtudownSignalHandler>());
+	SignalManager::registerSignal(std::make_unique<StopSignalHandler>());
+	SignalManager::registerSignal(std::make_unique<KillSignalHandler>());
 
 	try {
 		Server server(siteRoot, port);

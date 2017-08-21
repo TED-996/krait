@@ -197,7 +197,7 @@ std::string encode64(const std::string& val);
 
 bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 	if (PythonModule::websockets.checkIsNone("response")) {
-		clientSocket.respondWithObject(std::move(Response(400, "", true)));
+		clientSocket.respondWithObject(Response(400, "", true));
 		return false;
 	}
 
@@ -211,17 +211,17 @@ bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 	}
 
 	if (!key) {
-		clientSocket.respondWithObject(std::move(Response(1, 1, 400, std::unordered_multimap<std::string, std::string>(), "", true)));
+		clientSocket.respondWithObject(Response(400, "", true));
 		return false;
 	}
 	if (!version || version.get() != "13") {
-		clientSocket.respondWithObject(std::move(Response(
+		clientSocket.respondWithObject(Response(
 			1,
 			1,
 			400,
 			std::unordered_multimap<std::string, std::string>{{"Sec-WebSocket-Version", "13"}},
 			"",
-			true)));
+			true));
 		return false;
 	}
 
@@ -255,13 +255,13 @@ bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 		outHeaders.insert(make_pair("Sec-WebSocket-Protocol", protocol.get()));
 	}
 
-	clientSocket.respondWithObject(std::move(Response(
+	clientSocket.respondWithObject(Response(
 		1,
 		1,
 		101,
 		outHeaders,
 		"",
-		false)));
+		false));
 
 	return true;
 }

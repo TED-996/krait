@@ -7,7 +7,7 @@
 #include "dbg.h"
 
 std::unique_ptr<Response> PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request) {
-	IteratorResult iterResult(std::move(PymlIterator(pymlSource.getRootItem())));
+	IteratorResult iterResult(PymlIterator(pymlSource.getRootItem()));
 	
 	return std::make_unique<Response>(200, std::move(iterResult), false);
 }
