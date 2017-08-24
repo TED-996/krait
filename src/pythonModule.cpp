@@ -1,5 +1,4 @@
 #include "pythonModule.h"
-#include<python2.7/Python.h>
 #include<boost/python.hpp>
 #include<boost/format.hpp>
 #include<string>
