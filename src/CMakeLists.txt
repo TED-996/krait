@@ -16,24 +16,27 @@ list(REMOVE_ITEM SOURCE_FILES ${TEST_FILES})
 message("Source files:")
 message(${SOURCE_FILES} ${MAIN_FILES})
 
-find_package(PythonLibs 2.7 REQUIRED)
+SET(ORIGINAL_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
+SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
+SET(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_LIB_SUFFIX})
+
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-FIND_PACKAGE(Boost COMPONENTS python unit_test_framework filesystem regex thread chrono program_options)
-IF(Boost_FOUND)
+FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread chrono program_options)
+if(Boost_FOUND)
     INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}")
     SET(Boost_USE_STATIC_LIBS ${STATIC_BOOST})
     SET(Boost_USE_MULTITHREADED ON)
     SET(Boost_USE_STATIC_RUNTIME ${STATIC_BOOST})
-
-ELSEIF(NOT Boost_FOUND)
+else()
     MESSAGE(FATAL_ERROR "Unable to find correct Boost version. Did you set BOOST_ROOT?")
-ENDIF()
+endif()
 
 set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
 add_executable(cmdr main_cmdr.cpp commander.cpp utils.cpp path.cpp)
-target_link_libraries(cmdr ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(cmdr ${PYTHON_LIBRARY} ${Boost_LIBRARIES}) # TODO: remove python library
 set_target_properties(cmdr PROPERTIES OUTPUT_NAME ${BUILD_DIR}/krait-cmdr)
 
 

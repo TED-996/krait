@@ -25,13 +25,13 @@ CacheController::CacheController(Config& config, std::string filenameRoot)
 }
 
 void CacheController::load() {
-	this->noStoreTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_no_store"));
-	this->privateTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_private"));
-	this->publicTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_public"));
-	this->longTermTargets = RegexList::fromPythonObject(PythonModule::config.getGlobalVariable("cache_long_term"));
+	this->noStoreTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_no_store"));
+	this->privateTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_private"));
+	this->publicTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_public"));
+	this->longTermTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_long_term"));
 
-	this->maxAgeDefault = bp::extract<int>(PythonModule::config.getGlobalVariable("cache_max_age_default"));
-	this->maxAgeLongTerm = bp::extract<int>(PythonModule::config.getGlobalVariable("cache_max_age_long_term"));
+	this->maxAgeDefault = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_default"));
+	this->maxAgeLongTerm = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_long_term"));
 
 	loaded = true;
 }

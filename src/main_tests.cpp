@@ -16,13 +16,13 @@ BOOST_AUTO_TEST_CASE(funcs_python) {
 		PythonModule::initModules("/home/ted/proiect/tests/server");
 		std::cout << "Python inited." << std::endl;
 
-		PythonModule::main.run("abc = [1, '2', 3, ('a', 'b'), {'c':'d'}]");
+		PythonModule::main().run("abc = [1, '2', 3, ('a', 'b'), {'c':'d'}]");
 
 		std::cout << "Run called" << std::endl;
 
-		std::cout << PythonModule::main.eval("abc") << '\n';
-		std::cout << PythonModule::main.eval("True") << ' ' << PythonModule::main.test("'abc'") << ' '
-				<< PythonModule::main.test("0") << ' ' << PythonModule::main.test("False") << std::endl;
+		std::cout << PythonModule::main().eval("abc") << '\n';
+		std::cout << PythonModule::main().eval("True") << ' ' << PythonModule::main().test("'abc'") << ' '
+				<< PythonModule::main().test("0") << ' ' << PythonModule::main().test("False") << std::endl;
 	}
 	catch (pythonError& err) {
 		std::cout << "caught error!" << std::endl;

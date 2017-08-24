@@ -17,11 +17,26 @@ private:
 
 	//Statics
 public:
-	static PythonModule main;
-	static PythonModule krait;
-	static PythonModule mvc;
-	static PythonModule websockets;
-	static PythonModule config;
+	static PythonModule& main() {
+		static PythonModule* mod = new PythonModule("__main__");
+		return *mod;
+	}
+	static PythonModule& krait() {
+		static PythonModule* mod = new PythonModule("krait");
+		return *mod;
+	}
+	static PythonModule& mvc() {
+		static PythonModule* mod = new PythonModule("krait");
+		return *mod;
+	}
+	static PythonModule& websockets() {
+		static PythonModule* mod = new PythonModule("krait.websockets");
+		return *mod;
+	}
+	static PythonModule& config() {
+		static PythonModule* mod = new PythonModule("krait.config");
+		return *mod;
+	}
 
 private:
 	static bool pythonInitialized;
