@@ -134,17 +134,17 @@ bool WebsocketsServer::start(Request& upgradeRequest) {
 	}
 	// Request is now upgraded to a WebSockets request.
 	boost::python::object ctrlStartMethod =
-			PythonModule::websockets.evalToObject("response.controller.on_start");
+			PythonModule::websockets().evalToObject("response.controller.on_start");
 	boost::python::object inMsgEvent =
-			PythonModule::websockets.evalToObject("response.controller.on_in_message_internal");
+			PythonModule::websockets().evalToObject("response.controller.on_in_message_internal");
 	boost::python::object outMsgGetter =
-			PythonModule::websockets.evalToObject("response.controller.pop_out_message");
+			PythonModule::websockets().evalToObject("response.controller.pop_out_message");
 	boost::python::object ctrlStopMethod =
-			PythonModule::websockets.evalToObject("response.controller.on_stop");
+			PythonModule::websockets().evalToObject("response.controller.on_stop");
 	boost::python::object ctrlWaitStopMethod =
-			PythonModule::websockets.evalToObject("response.controller.wait_stopped");
+			PythonModule::websockets().evalToObject("response.controller.wait_stopped");
 
-	PythonModule::websockets.callObject(ctrlStartMethod);
+	PythonModule::websockets().callObject(ctrlStartMethod);
 
 	while (!closed) {
 		boost::optional<WebsocketsMessage> msgInOpt;
@@ -157,11 +157,11 @@ bool WebsocketsServer::start(Request& upgradeRequest) {
 			WebsocketsMessage& msgIn = msgInOpt.get();
 			if (msgIn.opcode == WebsocketsOpcode::Text || msgIn.opcode == WebsocketsOpcode::Binary) {
 				//DBG("calling inMsgEvent");
-				PythonModule::websockets.callObject(inMsgEvent, boost::python::str(msgIn.message));
+				PythonModule::websockets().callObject(inMsgEvent, boost::python::str(msgIn.message));
 			}
 		}
 
-		boost::python::object outMsg = PythonModule::websockets.callObject(outMsgGetter);
+		boost::python::object outMsg = PythonModule::websockets().callObject(outMsgGetter);
 		if (!outMsg.is_none()) {
 			std::string msgString = boost::python::extract<std::string>(outMsg);
 			//DBG_FMT("sending %1%", msgString);
@@ -173,18 +173,18 @@ bool WebsocketsServer::start(Request& upgradeRequest) {
 		}
 	}
 
-	PythonModule::websockets.callObject(ctrlStopMethod);
+	PythonModule::websockets().callObject(ctrlStopMethod);
 	int attemptsLeft = 12; // give it 12 x 5s = 1 minute. A bit much, true.
 	while (attemptsLeft > 0 &&
 		!boost::python::extract<bool>(
-			PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(5)))) {
+			PythonModule::websockets().callObject(ctrlWaitStopMethod, boost::python::object(5)))) {
 		Loggers::errLogger.log(formatString("[WARNING]: Websockets controller on url %1% not shutting down, "
 		                                    "retrying until timeout...", upgradeRequest.getUrl()));
 		attemptsLeft--;
 	}
 
 	if (!boost::python::extract<bool>(
-		PythonModule::websockets.callObject(ctrlWaitStopMethod, boost::python::object(1)))) {
+		PythonModule::websockets().callObject(ctrlWaitStopMethod, boost::python::object(1)))) {
 		Loggers::errLogger.log(formatString("[SERIOUS WARNING]: Websockets controller on url %1% failed to shut down "
 		                                    "within the timeout. Process closing forcefully.",
 		                                    upgradeRequest.getUrl()));
@@ -196,7 +196,7 @@ bool WebsocketsServer::start(Request& upgradeRequest) {
 std::string encode64(const std::string& val);
 
 bool WebsocketsServer::handleUpgradeRequest(Request& request) {
-	if (PythonModule::websockets.checkIsNone("response")) {
+	if (PythonModule::websockets().checkIsNone("response")) {
 		clientSocket.respondWithObject(Response(400, "", true));
 		return false;
 	}
@@ -206,8 +206,8 @@ bool WebsocketsServer::handleUpgradeRequest(Request& request) {
 
 	boost::optional<std::string> protocol = boost::none;
 
-	if (PythonModule::websockets.test("response.protocol is not None")) {
-		protocol = PythonModule::websockets.eval("response.protocol");
+	if (PythonModule::websockets().test("response.protocol is not None")) {
+		protocol = PythonModule::websockets().eval("response.protocol");
 	}
 
 	if (!key) {

@@ -13,17 +13,10 @@
 namespace b = boost;
 namespace bp = boost::python;
 
-PythonModule PythonModule::main("__main__");
-PythonModule PythonModule::krait("krait");
-PythonModule PythonModule::mvc("krait.mvc");
-PythonModule PythonModule::websockets("krait.websockets");
-PythonModule PythonModule::config("krait.config");
-
 
 bool PythonModule::pythonInitialized = false;
 bool PythonModule::modulesInitialized = false;
 bp::object PythonModule::requestType;
-
 
 
 void PythonModule::initPython() {
@@ -33,6 +26,7 @@ void PythonModule::initPython() {
 	}
 	try {
 		Py_Initialize();
+		DBG("PyInitialize done");
 		bp::to_python_converter<Request, requestToPythonObjectConverter>();
 		bp::to_python_converter<std::map<std::string, std::string>, StringMapToPythonObjectConverter>();
 		bp::to_python_converter<std::multimap<std::string, std::string>, StringMultimapToPythonObjectConverter>();
@@ -40,11 +34,16 @@ void PythonModule::initPython() {
 			&PythonObjectToRouteConverter::convertible,
 			&PythonObjectToRouteConverter::construct,
 			boost::python::type_id<Route>());
+		DBG("converters done");
 
 		bp::object mainModule = bp::import("__main__");
+		DBG("import main done");
+
 		bp::dict mainDict = bp::extract<bp::dict>(mainModule.attr("__dict__"));
+		DBG("imports done");
 
 		mainModule.attr("root_dir") = bp::str(getExecRoot().string());
+		DBG("executing file");
 
 		bp::exec_file(bp::str((getExecRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
 	}
@@ -54,6 +53,7 @@ void PythonModule::initPython() {
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("initPython()"));
 	}
 
+	DBG("pre_atexit");
 	if (atexit(PythonModule::finishPython) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("atexit: setting finishPython at exit") << errcodeInfoDef());
 	}
@@ -93,16 +93,17 @@ void PythonModule::resetModules(std::string projectDir) {
 	DBG("in pythonReset()");
 	try {
 		if (modulesInitialized) {
-			PythonModule::main.clear();
-			PythonModule::krait.clear();
-			PythonModule::mvc.clear();
-			PythonModule::websockets.clear();
+			PythonModule::main().clear();
+			PythonModule::krait().clear();
+			PythonModule::mvc().clear();
+			PythonModule::websockets().clear();
+			PythonModule::config().clear();
 		}
-		PythonModule::main.setGlobal("project_dir", projectDir);
+		PythonModule::main().setGlobal("project_dir", projectDir);
 
-		PythonModule::main.execfile((getExecRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
+		PythonModule::main().execfile((getExecRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
 
-		requestType = PythonModule::krait.moduleGlobals["Request"];
+		requestType = PythonModule::krait().moduleGlobals["Request"];
 	}
 	catch (bp::error_already_set const&) {
 		DBG("Python error in resetModules()!");

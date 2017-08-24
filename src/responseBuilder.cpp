@@ -206,10 +206,10 @@ void ResponseBuilder::addCacheHeaders(Response& response, const std::string& fil
 }
 
 
-std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
+std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) { //TODO: move to PythonApiManager
 	std::string extension;
 
-	if (!isDynamic || PythonModule::krait.checkIsNone("_content_type")) {
+	if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {
 		bf::path filePath(filename);
 		extension = filePath.extension().string();
 		if (extension == ".pyml") {
@@ -217,7 +217,7 @@ std::string ResponseBuilder::getContentType(const std::string& filename, bool is
 		}
 	}
 	else {
-		std::string varContentType = PythonModule::krait.getGlobalStr("_content_type");
+		std::string varContentType = PythonModule::krait().getGlobalStr("_content_type");
 		
 		if (!ba::starts_with(varContentType, "ext/")) {
 			return varContentType;

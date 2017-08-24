@@ -8,7 +8,7 @@ namespace bp = boost::python;
 
 void Config::loadRoutes() {
 	try {
-		bp::object pyRoutes = PythonModule::config.getGlobalVariable("routes");
+		bp::object pyRoutes = PythonModule::config().getGlobalVariable("routes");
 		if (pyRoutes.is_none()) {
 			routes = Route::getDefaultRoutes();
 		}

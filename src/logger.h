@@ -31,7 +31,7 @@ class LoggerIn
 
 public:
 	LoggerIn()
-		: pipeOut(dup(0)) {
+		: pipeOut(dup(1)) {
 	}
 
 	explicit LoggerIn(int pipeOut);

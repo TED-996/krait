@@ -42,22 +42,22 @@ const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 std::string htmlEscape(std::string htmlCode);
 
 std::string PymlItemPyEval::runPyml() const {
-	return htmlEscape(PythonModule::main.eval(code));
+	return htmlEscape(PythonModule::main().eval(code));
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {
-	return PythonModule::main.eval(code);
+	return PythonModule::main().eval(code);
 }
 
 
 std::string PymlItemPyExec::runPyml() const {
-	PythonModule::main.run(code);
+	PythonModule::main().run(code);
 	return "";
 }
 
 
 std::string PymlItemIf::runPyml() const {
-	if (PythonModule::main.test(conditionCode)) {
+	if (PythonModule::main().test(conditionCode)) {
 		if (itemIfTrue == NULL) {
 			return "";
 		}
@@ -77,7 +77,7 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
 		return NULL;
 	}
 
-	if (PythonModule::main.test(conditionCode)) {
+	if (PythonModule::main().test(conditionCode)) {
 		return itemIfTrue.get();
 	}
 	else {
@@ -87,11 +87,11 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
 
 
 std::string PymlItemFor::runPyml() const {
-	PythonModule::main.run(initCode);
+	PythonModule::main().run(initCode);
 	std::string result;
-	while (PythonModule::main.test(conditionCode)) {
+	while (PythonModule::main().test(conditionCode)) {
 		result += loopItem->runPyml();
-		PythonModule::main.run(updateCode);
+		PythonModule::main().run(updateCode);
 	}
 	return result;
 }
@@ -99,13 +99,13 @@ std::string PymlItemFor::runPyml() const {
 
 const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 	if (last == NULL) {
-		PythonModule::main.run(initCode);
+		PythonModule::main().run(initCode);
 	}
 	else {
-		PythonModule::main.run(updateCode);
+		PythonModule::main().run(updateCode);
 	}
 
-	if (PythonModule::main.test(conditionCode)) {
+	if (PythonModule::main().test(conditionCode)) {
 		return loopItem.get();
 	}
 	else {
@@ -115,7 +115,7 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
 	if (last == NULL) {
-		return cache.get(PythonModule::main.eval(filename)).getRootItem();
+		return cache.get(PythonModule::main().eval(filename)).getRootItem();
 	}
 	else {
 		return NULL;
@@ -123,19 +123,19 @@ const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
 }
 
 std::string PymlItemEmbed::runPyml() const {
-	return cache.get(PythonModule::main.eval(filename)).runPyml();
+	return cache.get(PythonModule::main().eval(filename)).runPyml();
 }
 
 bool PymlItemEmbed::isDynamic() const {
-	return cache.get(PythonModule::main.eval(filename)).isDynamic();
+	return cache.get(PythonModule::main().eval(filename)).isDynamic();
 }
 
 std::string PymlItemSetCallable::runPyml() const {
 	std::string tempName = "__kr_int_" + randomAlpha(32);
 
-	PythonModule::main.setGlobal(tempName, PythonModule::main.callObject(callable));
-	PythonModule::main.run(formatString("%1% = %2%", destination, tempName));
-	PythonModule::main.run(formatString("del %1%", tempName));
+	PythonModule::main().setGlobal(tempName, PythonModule::main().callObject(callable));
+	PythonModule::main().run(formatString("%1% = %2%", destination, tempName));
+	PythonModule::main().run(formatString("del %1%", tempName));
 
 	return "";
 }
