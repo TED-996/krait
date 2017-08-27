@@ -4,9 +4,35 @@ Currently, this module is used to configure routing and the client-side cache.
 
 The members of this module should only be changed from ``.py/init.py``, later changes are ignored.
 
+The routing engine:
+===================
+
+Krait uses routing to decide how to start responding to the client's requests.
+For this, you can (should) configure a list of routes.
+Each route consists of two components: the matching rule and the target.
+The matching rule decides if a route is a match for a specific URL,
+and the target decides what is the source to use for the response.
+
+Matching rules can be either universal (matching everything), a string or a regular expression.
+These must be matched exactly (and are case-sensitive), or else the request will not be answered
+by what you would expect, or it might produce a 404.
+Route targets can be either the default (the input URL as a file in the site root directory),
+a filename (for now static one, in the future you will be able to make it depend on the URL)
+or a MVC controller class. Use MVC controllers where possible, as it can improve performance.
+
+The order of the routes in the route list is important, as the first route to match will be used.
+It is recommended that the last route is a default route (matching everything, with default targets)
+to serve other files in the site root, such as Javascript, CSS or image files.
+
 Usage
 =====
 
+1. Configure the routes that Krait will use for your website:
+    Create a file named ``init.py`` (no underscores) in the ``.py`` directory, if it doesn't exist.
+    In it, import :obj:`krait.config` and assign :obj:`krait.config.routes`
+    to a list of :class:`krait.config.Route` objects.
+
+TODO: and test this.
 
 
 Reference
