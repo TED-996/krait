@@ -49,14 +49,28 @@ class Cookie:
         Convert the Cookie to the Set-Cookie syntax
 
         Returns
-            str: The cookie in standard HTTP ``Set-Cookie` syntax.
+            str: The cookie in standard HTTP ``Set-Cookie`` syntax.
         """
         if not self.name:
-            main_name = self.value;
+            main_name = self.value
         else:
-            main_name = self.name + "+" + str(self.value)
+            main_name = self.name + "=" + str(self.value)
 
         return "; ".join([main_name] + [str(a) for a in self.attributes])
+
+    def __repr__(self):
+        """
+        Convert the Cookie to its representation.
+
+        Returns
+            str: The cookie in its representation form.
+        """
+        # TODO: make it re-initializable code.
+        return "krait.cookie.Cookie("\
+            + repr(self.name) + ", "\
+            + repr(self.value)\
+            + ("" if not self.attributes else ", attributes=[...]")\
+            + ")"
 
     def add_attribute(self, attribute):
         """

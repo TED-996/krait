@@ -4,6 +4,11 @@ Currently, this module is used to configure routing and the client-side cache.
 
 The members of this module should only be changed from ``.py/init.py``, later changes are ignored.
 
+Usage
+=====
+
+
+
 Reference
 =========
 """
