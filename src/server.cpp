@@ -30,7 +30,7 @@ Server* Server::instance = nullptr;
 
 Server::Server(std::string serverRoot, int port)
 	:
-	serverRoot(bf::path(serverRoot)),
+	serverRoot(bf::canonical(bf::absolute(serverRoot))),
 	config(),
 	cacheController(config, serverRoot),
 	networkManager(std::make_unique<NetworkManager>(NetworkManager::fromAnyOnPort(port))),

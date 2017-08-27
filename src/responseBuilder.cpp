@@ -301,7 +301,7 @@ std::string replaceParams(const std::string& target, std::map<std::string, std::
 bool ResponseBuilder::pathBlocked(const std::string& path) {
 	bf::path filePath(path);
 	for (auto& part : filePath) {
-		if (part.c_str()[0] == '.') {
+		if (part.size() > 1 && part.c_str()[0] == '.') {
 			return true;
 		}
 	}
