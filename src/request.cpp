@@ -30,8 +30,21 @@ Request::Request(HttpVerb verb, const std::string& url, const std::string& query
 }
 
 
+Request::Request(HttpVerb verb, std::string&& url, std::string&& queryString, int httpMajor, int httpMinor,
+                 const std::map<std::string, std::string>& headers, std::string&& body) : 
+	url(std::move(url)), body(std::move(body)), queryString(std::move(queryString)){
+	this->verb = verb;
+	this->httpMajor = httpMajor;
+	this->httpMinor = httpMinor;
+	
+	for (auto p : headers) {
+		this->headers[ba::to_lower_copy(p.first)] = p.second;
+	}
+	this->routeVerb = toRouteVerb(verb);
+}
+
 Request::Request(Request&& other) noexcept
-	: url(std::move(other.url)), headers(other.headers), body(other.body), queryString(std::move(other.queryString)) {
+	: url(std::move(other.url)), headers(other.headers), body(std::move(other.body)), queryString(std::move(other.queryString)) {
 	this->verb = other.verb;
 	this->httpMajor = other.httpMajor;
 	this->httpMinor = other.httpMinor;

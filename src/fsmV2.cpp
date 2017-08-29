@@ -51,7 +51,7 @@ void FsmV2::reset() {
 	isFinalPass = false;
 }
 
-void FsmV2::add(size_t state, FsmTransition* transition) {
+void FsmV2::add(size_t state, FsmTransition*&& transition) {
 	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add transition to larger than maximum."));
 	}
@@ -59,9 +59,9 @@ void FsmV2::add(size_t state, FsmTransition* transition) {
 	transitions[state].emplace_back(transition);
 }
 
-void FsmV2::addMany(std::initializer_list<std::pair<size_t, FsmTransition *>> transitions) {
+void FsmV2::addMany(std::initializer_list<std::pair<size_t, FsmTransition*&&>> transitions) {
 	for (const auto& transition : transitions) {
-		add(transition.first, transition.second);
+		add(transition.first, std::move(transition.second));
 	}
 }
 
@@ -90,7 +90,7 @@ void FsmV2::addFinalActionToMany(fsmAction action, std::initializer_list<size_t>
 	}
 }
 
-void FsmV2::addToBulk(size_t state, FsmTransition* transition) {
+void FsmV2::addToBulk(size_t state, FsmTransition*&& transition) {
 	if (state >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested bulk state to add transition to larger than maximum."));
 	}
@@ -168,7 +168,7 @@ void FsmV2::resetStored() {
 }
 
 std::string FsmV2::getResetStored() {
-	std::string result = std::move(backBuffer);
+	std::string result(std::move(backBuffer));
 	result.append(workingBuffer, workingIdx);
 
 	workingIdx = 0;
