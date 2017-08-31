@@ -43,6 +43,8 @@ private:
 
 	bool isFinalPass;
 
+	bool hasStateActions;
+
 	static const size_t workingBufferSize = 1024;
 	size_t workingIdx;
 	char workingBuffer[workingBufferSize];
@@ -52,7 +54,7 @@ private:
 	void store(char chr);
 
 	void addToBulk(size_t state, FsmTransition*&& transition);
-	void addStateActionToBulk(size_t state, fsmAction action);
+	void addStateActionToBulk(size_t state, const fsmAction& action);
 
 	void execStateAction();
 
@@ -68,16 +70,16 @@ public:
 
 	void add(size_t state, FsmTransition*&& transition);
 	void addMany(std::initializer_list<std::pair<size_t, FsmTransition*&&>> transitions);
-	void addStateAction(size_t state, fsmAction action);
-	void addFinalAction(size_t state, fsmAction action);
-	void addFinalActionToMany(fsmAction action, std::initializer_list<size_t> destinationStates);
+	void addStateAction(size_t state, const fsmAction& action);
+	void addFinalAction(size_t state, const fsmAction& action);
+	void addFinalActionToMany(const fsmAction& action, std::initializer_list<size_t> destinationStates);
 
-	void addBulkParser(size_t startState, size_t endState, size_t failState, std::string strToMatch);
+	void addBulkParser(size_t startState, size_t endState, size_t failState, const std::string& strToMatch);
 	void addStringLiteralParser(size_t startState, size_t endState, char delimiter, char escapeChr);
 	void addBlockParser(size_t startState, size_t endState, char blockStart, char blockEnd);
 
 	void consumeOne(char chr);
-	void doFinalPass();
+	void doFinalPass(char consumeChr);
 
 	std::string getStored();
 	void resetStored();
@@ -97,8 +99,8 @@ public:
 	void pushResetStoredString();
 	std::string popStoredString();
 
-	int getProp(std::string key);
-	void setProp(std::string key, int value);
+	int getProp(const std::string& key);
+	void setProp(const std::string& key, int value);
 };
 
 class FsmTransition

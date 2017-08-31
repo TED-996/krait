@@ -35,6 +35,8 @@ FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates)
 	finalActions.resize(nrStates);
 	bulkFailState.resize(nrBulkStates);
 
+	hasStateActions = false;
+
 	reset();
 }
 
@@ -65,15 +67,16 @@ void FsmV2::addMany(std::initializer_list<std::pair<size_t, FsmTransition*&&>> t
 	}
 }
 
-void FsmV2::addStateAction(size_t state, FsmV2::fsmAction action) {
+void FsmV2::addStateAction(size_t state, const FsmV2::fsmAction& action) {
 	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add action to larger than maximum."));
 	}
 
 	stateActions[state].push_back(action);
+	hasStateActions = true;
 }
 
-void FsmV2::addFinalAction(size_t state, FsmV2::fsmAction action) {
+void FsmV2::addFinalAction(size_t state, const FsmV2::fsmAction& action) {
 	if (state >= maxState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add final action to larger than maximum."));
 	}
@@ -81,7 +84,7 @@ void FsmV2::addFinalAction(size_t state, FsmV2::fsmAction action) {
 	finalActions[state].push_back(action);
 }
 
-void FsmV2::addFinalActionToMany(fsmAction action, std::initializer_list<size_t> destinationStates) {
+void FsmV2::addFinalActionToMany(const FsmV2::fsmAction& action, std::initializer_list<size_t> destinationStates) {
 	for (auto state : destinationStates) {
 		if (state >= maxState) {
 			BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add final action to larger than maximum."));
@@ -98,12 +101,13 @@ void FsmV2::addToBulk(size_t state, FsmTransition*&& transition) {
 	transitions[state].emplace_back(transition);
 }
 
-void FsmV2::addStateActionToBulk(size_t state, FsmV2::fsmAction action) {
+void FsmV2::addStateActionToBulk(size_t state, const FsmV2::fsmAction& action) {
 	if (state >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Requested state to add action to larger than maximum."));
 	}
 
 	stateActions[state].push_back(action);
+	hasStateActions = true;
 }
 
 void FsmV2::setSavepoint(size_t offset) {
@@ -132,7 +136,7 @@ std::string FsmV2::popStoredString() {
 	return result;
 }
 
-int FsmV2::getProp(std::string key) {
+int FsmV2::getProp(const std::string& key) {
 	const auto it = parserProps.find(key);
 	if (it == parserProps.end()) {
 		return 0;
@@ -142,7 +146,7 @@ int FsmV2::getProp(std::string key) {
 	}
 }
 
-void FsmV2::setProp(std::string key, int value) {
+void FsmV2::setProp(const std::string& key, int value) {
 	parserProps[key] = value;
 }
 
@@ -177,7 +181,7 @@ std::string FsmV2::getResetStored() {
 	return result;
 }
 
-void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, std::string strToMatch) {
+void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, const std::string& strToMatch) {
 	if (currBulkState + strToMatch.length() - 1 >= maxBulkState) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("FSM error: Out of bulk states."));
 	}
@@ -193,7 +197,7 @@ void FsmV2::addBulkParser(size_t startState, size_t endState, size_t failState, 
 
 	add(startState, new SimpleFsmTransition(strToMatch[0], currBulkState));
 
-	for (std::string::iterator it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); ++it) {
+	for (auto it = strToMatch.begin() + 1; it + 1 < strToMatch.end(); ++it) {
 		addToBulk(currBulkState, new SimpleFsmTransition(*it, currBulkState + 1));
 		addToBulk(currBulkState, new AlwaysFsmTransition(failState, false));
 		bulkFailState[currBulkState - maxState] = failState;
@@ -258,7 +262,9 @@ void FsmV2::addBlockParser(size_t startState, size_t endState, char blockStart, 
 }
 
 void FsmV2::consumeOne(char chr) {
-	execStateAction();
+	if (hasStateActions) {
+		execStateAction();
+	}
 
 	bool consumed = false;
 	skipThis = false;
@@ -284,9 +290,9 @@ void FsmV2::consumeOne(char chr) {
 }
 
 
-void FsmV2::doFinalPass() {
+void FsmV2::doFinalPass(char consumeChr) {
 	isFinalPass = true;
-	consumeOne('\n');
+	consumeOne(consumeChr);
 
 	size_t actionState = state;
 	if (state > maxState) {

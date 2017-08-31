@@ -25,18 +25,11 @@ V2HttpFsm::V2HttpFsm() : FsmV2(20, 0), parser(nullptr) {
 
 void V2HttpFsm::init() {
 	typedef SimpleFsmTransition Simple;
-	typedef ActionFsmTransition Action;
-	typedef SavepointSetFsmTransition SavepointSet;
-	typedef SavepointRevertFsmTransition SavepointRevert;
 	typedef PushFsmTransition Push;
 	typedef DiscardFsmTransition Discard;
 	typedef AlwaysFsmTransition Always;
-	typedef AndConditionFsmTransition Condition;
 	typedef SkipFsmTransition Skip;
-	typedef WhitespaceFsmTransition Whitespace;
 	typedef FinalFsmTransition Final;
-	typedef OrFinalFsmTransition OrFinal;
-	typedef ErrorFsmTransition Error;
 
 	enum {
 		inMethod = 0,
@@ -289,7 +282,7 @@ void V2HttpParser::consume(char* start, size_t length) {
 	}
 
 	if (isFinished() || isError()) {
-		fsm.doFinalPass();
+		fsm.doFinalPass('\0');
 	}
 }
 
