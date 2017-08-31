@@ -13,9 +13,12 @@
 #include <string.h>
 #include <poll.h>
 #include <endian.h>
-#include "requestParser.h"
 #include "except.h"
 #include "logger.h"
+#include "v2HttpParser.h"
+
+#define DBG_DISABLE
+#include"dbg.h"
 
 
 ManagedSocket::ManagedSocket(int socket) : socket(socket) {
@@ -73,7 +76,9 @@ bool ManagedSocket::readExactly(void* destination, size_t nBytes) {
 }
 
 std::unique_ptr<Request> ManagedSocket::getRequest() {
-	RequestParser parser;
+	static V2HttpParser parser(8192, 1024 * 1024 * 128); //TODO: fetch those dynamically
+	parser.reset();
+
 
 	char buffer[4096];
 
@@ -99,8 +104,14 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
 			}
 		}
 	}
+	
+	if (parser.isError()) {
+		Loggers::logErr(formatString("Error parsing http request: Status code %1%, message %2%\n",
+			parser.getErrorStatusCode(), parser.getErrorMessage()));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
+	}
 
-	return parser.getRequest();
+	return parser.getParsed();
 }
 
 void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
@@ -122,7 +133,9 @@ void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
 }
 
 std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
-	RequestParser parser;
+	static V2HttpParser parser(8192, 1024 * 1024 * 128); //TODO: fetch those dynamically
+	parser.reset(); //TODO: make this a no-op if already reset - or is it not called in a hot loop?
+
 	char buffer[4096];
 	int pollResult;
 
@@ -159,11 +172,17 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 		}
 	}
 
+	if (parser.isError()) {
+		Loggers::logErr(formatString("Error parsing http request: Status code %1%, message %2%\n",
+			parser.getErrorStatusCode(), parser.getErrorMessage()));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
+	}
+
 	if (!parser.isFinished()) {
 		return nullptr;
 	}
 
-	return parser.getRequest();
+	return parser.getParsed();
 }
 
 void ManagedSocket::respondWithObject(Response&& response) {

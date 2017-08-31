@@ -43,6 +43,8 @@ private:
 
 	bool isFinalPass;
 
+	bool hasStateActions;
+
 	static const size_t workingBufferSize = 1024;
 	size_t workingIdx;
 	char workingBuffer[workingBufferSize];
@@ -51,8 +53,8 @@ private:
 
 	void store(char chr);
 
-	void addToBulk(size_t state, FsmTransition* transition);
-	void addStateActionToBulk(size_t state, fsmAction action);
+	void addToBulk(size_t state, FsmTransition*&& transition);
+	void addStateActionToBulk(size_t state, const fsmAction& action);
 
 	void execStateAction();
 
@@ -66,18 +68,18 @@ public:
 		return state;
 	}
 
-	void add(size_t state, FsmTransition* transition);
-	void addMany(std::initializer_list<std::pair<size_t, FsmTransition*>> transitions);
-	void addStateAction(size_t state, fsmAction action);
-	void addFinalAction(size_t state, fsmAction action);
-	void addFinalActionToMany(fsmAction action, std::initializer_list<size_t> destinationStates);
+	void add(size_t state, FsmTransition*&& transition);
+	void addMany(std::initializer_list<std::pair<size_t, FsmTransition*&&>> transitions);
+	void addStateAction(size_t state, const fsmAction& action);
+	void addFinalAction(size_t state, const fsmAction& action);
+	void addFinalActionToMany(const fsmAction& action, std::initializer_list<size_t> destinationStates);
 
-	void addBulkParser(size_t startState, size_t endState, size_t failState, std::string strToMatch);
+	void addBulkParser(size_t startState, size_t endState, size_t failState, const std::string& strToMatch);
 	void addStringLiteralParser(size_t startState, size_t endState, char delimiter, char escapeChr);
 	void addBlockParser(size_t startState, size_t endState, char blockStart, char blockEnd);
 
 	void consumeOne(char chr);
-	void doFinalPass();
+	void doFinalPass(char consumeChr);
 
 	std::string getStored();
 	void resetStored();
@@ -97,8 +99,8 @@ public:
 	void pushResetStoredString();
 	std::string popStoredString();
 
-	int getProp(std::string key);
-	void setProp(std::string key, int value);
+	int getProp(const std::string& key);
+	void setProp(const std::string& key, int value);
 };
 
 class FsmTransition
@@ -198,7 +200,7 @@ private:
 	FsmV2::fsmAction action;
 	std::unique_ptr<FsmTransition> transition;
 public:
-	ActionFsmTransition(FsmTransition* transition, FsmV2::fsmAction action)
+	ActionFsmTransition(FsmTransition*&& transition, FsmV2::fsmAction action)
 		: action(action), transition(transition) {
 	}
 
@@ -226,7 +228,7 @@ private:
 	size_t offset;
 	std::unique_ptr<FsmTransition> transition;
 public:
-	SavepointSetFsmTransition(FsmTransition* transition, size_t offset = 0)
+	SavepointSetFsmTransition(FsmTransition*&& transition, size_t offset = 0)
 		: offset(offset), transition(transition) {
 	}
 
@@ -253,7 +255,7 @@ class SavepointRevertFsmTransition : public FsmTransition
 private:
 	std::unique_ptr<FsmTransition> transition;
 public:
-	SavepointRevertFsmTransition(FsmTransition* transition)
+	SavepointRevertFsmTransition(FsmTransition*&& transition)
 		: transition(transition) {
 	}
 
@@ -280,7 +282,7 @@ class DiscardFsmTransition : public FsmTransition
 private:
 	std::unique_ptr<FsmTransition> transition;
 public:
-	DiscardFsmTransition(FsmTransition* transition)
+	DiscardFsmTransition(FsmTransition*&& transition)
 		: transition(transition) {
 	}
 
@@ -307,7 +309,7 @@ class PushFsmTransition : public FsmTransition
 private:
 	std::unique_ptr<FsmTransition> transition;
 public:
-	PushFsmTransition(FsmTransition* transition)
+	PushFsmTransition(FsmTransition*&& transition)
 		: transition(transition) {
 	}
 
@@ -335,7 +337,7 @@ class SkipFsmTransition : public FsmTransition
 private:
 	std::unique_ptr<FsmTransition> transition;
 public:
-	SkipFsmTransition(FsmTransition* transition)
+	SkipFsmTransition(FsmTransition*&& transition)
 		: transition(transition) {
 	}
 
@@ -380,7 +382,7 @@ class OrFinalFsmTransition : public FsmTransition
 private:
 	std::unique_ptr<FsmTransition> transition;
 public:
-	OrFinalFsmTransition(FsmTransition* transition)
+	OrFinalFsmTransition(FsmTransition*&& transition)
 		: transition(transition) {
 	}
 
@@ -407,7 +409,7 @@ private:
 	std::unique_ptr<FsmTransition> transition;
 	std::function<bool(char, FsmV2&)> condition;
 public:
-	AndConditionFsmTransition(FsmTransition* transition, std::function<bool(char, FsmV2&)> condition)
+	AndConditionFsmTransition(FsmTransition*&& transition, std::function<bool(char, FsmV2&)> condition)
 		: transition(transition), condition(condition) {
 	}
 

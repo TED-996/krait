@@ -166,6 +166,7 @@
     <ClCompile Include="src\signalManager.cpp" />
     <ClCompile Include="src\stringPiper.cpp" />
     <ClCompile Include="src\utils.cpp" />
+    <ClCompile Include="src\v2HttpParser.cpp" />
     <ClCompile Include="src\v2PymlParser.cpp" />
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
@@ -212,6 +213,7 @@
     <ClInclude Include="src\signalManager.h" />
     <ClInclude Include="src\stringPiper.h" />
     <ClInclude Include="src\utils.h" />
+    <ClInclude Include="src\v2HttpParser.h" />
     <ClInclude Include="src\v2PymlParser.h" />
     <ClInclude Include="src\valueOrPtr.h" />
     <ClInclude Include="src\websocketsServer.h" />

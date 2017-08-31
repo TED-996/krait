@@ -29,8 +29,10 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 		parserFsm.consumeOne(*start);
 		++start;
 	}
-
-	parserFsm.doFinalPass();
+	
+	//TODO: To support multiple passes (for performance), the prologue and the epilogue must be separated
+	//TODO: (to be called separately)
+	parserFsm.doFinalPass('\n');
 
 	if (itemStack.size() != 1) {
 		DBG_FMT("Error unexpected end! state is %1%", parserFsm.getState());
@@ -55,7 +57,7 @@ std::unique_ptr<const IPymlItem> V2PymlParser::getParsed() {
 }
 
 
-void V2PymlParser::addPymlWorkingStr(const std::string& str) {
+void V2PymlParser::addPymlWorkingStr(std::string&& str) {
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
@@ -76,7 +78,7 @@ bool isWhitespace(const std::string& str) {
 }
 
 
-void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::string& code) {
+void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, std::string&& code) {
 	if (code.length() == 0 || isWhitespace(code)) {
 		return;
 	}
@@ -92,7 +94,7 @@ void V2PymlParser::addPymlWorkingPyCode(PymlWorkingItem::Type type, const std::s
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::addPymlWorkingEmbed(const std::string& filename) {
+void V2PymlParser::addPymlWorkingEmbed(std::string&& filename) {
 	if (filename.length() == 0 || isWhitespace(filename)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("Import filename code empty."));
 	}
@@ -112,7 +114,7 @@ void V2PymlParser::addPymlWorkingEmbed(const std::string& filename) {
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::addPymlWorkingCtrl(const std::string& ctrlCode) {
+void V2PymlParser::addPymlWorkingCtrl(std::string&& ctrlCode) {
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Pyml FSM error: stack top not Seq."));
 	}
@@ -130,7 +132,7 @@ void V2PymlParser::addPymlWorkingCtrl(const std::string& ctrlCode) {
 	addPymlStackTop();
 }
 
-void V2PymlParser::pushPymlWorkingIf(const std::string& condition) {
+void V2PymlParser::pushPymlWorkingIf(std::string&& condition) {
 	if (condition.length() == 0 || isWhitespace(condition)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("If condition code empty."));
 	}
@@ -204,7 +206,7 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 	return true;
 }
 
-void V2PymlParser::addCodeToPymlWorkingFor(int where, const std::string& code) {
+void V2PymlParser::addCodeToPymlWorkingFor(int where, std::string&& code) {
 	if (!stackTopIsType<PymlWorkingItem::ForData>()) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Parser error: tried to add code to <?for ?> without a for being on top"));
 	}
@@ -236,16 +238,14 @@ void V2PymlParser::addPymlStackTop() {
 	}
 
 	if (!stackTopIsType<PymlWorkingItem::SeqData>()) {
-		BOOST_THROW_EXCEPTION(
-			serverError() <<
-			stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Pyml FSM error: stack top not Seq, but %1%", itemStack.top().type));
 	}
 	PymlWorkingItem::SeqData& data = getStackTop<PymlWorkingItem::SeqData>();
 
 	data.items.push_back(newItem);
 }
 
-void V2PymlParser::pushPymlWorkingForIn(const std::string& entry, const std::string& collection) {
+void V2PymlParser::pushPymlWorkingForIn(std::string&& entry, std::string&& collection) {
 	if (entry.length() == 0 || isWhitespace(entry) || collection.length() == 0 || isWhitespace(collection)) {
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
 	}
@@ -263,14 +263,14 @@ void V2PymlParser::pushPymlWorkingForIn(const std::string& entry, const std::str
 	//TODO: delete the IteratorWrapper! over time these add up (esp. with runtime reuse)!
 
 	pushPymlWorkingFor();
-	addCodeToPymlWorkingFor(0, initCode);
-	addCodeToPymlWorkingFor(1, condCode);
-	addCodeToPymlWorkingFor(2, updateCode);
+	addCodeToPymlWorkingFor(0, std::move(initCode));
+	addCodeToPymlWorkingFor(1, std::move(condCode));
+	addCodeToPymlWorkingFor(2, std::move(updateCode));
 }
 
 
 V2PymlParserFsm::V2PymlParserFsm()
-	: FsmV2(30, 60) { //TODO: tune
+	: FsmV2(30, 60) {
 	parser = nullptr;
 	init();
 }
@@ -548,7 +548,7 @@ void V2PymlParserFsm::init() {
 void V2PymlParserFsm::finalAddPymlStr() {
 	std::string pymlStr = getResetStored();
 	if (pymlStr.length() != 0) {
-		parser->addPymlWorkingStr(pymlStr);
+		parser->addPymlWorkingStr(std::move(pymlStr));
 	}
 }
 
