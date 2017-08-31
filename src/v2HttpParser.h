@@ -4,6 +4,9 @@
 #include "except.h"
 #include "request.h"
 
+//#define DBG_DISABLE
+#include"dbg.h"
+
 class IV2HttpParser
 {
 public:
@@ -189,12 +192,12 @@ class V2HttpParser : public IV2HttpParser
 	int maxBodyLegth;
 	int maxHeaderLength;
 
+	void urlDecode(std::string& url);
+	int getContentLengthFromHeaders();
+
 
 	static V2HttpFsm fsm;
 	static std::map<std::string, HttpVerb> methodStringMapping;
-
-	void urlDecode(std::string& url);
-
 public:
 	explicit V2HttpParser(int maxHeaderLength, int maxBodyLength);
 	void reset();
@@ -208,11 +211,14 @@ public:
 	void setBody(std::string&& body) override;
 	void onError(int statusCode, std::string&& reason) override;
 
-	void consume(std::string::iterator start, std::string::iterator end);
+	void consume(char* start, size_t length);
 	std::unique_ptr<Request> getParsed();
 
 	bool isError() const {
 		return state == ParserState::Error;
+	}
+	bool isFinished() const {
+		return state == ParserState::InBody && bodyBytesLeft == 0;
 	}
 	int getErrorStatusCode() const {
 		return errorStatusCode;

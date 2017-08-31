@@ -30,7 +30,7 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 		++start;
 	}
 	
-	//TODO: To support multiple passes (for oerformance), the prologue and the epilogue must be separated
+	//TODO: To support multiple passes (for performance), the prologue and the epilogue must be separated
 	//TODO: (to be called separately)
 	parserFsm.doFinalPass();
 

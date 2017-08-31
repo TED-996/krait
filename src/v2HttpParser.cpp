@@ -1,4 +1,9 @@
 ﻿#include "v2HttpParser.h"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/compare.hpp>
+
+#define DBG_DISABLE
+#include"dbg.h"
 
 
 V2HttpFsm V2HttpParser::fsm;
@@ -15,6 +20,7 @@ std::map<std::string, HttpVerb> V2HttpParser::methodStringMapping {
 
 
 V2HttpFsm::V2HttpFsm() : FsmV2(20, 0), parser(nullptr) {
+	init();
 }
 
 void V2HttpFsm::init() {
@@ -58,14 +64,14 @@ void V2HttpFsm::init() {
 	add(inMethod, new HttpSetMethodTransition(&parser, new Skip(new Simple(' ', afterMethod))));
 	add(inMethod, new Always(inMethod));
 
-	add(afterMethod, new Always(inUrl));
+	add(afterMethod, new Discard(new Always(inUrl)));
 
 	add(inUrl, new HttpSetUrlTransition(&parser, new Skip(new Simple(' ', afterUrl))));
 	add(inUrl, new Always(inUrl));
 
 	add(afterUrl, new Always(inVersion));
 
-	add(inVersion, new HttpSetMethodTransition(&parser, new Skip(new Simple('\r', afterVersion))));
+	add(inVersion, new HttpSetVersionTransition(&parser, new Skip(new Simple('\r', afterVersion))));
 	add(inVersion, new Always(inVersion));
 
 	add(afterVersion, new Skip(new Simple('\n', newLine)));
@@ -82,7 +88,7 @@ void V2HttpFsm::init() {
 	add(newLineInCrlf, new HttpOnBodyStartTransition(&parser, new Discard(new Skip(new Simple('\n', inBody)))));
 	add(newLineInCrlf, new HttpErrorTransition(400, "Incomplete CR-LF after CR-LF.", &parser, new Always(errorState)));
 
-	add(inHeaderKey, new Push(new Skip(new Simple('=', afterHeaderKey))));
+	add(inHeaderKey, new Push(new Skip(new Simple(':', afterHeaderKey))));
 	add(inHeaderKey, new Always(inHeaderKey));
 
 	add(afterHeaderKey, new Simple('\r', inHeaderLwsInCrlf));
@@ -96,7 +102,7 @@ void V2HttpFsm::init() {
 	add(inHeaderValue, new HttpAddHeaderTransition(&parser, new Push(new Simple('\r', afterHeaderValue))));
 	add(inHeaderValue, new Always(inHeaderValue));
 
-	//TODO: tolerate CRs without LFs? (assume part of header)
+	//TODO: tolerate LFs without CRs? (assume part of header)
 
 	add(afterHeaderValue, new Simple('\n', newLine));
 
@@ -112,7 +118,7 @@ void V2HttpFsm::init() {
 	add(inBody, new Always(inBody));
 	add(errorState, new Always(errorState));
 
-	addFinalActionToMany([=](FsmV2& fsm){
+	addFinalActionToMany([](FsmV2& fsm){
 		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Incomplete request. Insufficient information.")); //TODO: get more information
 	}, {
 			inMethod,
@@ -133,7 +139,7 @@ void V2HttpFsm::init() {
 			beforeHeaderExtension,
 			inHeaderExtension
 		});
-	addFinalAction(errorState, [=](FsmV2 fsm) {
+	addFinalAction(errorState, [](FsmV2& fsm) {
 		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Malformed HTTP request. Insufficient information."));
 	});
 }
@@ -160,6 +166,7 @@ void V2HttpParser::reset() {
 	state = ParserState::InMethod;
 
 	fsm.setParser(this);
+	fsm.reset();
 }
 
 
@@ -197,32 +204,49 @@ void V2HttpParser::addHeader(std::string&& key, std::string&& value) {
 	//Excesses will be caught by the max size limit.
 	if (key.length() == 0) {
 		onError(400, "Missing header field name.");
+		return;
 	}
-	else {
-		//This will NOT invoke a move constructor because 'key' is still an lvalue, even if it's of an rvalue reference type.
-		lastHeaderKey = key;
+	boost::to_lower(key);
+
+	//This will NOT invoke a move constructor because 'key' is still an lvalue, even if it's of an rvalue reference type.
+	lastHeaderKey = key;
+
+	auto existingHeader = this->headers.find(key);
+	if (existingHeader == this->headers.end()) {
 		this->headers.insert(std::make_pair(std::move(key), std::move(value)));
 	}
+	else {
+		std::string& dest = existingHeader->second;
+		dest.reserve(dest.length() + value.length() + 1);
+		dest.append(",");
+		dest.append(value);
+	}
 
-	//TODO: get ContentLength
+	if (bodyBytesLeft == 0 && lastHeaderKey == "content-length") {
+		bodyBytesLeft = getContentLengthFromHeaders();
+	}
 }
 
 void V2HttpParser::extendHeader(std::string&& value) {
 	if (lastHeaderKey.length() == 0) {
 		onError(400, "Continuation line before any headers.");
+		return;
+	}
+
+	std::string& dest = this->headers[lastHeaderKey];
+
+	if (dest.empty()) {
+		dest = std::move(value);
 	}
 	else {
-		std::string& dest = this->headers[lastHeaderKey];
+		//Need to add a space, then the new value.
+		dest.reserve(dest.length() + value.length() + 1);
+		dest.append(" ", 1);
+		dest.append(value);
+	}
 
-		if (dest.empty()) {
-			dest = std::move(value);
-		}
-		else {
-			//Need to add a space, then the new value.
-			dest.reserve(dest.length() + value.length() + 1);
-			dest.append(" ", 1);
-			dest.append(value);
-		}
+	if (bodyBytesLeft == 0) {
+		bodyBytesLeft = getContentLengthFromHeaders();
 	}
 }
 
@@ -241,23 +265,39 @@ void V2HttpParser::onError(int statusCode, std::string&& reason) {
 	this->errorMessage = std::move(reason);
 }
 
-void V2HttpParser::consume(std::string::iterator start, std::string::iterator end) {
-	if (isError()) {
+void V2HttpParser::consume(char* start, size_t length) {
+	if (isFinished() || isError()) {
 		return;
 	}
-
-	while(start != end && !isError()) { //TODO: enforce limits
+	char* end = start + length;
+	while (start != end && !isError() && !isFinished()) {
+		if (state != ParserState::InBody) {
+			headerBytesLeft--;
+			if (headerBytesLeft < 0) {
+				onError(400, "Request header too large.");
+			}
+		}
+		else {
+			bodyBytesLeft--;
+			if (bodyBytesLeft < 0) {
+				BOOST_THROW_EXCEPTION(serverError() << stringInfo("V2HttpParser: FSM not stopped when body is over."));
+			}
+		}
+		
 		fsm.consumeOne(*start);
 		++start;
 	}
+
+	if (isFinished() || isError()) {
+		fsm.doFinalPass();
+	}
 }
+
 
 std::unique_ptr<Request> V2HttpParser::getParsed() {
 	if (isError()) {
 		return nullptr;
 	}
-
-	fsm.doFinalPass(); //TODO: move to a finalize() function once the split is made in v2PymlParser too
 
 	const auto& verbIt = methodStringMapping.find(this->method);
 	if (verbIt == methodStringMapping.end()) {
@@ -274,5 +314,79 @@ std::unique_ptr<Request> V2HttpParser::getParsed() {
 	}
 	urlDecode(url);
 
-	return std::make_unique<Request>(verb, std::move(url), std::move(queryString), 1, 1, headers, std::move(body));
+	return std::make_unique<Request>(verb, std::move(url), std::move(queryString), 1, 1, std::move(headers), std::move(body));
+}
+
+void V2HttpParser::urlDecode(std::string& url) {
+	size_t offset = 0;
+
+	bool inEscapeSeq = false;
+	int escapeValueDigits = 0;
+	int escapeValue = 0;
+
+	for (size_t i = 0; i < url.length(); i++) {
+		if (!inEscapeSeq) {
+			if (url[i] == '%') {
+				inEscapeSeq = true;
+				escapeValueDigits = 0;
+				escapeValue = 0;
+			}
+			else if (offset != 0) {
+				url[i - offset] = url[i];
+			}
+		}
+		else {
+			const char ch = url[i];
+			int chValue;
+
+			if (ch >= '0' && ch <= '9') {
+				chValue = ch - '0';
+			}
+			else if (ch >= 'a' && ch <= 'f') {
+				chValue = ch - 'a' + 10;
+			}
+			else if (ch >= 'A' && ch <= 'F') {
+				chValue = ch - 'A' + 10;
+			}
+			else {
+				//DBG_FMT("URL unquoting error: character '%1%' in string '%2%' not hexadecimal.", ch, url);
+				onError(400, "URL unquoting: non-hex character");
+				return;
+			}
+
+			if (escapeValueDigits == 0) {
+				escapeValue = chValue << 4;
+			}
+			else {
+				escapeValue |= chValue;
+			}
+
+			escapeValueDigits++;
+			if (escapeValueDigits == 2) {
+				//%12, str[i] was '2' => '%' is str[i - 2]
+				offset += 2;
+
+				url[i - offset] = (char)escapeValue;
+				inEscapeSeq = false;
+			}
+		}
+	}
+
+	url.resize(url.length() - offset); // IMPORTANT: Offset and NewSize must be kept in sync!
+}
+
+int V2HttpParser::getContentLengthFromHeaders() {
+	const auto& lengthHeader = this->headers.find("content-length");
+	if (lengthHeader == this->headers.end()) {
+		return 0;
+	}
+	
+	size_t idx = 0;
+	int length = std::stoi(lengthHeader->second, &idx, 10);
+
+	if (idx != lengthHeader->second.size()) {
+		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Content-Length not int!"));
+	}
+
+	return length;
 }

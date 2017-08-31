@@ -21,7 +21,7 @@ public:
 	Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
 	        const std::map<std::string, std::string>& headers, const std::string& body);
 	Request(HttpVerb verb, std::string&& url, std::string&& queryString, int httpMajor, int httpMinor, 
-	        const std::map<std::string, std::string>& headers, std::string&& body);
+	        std::map<std::string, std::string>&& headers, std::string&& body);
 
 	Request(Request&& other) noexcept;
 
