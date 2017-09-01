@@ -2,8 +2,9 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/compare.hpp>
 
-#define DBG_DISABLE
-#include"dbg.h"
+//#define DBG_DISABLE
+#include "dbg.h"
+#include "dbgStopwatch.h"
 
 
 V2HttpFsm V2HttpParser::fsm;
@@ -24,6 +25,8 @@ V2HttpFsm::V2HttpFsm() : FsmV2(20, 0), parser(nullptr) {
 }
 
 void V2HttpFsm::init() {
+	DbgStopwatch stopwatch("V2HttpFsm::init");
+
 	typedef SimpleFsmTransition Simple;
 	typedef PushFsmTransition Push;
 	typedef DiscardFsmTransition Discard;

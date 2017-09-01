@@ -17,8 +17,9 @@
 #include "logger.h"
 #include "v2HttpParser.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include"dbg.h"
+#include "dbgStopwatch.h"
 
 
 ManagedSocket::ManagedSocket(int socket) : socket(socket) {
@@ -144,10 +145,15 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 
+	DbgAggregatedStopwatch stopwatch("ManagedSocket::getRequestTimeout");
+
 	while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
 		if (pollResult < 0) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
 		}
+
+		DbgDependentStopwatch networkStopwatch(stopwatch);
+
 		int bytesRead = read(buffer, sizeof(buffer));
 		if (bytesRead == 0) {
 			return nullptr;

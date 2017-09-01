@@ -172,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
     <ClInclude Include="src\INetworkManager.h" />
     <ClInclude Include="src\managedSocket.h" />
