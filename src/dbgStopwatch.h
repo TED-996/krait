@@ -27,7 +27,7 @@ public:
 	void stopPrint() {
 		if (running) {
 			clock::time_point stop = clock::now();
-			DBG_FMT("DbgStopwatch: Name \"%1%\", time %2%ms", name,
+			DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
 				std::chrono::duration<double, std::milli>(stop - start).count());
 			running = false;
 		}
@@ -71,7 +71,7 @@ public:
 
 	void stopPrint() {
 		if (total.count() != 0) {
-			DBG_FMT("DbgAggregatedStopwatch: Name \"%1%\", time %2%ms", name,
+			DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
 				std::chrono::duration<double, std::milli>(total).count());
 			total = duration();
 		}
@@ -79,11 +79,9 @@ public:
 
 	void add(duration amount) {
 		total += amount;
-		DBG("added in stopwatch");
 	}
 
 	~_DbgAggregatedStopwatch() {
-		DBG("aggregator dtor");
 		stopPrint();
 	}
 };
@@ -131,9 +129,7 @@ public:
 	}
 
 	~DbgDependentStopwatch() {
-		DBG("dependent dtor");
 		if (running) {
-			DBG("dependent actually running");
 			stopAdd();
 		}
 	}
