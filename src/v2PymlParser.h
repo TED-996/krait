@@ -28,30 +28,13 @@ public:
 class V2PymlParserFsm : public FsmV2
 {
 private:
-	class PymlRootTransition : public FsmTransition
+	class PymlRootTransition : public DelegatingFsmTransition
 	{
 	protected:
 		IV2PymlParser** parser;
-		std::unique_ptr<FsmTransition> base;
 	public:
-		PymlRootTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: parser(parser), base(base) {
-		}
-
-		bool isMatch(char chr, FsmV2& fsm) override {
-			return base->isMatch(chr, fsm);
-		}
-
-		size_t getNextState(FsmV2& fsm) override {
-			return base->getNextState(fsm);
-		}
-
-		bool isConsume(FsmV2& fsm) override {
-			return base->isConsume(fsm);
-		}
-
-		void execute(FsmV2& fsm) override {
-			base->execute(fsm);
+		PymlRootTransition(IV2PymlParser** parser, FsmTransition*&& delegate)
+			: DelegatingFsmTransition(std::move(delegate)), parser(parser) {
 		}
 	};
 
@@ -65,6 +48,10 @@ private:
 		void execute(FsmV2& fsm) override {
 			PymlRootTransition::execute(fsm);
 			(*parser)->addPymlWorkingStr(fsm.getResetStored());
+		}
+
+		FsmTransition& getDelegateExecute() override{
+			return *this;
 		}
 	};
 
@@ -82,6 +69,10 @@ private:
 			PymlRootTransition::execute(fsm);
 			(*parser)->addPymlWorkingPyCode(type, fsm.getResetStored());
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlAddEmbedTransition : public PymlRootTransition
@@ -97,6 +88,10 @@ private:
 
 			(*parser)->addPymlWorkingEmbed(fsm.getResetStored());
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlAddCtrlTransition : public PymlRootTransition
@@ -111,6 +106,10 @@ private:
 			PymlRootTransition::execute(fsm);
 
 			(*parser)->addPymlWorkingCtrl(fsm.getResetStored());
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 
@@ -132,6 +131,10 @@ private:
 
 			fsm.resetStored();
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlAddForInTransition : public PymlRootTransition
@@ -150,6 +153,10 @@ private:
 
 			fsm.resetStored();
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlAddIfTransition : public PymlRootTransition
@@ -167,6 +174,10 @@ private:
 
 			fsm.resetStored();
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlAddElseTransition : public PymlRootTransition
@@ -183,6 +194,10 @@ private:
 			(*parser)->pushPymlWorkingSeq();
 			fsm.resetStored();
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 
 	class PymlFinishForTransition : public PymlRootTransition
@@ -198,6 +213,10 @@ private:
 			(*parser)->addSeqToPymlWorkingFor();
 			(*parser)->addPymlStackTop();
 			fsm.resetStored();
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 
@@ -217,6 +236,10 @@ private:
 			}
 			(*parser)->addPymlStackTop();
 			fsm.resetStored();
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 

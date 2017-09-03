@@ -152,8 +152,6 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 			BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
 		}
 
-		DbgDependentStopwatch networkStopwatch(stopwatch);
-
 		int bytesRead = read(buffer, sizeof(buffer));
 		if (bytesRead == 0) {
 			return nullptr;
@@ -169,6 +167,7 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 
 		if (bytesRead != 0) {
 			try {
+				DbgDependentStopwatch networkStopwatch(stopwatch);
 				parser.consume(buffer, bytesRead);
 			}
 			catch (httpParseError err) {

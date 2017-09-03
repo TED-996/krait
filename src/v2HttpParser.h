@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <string>
 #include "fsmV2.h"
-#include "except.h"
 #include "request.h"
 
 //#define DBG_DISABLE
@@ -23,30 +22,13 @@ public:
 
 class V2HttpFsm : public FsmV2
 {
-	class HttpRootTransition : public FsmTransition
+	class HttpRootTransition : public DelegatingFsmTransition
 	{
 	protected:
 		IV2HttpParser** parser;
-		std::unique_ptr<FsmTransition> base;
 	public:
 		HttpRootTransition(IV2HttpParser** parser, FsmTransition*&& base)
-			: parser(parser), base(base) {
-		}
-
-		bool isMatch(char chr, FsmV2& fsm) override {
-			return base->isMatch(chr, fsm);
-		}
-
-		size_t getNextState(FsmV2& fsm) override {
-			return base->getNextState(fsm);
-		}
-
-		bool isConsume(FsmV2& fsm) override {
-			return base->isConsume(fsm);
-		}
-
-		void execute(FsmV2& fsm) override {
-			base->execute(fsm);
+			: DelegatingFsmTransition(std::move(base)), parser(parser) {
 		}
 	};
 	class HttpSetMethodTransition : public HttpRootTransition
@@ -61,6 +43,10 @@ class V2HttpFsm : public FsmV2
 
 			(*parser)->setMethod(fsm.getResetStored());
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 	class HttpSetUrlTransition : public HttpRootTransition
 	{
@@ -74,6 +60,11 @@ class V2HttpFsm : public FsmV2
 
 			(*parser)->setUrl(fsm.getResetStored());
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
+
 	};
 	class HttpSetVersionTransition : public HttpRootTransition
 	{
@@ -86,6 +77,10 @@ class V2HttpFsm : public FsmV2
 			HttpRootTransition::execute(fsm);
 
 			(*parser)->setVersion(fsm.getResetStored());
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 	class HttpAddHeaderTransition : public HttpRootTransition
@@ -103,6 +98,10 @@ class V2HttpFsm : public FsmV2
 
 			(*parser)->addHeader(std::move(key), std::move(value));
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 	class HttpExtendHeaderTransition : public HttpRootTransition
 	{
@@ -115,6 +114,10 @@ class V2HttpFsm : public FsmV2
 			HttpRootTransition::execute(fsm);
 
 			(*parser)->extendHeader(fsm.getResetStored());
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 	class HttpOnBodyStartTransition : public HttpRootTransition
@@ -130,6 +133,10 @@ class V2HttpFsm : public FsmV2
 			(*parser)->onBodyStart();
 			fsm.resetStored();
 		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
+		}
 	};
 	class HttpSetBodyTransition : public HttpRootTransition
 	{
@@ -142,6 +149,10 @@ class V2HttpFsm : public FsmV2
 			HttpRootTransition::execute(fsm);
 
 			(*parser)->setBody(fsm.getResetStored());
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 	class HttpErrorTransition : public HttpRootTransition
@@ -157,6 +168,10 @@ class V2HttpFsm : public FsmV2
 			HttpRootTransition::execute(fsm);
 
 			(*parser)->onError(statusCode, std::move(reason));
+		}
+
+		FsmTransition& getDelegateExecute() override {
+			return *this;
 		}
 	};
 

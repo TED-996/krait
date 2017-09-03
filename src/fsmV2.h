@@ -116,6 +116,19 @@ public:
 
 	virtual void execute(FsmV2& fsm) {
 	}
+
+	virtual FsmTransition& getDelegateIsMatch() {
+		return *this;
+	}
+	virtual FsmTransition& getDelegateNextState() {
+		return *this;
+	}
+	virtual FsmTransition& getDelegateIsConsume() {
+		return *this;
+	}
+	virtual FsmTransition& getDelegateExecute() {
+		return *this;
+	}
 };
 
 
@@ -194,168 +207,155 @@ public:
 	}
 };
 
-class ActionFsmTransition : public FsmTransition
+class DelegatingFsmTransition : public FsmTransition
+{
+private:
+	std::unique_ptr<FsmTransition> delegate;
+
+	FsmTransition& isMatchDelegate;
+	FsmTransition& nextStateDelegate;
+	FsmTransition& isConsumeDelegate;
+	FsmTransition& executeDelegate;
+public:
+	explicit DelegatingFsmTransition(FsmTransition*&& delegate) :
+		delegate(delegate), 
+		isMatchDelegate(this->delegate->getDelegateIsMatch()),
+		nextStateDelegate(this->delegate->getDelegateNextState()),
+		isConsumeDelegate(this->delegate->getDelegateIsConsume()),
+		executeDelegate(this->delegate->getDelegateExecute()){
+	}
+
+	bool isMatch(char chr, FsmV2& fsm) override {
+		return isMatchDelegate.isMatch(chr, fsm);
+	}
+	size_t getNextState(FsmV2& fsm) override {
+		return nextStateDelegate.getNextState(fsm);
+	}
+	bool isConsume(FsmV2& fsm) override {
+		return isConsumeDelegate.isConsume(fsm);
+	}
+	void execute(FsmV2& fsm) override {
+		executeDelegate.execute(fsm);
+	}
+
+	FsmTransition& getDelegateIsMatch() override{
+		return isMatchDelegate;
+	}
+	FsmTransition& getDelegateNextState() override{
+		return nextStateDelegate;
+	}
+	FsmTransition& getDelegateIsConsume() override{
+		return isConsumeDelegate;
+	}
+	FsmTransition& getDelegateExecute() override{
+		return executeDelegate;
+	}
+};
+
+class ActionFsmTransition : public DelegatingFsmTransition
 {
 private:
 	FsmV2::fsmAction action;
-	std::unique_ptr<FsmTransition> transition;
 public:
-	ActionFsmTransition(FsmTransition*&& transition, FsmV2::fsmAction action)
-		: action(action), transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	ActionFsmTransition(FsmTransition*&& delegate, FsmV2::fsmAction action)
+		: DelegatingFsmTransition(std::move(delegate)), action(action) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		action(fsm);
+	}
+
+	FsmTransition& getDelegateExecute() override{
+		return *this;
 	}
 };
 
-class SavepointSetFsmTransition : public FsmTransition
+class SavepointSetFsmTransition : public DelegatingFsmTransition
 {
 private:
 	size_t offset;
-	std::unique_ptr<FsmTransition> transition;
 public:
-	SavepointSetFsmTransition(FsmTransition*&& transition, size_t offset = 0)
-		: offset(offset), transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	SavepointSetFsmTransition(FsmTransition*&& delegate, size_t offset = 0)
+		: DelegatingFsmTransition(std::move(delegate)), offset(offset) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		fsm.setSavepoint(offset);
 	}
+
+	FsmTransition& getDelegateExecute() override {
+		return *this;
+	}
 };
 
-class SavepointRevertFsmTransition : public FsmTransition
+class SavepointRevertFsmTransition : public DelegatingFsmTransition
 {
-private:
-	std::unique_ptr<FsmTransition> transition;
 public:
-	SavepointRevertFsmTransition(FsmTransition*&& transition)
-		: transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	SavepointRevertFsmTransition(FsmTransition*&& delegate)
+		: DelegatingFsmTransition(std::move(delegate)) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		fsm.revertSavepoint();
 	}
+
+	FsmTransition& getDelegateExecute() override{
+		return *this;
+	}
 };
 
-class DiscardFsmTransition : public FsmTransition
+class DiscardFsmTransition : public DelegatingFsmTransition
 {
-private:
-	std::unique_ptr<FsmTransition> transition;
 public:
-	DiscardFsmTransition(FsmTransition*&& transition)
-		: transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	DiscardFsmTransition(FsmTransition*&& delegate)
+		: DelegatingFsmTransition(std::move(delegate)) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		fsm.resetStored();
 	}
+
+	FsmTransition& getDelegateExecute() override{
+		return *this;
+	}
 };
 
-class PushFsmTransition : public FsmTransition
+class PushFsmTransition : public DelegatingFsmTransition
 {
-private:
-	std::unique_ptr<FsmTransition> transition;
 public:
-	PushFsmTransition(FsmTransition*&& transition)
-		: transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	PushFsmTransition(FsmTransition*&& delegate)
+		: DelegatingFsmTransition(std::move(delegate)) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		fsm.pushResetStoredString();
 	}
+
+	FsmTransition& getDelegateExecute() override{
+		return *this;
+	}
 };
 
 
-class SkipFsmTransition : public FsmTransition
+class SkipFsmTransition : public DelegatingFsmTransition
 {
-private:
-	std::unique_ptr<FsmTransition> transition;
 public:
-	SkipFsmTransition(FsmTransition*&& transition)
-		: transition(transition) {
-	}
-
-	bool isMatch(char chr, FsmV2& fsm) override {
-		return transition->isMatch(chr, fsm);
-	}
-
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
+	SkipFsmTransition(FsmTransition*&& delegate)
+		: DelegatingFsmTransition(std::move(delegate)) {
 	}
 
 	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+		DelegatingFsmTransition::execute(fsm);
 		fsm.setSkip(true);
+	}
+
+	FsmTransition& getDelegateExecute() override {
+		return *this;
 	}
 };
 
@@ -377,55 +377,36 @@ public:
 	}
 };
 
-class OrFinalFsmTransition : public FsmTransition
+class OrFinalFsmTransition : public DelegatingFsmTransition
 {
-private:
-	std::unique_ptr<FsmTransition> transition;
 public:
-	OrFinalFsmTransition(FsmTransition*&& transition)
-		: transition(transition) {
+	OrFinalFsmTransition(FsmTransition*&& delegate)
+		: DelegatingFsmTransition(std::move(delegate)){
 	}
 
 	bool isMatch(char chr, FsmV2& fsm) override {
-		return fsm.getIsFinalPass() || transition->isMatch(chr, fsm);
+		return fsm.getIsFinalPass() || DelegatingFsmTransition::isMatch(chr, fsm);
 	}
 
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
-	}
-
-	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+	FsmTransition& getDelegateIsMatch() override{
+		return *this;
 	}
 };
 
-class AndConditionFsmTransition : public FsmTransition
+class AndConditionFsmTransition : public DelegatingFsmTransition
 {
 private:
-	std::unique_ptr<FsmTransition> transition;
 	std::function<bool(char, FsmV2&)> condition;
 public:
-	AndConditionFsmTransition(FsmTransition*&& transition, std::function<bool(char, FsmV2&)> condition)
-		: transition(transition), condition(condition) {
+	AndConditionFsmTransition(FsmTransition*&& delegate, std::function<bool(char, FsmV2&)> condition)
+		: DelegatingFsmTransition(std::move(delegate)), condition(condition) {
 	}
 
 	bool isMatch(char chr, FsmV2& fsm) override {
-		return condition(chr, fsm) && transition->isMatch(chr, fsm);
+		return condition(chr, fsm) && DelegatingFsmTransition::isMatch(chr, fsm);
 	}
 
-	size_t getNextState(FsmV2& fsm) override {
-		return transition->getNextState(fsm);
-	}
-
-	bool isConsume(FsmV2& fsm) override {
-		return transition->isConsume(fsm);
-	}
-
-	void execute(FsmV2& fsm) override {
-		transition->execute(fsm);
+	FsmTransition& getDelegateIsMatch() override {
+		return *this;
 	}
 };

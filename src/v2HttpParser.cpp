@@ -1,6 +1,7 @@
 ﻿#include "v2HttpParser.h"
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/compare.hpp>
+#include  "except.h"
 
 //#define DBG_DISABLE
 #include "dbg.h"
