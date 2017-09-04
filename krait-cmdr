@@ -1,0 +1,154 @@
+#!/usr/bin/python2
+import sys
+import argparse
+import os
+import subprocess
+import fcntl
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Manage the Krait HTTP server")
+    subparsers = parser.add_subparsers(help="Sub-commands:", dest="cmd_name")
+
+    parser_start = subparsers.add_parser("start", help="Start the Krait server; "
+                                                       "the remaining arguments are passed to Krait")
+    parser_start.add_argument("krait_args", nargs=argparse.REMAINDER)
+
+    subparsers.add_parser("watch", help="Watch the Krait logs\n"
+                                        "(equivalent to \"tail -f {stdout-path} -f {stderr_path}\")")
+    subparsers.add_parser("stop", help="Gracefully stop the Krait server")
+    subparsers.add_parser("kill", help="Less than gracefully stop the Hrait server")
+
+    raw_argv = sys.argv
+    if len(raw_argv) <= 1:
+        parser.print_usage()
+        sys.exit(2)
+    start_argv = raw_argv[2:]
+
+    args = parser.parse_args(raw_argv[1:2])
+
+    # This is necessary because of argparse.REMAINDER not considering our use case.
+    if args.cmd_name == "start":
+        args.krait_args = start_argv
+
+    if args.cmd_name == "start":
+        cmdr_start(args.krait_args)
+    elif args.cmd_name == "watch":
+        cmdr_watch()
+    elif args.cmd_name == "stop":
+        cmdr_stop()
+    elif args.cmd_name == "kill":
+        cmdr_kill()
+    else:
+        # Not something that the user would debug.
+        raise RuntimeError("Unexpected subcommand name, shouldn't happen!")
+
+
+def cmdr_start(krait_args):
+    krait_bin = os.path.join(os.path.dirname(__file__), "krait")
+    dot_krait_dir = get_cmdr_dir()
+
+    # TODO: check already running (use a lock file)
+
+    try:
+        stdout_filename = os.path.join(dot_krait_dir, "stdout")
+        stderr_filename = os.path.join(dot_krait_dir, "stderr")
+
+        # All opens are made with bufsize 1 (line buffered)
+        with open(stdout_filename, "w", 1) as stdout,\
+                open(stderr_filename, "w", 1) as stderr:
+            os.fchmod(stdout.fileno(), 0o666)
+            os.fchmod(stderr.fileno(), 0o666)
+
+            try:
+                proc = subprocess.Popen([krait_bin] + krait_args,
+                                        stdout=stdout, stderr=stderr, stdin=subprocess.PIPE,
+                                        close_fds=True, bufsize=1)
+            except OSError as err:
+                print >> sys.stderr, "Krait binary {} missing. Exception info:\n{}".format(krait_bin, err)
+                sys.exit(1)
+            proc.stdin.close()
+    except StandardError as err:
+        print >> sys.stderr, "Error starting Krait:\n{}".format(err)
+        sys.exit(1)
+
+    print "Krait started.\n" \
+          "Watch stdout in {} and stderr in {}\n" \
+          "or run krait-cmdr watch.".format(stdout_filename, stderr_filename)
+
+
+def cmdr_watch():
+    dot_krait_dir = get_cmdr_dir()
+    stdout_filename = os.path.join(dot_krait_dir, "stdout")
+    stderr_filename = os.path.join(dot_krait_dir, "stderr")
+
+    if not os.path.exists(stdout_filename) or not os.path.exists(stderr_filename):
+        print >> sys.stderr, "At least one of {} (stdout) or {} (stderr) does not exist.\n"" \
+            ""Most likely Krait isn't started, or not by krait-cmdr."
+        sys.exit(1)
+
+    os.execvp("tail", ["-f", stdout_filename, "-f", stderr_filename])
+
+
+def get_cmdr_dir():
+    dir_name = os.path.expanduser("~/.krait")
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name, 0o777)
+
+    return dir_name
+
+
+def cmdr_stop():
+    cmdr_write("^X")
+    print "Stop sent."
+
+
+def cmdr_kill():
+    cmdr_write("^K")
+    print "Kill sent."
+
+
+def cmdr_write(command):
+    with open_cmdr_pipe() as cmdr_pipe:
+        cmdr_pipe.write(command)
+
+
+def open_cmdr_pipe():
+    pipe_name = os.path.join(get_cmdr_dir(), "krait_cmdr")
+    if not os.path.exists(pipe_name):
+        try:
+            os.mkfifo(pipe_name, 0o666)
+        except OSError as err:
+            print >> sys.stderr, "Cannot create command pipe {}. Exception info:\n{}".format(pipe_name, err)
+            sys.exit(1)
+
+    try:
+        fd = os.open(pipe_name, os.O_WRONLY | os.O_NONBLOCK)
+    except IOError as err:
+        print >> sys.stderr, "Cannot open command pipe {}. Exception info:{}".format(pipe_name, err)
+        sys.exit(1)
+    except OSError as err:
+        if err.errno == 6:
+            print >> sys.stderr, "Cannot open command pipe: Krait is not running."
+            sys.exit(1)
+        else:
+            print "Cannot open command pipe. Unknown error."
+            raise
+
+    try:
+        fcntl.fcntl(fd, fcntl.F_SETFD, os.O_WRONLY)
+    except IOError:
+        os.close(fd)
+        print >> sys.stderr, "Cannot set command pipe to nonblocking."
+        raise  # Not something that the user would debug.
+
+    try:
+        return os.fdopen(fd, "w", 0)
+    except StandardError:
+        os.close(fd)
+        print >> sys.stderr, "Cannot wrap file descriptor."
+        raise  # Not something that the user would debug.
+
+
+if __name__ == '__main__':
+    main()
