@@ -144,27 +144,3 @@ bool processCommand(pid_t mainPid, const char* cmd, int cmdLen) {
 	}
 	return false;
 }
-
-void sendCommand(const char* command, int cmdLen);
-
-void sendCommand(const char* command) {
-	sendCommand(command, strlen(command));
-}
-
-void sendCommand(const char* command, int cmdLen) {
-	int fifoFd = openFifo(O_WRONLY, true);
-	if (fifoFd == -1) {
-		BOOST_THROW_EXCEPTION(cmdrError() << stringInfo("Coult not open named pipe to request server shutdown."));
-	}
-	if (write(fifoFd, command, cmdLen) != cmdLen) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("write: writing shutdown command to named pipe") << errcodeInfoDef());
-	}
-}
-
-void sendCommandClose() {
-	sendCommand("^X");
-}
-
-void sendCommandKill() {
-	sendCommand("^K");
-}
