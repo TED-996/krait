@@ -44,10 +44,10 @@ void startCommanderProcess() {
 }
 
 std::string getCreateDotKrait() {
-	bf::path fifoNameBase = bf::path(getenv("HOME")) / ".krait";
+	bf::path fifoNameBase = bf::path("/run");
 	if (!bf::exists(fifoNameBase)) {
 		if (!bf::create_directory(fifoNameBase)) {
-			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating .krait directory (%1%). Check that you have appropriate rights.",
+			BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("mkdir(): creating command directory %1%. Check that you have appropriate rights.",
 					fifoNameBase.string())
 				<< errcodeInfoDef());
 		}

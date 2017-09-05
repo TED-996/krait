@@ -46,13 +46,13 @@ def main():
 
 def cmdr_start(krait_args):
     krait_bin = os.path.join(os.path.dirname(__file__), "krait")
-    dot_krait_dir = get_cmdr_dir()
+    log_dir = get_log_dir()
 
     # TODO: check already running (use a lock file)
 
     try:
-        stdout_filename = os.path.join(dot_krait_dir, "stdout")
-        stderr_filename = os.path.join(dot_krait_dir, "stderr")
+        stdout_filename = os.path.join(log_dir, "stdout")
+        stderr_filename = os.path.join(log_dir, "stderr")
 
         # All opens are made with bufsize 1 (line buffered)
         with open(stdout_filename, "w", 1) as stdout,\
@@ -78,9 +78,9 @@ def cmdr_start(krait_args):
 
 
 def cmdr_watch():
-    dot_krait_dir = get_cmdr_dir()
-    stdout_filename = os.path.join(dot_krait_dir, "stdout")
-    stderr_filename = os.path.join(dot_krait_dir, "stderr")
+    log_dir = get_log_dir()
+    stdout_filename = os.path.join(log_dir, "stdout")
+    stderr_filename = os.path.join(log_dir, "stderr")
 
     if not os.path.exists(stdout_filename) or not os.path.exists(stderr_filename):
         print >> sys.stderr, "At least one of {} (stdout) or {} (stderr) does not exist.\n"" \
@@ -88,14 +88,6 @@ def cmdr_watch():
         sys.exit(1)
 
     os.execvp("tail", ["-f", stdout_filename, "-f", stderr_filename])
-
-
-def get_cmdr_dir():
-    dir_name = os.path.expanduser("~/.krait")
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name, 0o777)
-
-    return dir_name
 
 
 def cmdr_stop():
@@ -114,10 +106,10 @@ def cmdr_write(command):
 
 
 def open_cmdr_pipe():
-    pipe_name = os.path.join(get_cmdr_dir(), "krait_cmdr")
+    pipe_name = os.path.join(get_pipe_dir(), "krait_cmdr")
     if not os.path.exists(pipe_name):
         try:
-            os.mkfifo(pipe_name, 0o666)
+            os.mkfifo(pipe_name, 0o644)
         except OSError as err:
             print >> sys.stderr, "Cannot create command pipe {}. Exception info:\n{}".format(pipe_name, err)
             sys.exit(1)
@@ -130,10 +122,12 @@ def open_cmdr_pipe():
     except OSError as err:
         if err.errno == 6:
             print >> sys.stderr, "Cannot open command pipe: Krait is not running."
-            sys.exit(1)
+        elif err.errno == 13:
+            print >> sys.stderr, "Cannot open command pipe: Insufficient rights, not running as root."
         else:
             print "Cannot open command pipe. Unknown error."
             raise
+        sys.exit(1)
 
     try:
         fcntl.fcntl(fd, fcntl.F_SETFD, os.O_WRONLY)
@@ -149,6 +143,27 @@ def open_cmdr_pipe():
         print >> sys.stderr, "Cannot wrap file descriptor."
         raise  # Not something that the user would debug.
 
+
+def get_log_dir():
+    dir_name = "/var/log/krait"
+    if not os.path.exists(dir_name):
+        try:
+            os.makedirs(dir_name, 0o777)
+        except OSError as err:
+            print >> sys.stderr, "Could not create log directory {}.",
+            if err.errno == 13:
+                print >> sys.stderr, "Insufficient rights, not running as root."
+            else:
+                print >> sys.stderr, "Unknown reason."
+
+            print >> sys.stderr, "Error info:\n{}".format(dir_name, err)
+            sys.exit(1)
+
+    return dir_name
+
+
+def get_pipe_dir():
+    return "/run"
 
 if __name__ == '__main__':
     main()
