@@ -371,3 +371,4 @@ callgrind-out/*
 **/*.pyc
 docs/build/*
 *.nocommit
+CMakeSettings.json
