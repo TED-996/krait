@@ -34,21 +34,29 @@ else()
 endif()
 
 set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
+set(BIN_DIR ${BUILD_DIR}/bin)
+set(SHARE_DIR ${BUILD_DIR}/share/krait)
 
 add_executable(build main.cpp ${SOURCE_FILES})
 
 target_link_libraries(build ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
-set_target_properties(build PROPERTIES OUTPUT_NAME ${BUILD_DIR}/${CMAKE_PROJECT_NAME})
+set_target_properties(build PROPERTIES OUTPUT_NAME ${BIN_DIR}/${CMAKE_PROJECT_NAME})
+
 add_custom_command(TARGET build PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR})
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${BIN_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR}/share
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHARE_DIR}
+)
+
 add_custom_command(TARGET build POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${BUILD_DIR}/py)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/py ${SHARE_DIR}/py)
 add_custom_command(TARGET build POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${SHARE_DIR}/globals)
 add_custom_command(TARGET build POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/krait-cmdr ${BUILD_DIR}/krait-cmdr)
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/krait-cmdr ${BIN_DIR}/krait-cmdr)
 add_custom_command(TARGET build POST_BUILD
-    COMMAND /bin/chmod uga+xr ${BUILD_DIR}/krait-cmdr)
+    COMMAND /bin/chmod uga+xr ${BIN_DIR}/krait-cmdr)
 
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
@@ -64,4 +72,5 @@ add_custom_command(TARGET build_tests POST_BUILD
 add_custom_command(TARGET build_tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 
-install(TARGETS build RUNTIME DESTINATION bin)
+
+install(DIRECTORY ${BUILD_DIR} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})

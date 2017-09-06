@@ -42,10 +42,10 @@ void PythonModule::initPython() {
 		bp::dict mainDict = bp::extract<bp::dict>(mainModule.attr("__dict__"));
 		DBG("imports done");
 
-		mainModule.attr("root_dir") = bp::str(getExecRoot().string());
+		mainModule.attr("root_dir") = bp::str(getShareRoot().string());
 		DBG("executing file");
 
-		bp::exec_file(bp::str((getExecRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
+		bp::exec_file(bp::str((getShareRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
 	}
 	catch (bp::error_already_set const&) {
 		DBG("Python error in initPython()!");
@@ -101,7 +101,7 @@ void PythonModule::resetModules(std::string projectDir) {
 		}
 		PythonModule::main().setGlobal("project_dir", projectDir);
 
-		PythonModule::main().execfile((getExecRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
+		PythonModule::main().execfile((getShareRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
 
 		requestType = PythonModule::krait().moduleGlobals["Request"];
 	}

@@ -111,7 +111,7 @@ pyErrorInfo getPyErrorInfo() {
 	return pyErrorInfo(pyErrAsString());
 }
 
-std::string unixTimeToString(std::time_t timeVal) {
+std::string unixTimeToString(std::time_t timeVal) {  //TODO: remove dependency on boost::time.
 	b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
 
 	std::ostringstream result;

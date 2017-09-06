@@ -25,7 +25,6 @@ def build():
 
     with fab.cd(remote_path):
         fab.run("cmake .")
-        fab.run("mkdir -p build")
         fab.run("make -j5")
 
     built = True
@@ -37,14 +36,14 @@ def start_demoserver():
     stop_demoserver()
 
     with fab.cd(remote_path):
-        fab.sudo("build/krait-cmdr start -p {} {}".format(port, rpath.join(remote_path, "demoserver")))
+        fab.sudo("build/bin/krait-cmdr start -p {} {}".format(port, rpath.join(remote_path, "demoserver")))
 
     return "http://{}:{}".format(host, port)
 
 
 def stop_demoserver(force=False):
     with fab.cd(remote_path), fab.settings(warn_only=(not force)):
-        result = fab.sudo("build/krait-cmdr stop")
+        result = fab.sudo("build/bin/krait-cmdr stop")
 
     if not force and result.failed:
         print "Server already stopped, not a problem."
@@ -52,7 +51,7 @@ def stop_demoserver(force=False):
 
 def watch():
     with fab.cd(remote_path):
-        fab.sudo("build/krait-cmdr watch")
+        fab.sudo("build/bin/krait-cmdr watch")
 
 
 def upload():

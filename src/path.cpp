@@ -21,7 +21,11 @@ bf::path getExecRoot() {
 }
 
 bf::path getShareRoot() {
-	return getExecRoot();
+	bf::path base = getExecRoot();
+	if (!base.has_parent_path()) {
+		return base / "share" / "krait";
+	}
+	return base.parent_path() / "share" / "krait";
 }
 
 bool pathCheckExists(std::string filename) {
