@@ -214,7 +214,7 @@ class DemoserverTests(unittest.TestCase):
         self.check_header("/ws")
 
         start_time = time.clock()
-        timeout = 10.0  # in seconds
+        timeout = 20.0  # in seconds
         check_count = 20
         passed = False
 

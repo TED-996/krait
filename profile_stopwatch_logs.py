@@ -6,7 +6,7 @@ from collections import defaultdict, OrderedDict
 
 def main():
     if len(sys.argv) == 1:
-        filename = os.path.expanduser("~/.krait/stdout")
+        filename = os.path.expanduser("/var/log/krait/stdout")
     else:
         filename = sys.argv[1]
 
