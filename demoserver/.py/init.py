@@ -15,7 +15,7 @@ from ctrl import index, db, http, ws
 
 # First, configure the routes
 config.routes = [
-    # First, add routes to the MVC controllers. TODO: use an annotation.
+    # First, add routes to the MVC controllers.
     config.Route(url="/", ctrl_class=index.IndexController),
     config.Route(url="/db", ctrl_class=db.DbController),
     config.Route(url="/http", ctrl_class=http.HttpController),

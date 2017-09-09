@@ -109,7 +109,6 @@ void PythonModule::resetModules(std::string projectDir) {
 		DBG("Python error in resetModules()!");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("resetModules()"));
-		//TODO: make more clear that it's probably a problem with your init script
 	}
 
 	modulesInitialized = true;

@@ -79,7 +79,7 @@ Server::~Server() {
 
 void Server::runServer() {
 	try {
-		networkManager->listen(5); //TODO: backlog size?
+		networkManager->listen();
 	}
 	catch (const networkError&) {
 		Loggers::errLogger.log("Could not set server to listen.");
@@ -93,10 +93,12 @@ void Server::runServer() {
 		updateParentCaches();
 		tryCheckStdinClosed();
 	}
+	Loggers::logInfo("Server shutting down.");
 }
 
 void Server::requestShutdown() {
 	shutdownRequested = true;
+	Loggers::logInfo("Shutdown requested, waiting...");
 }
 
 void Server::cleanup() {
@@ -141,7 +143,7 @@ void Server::tryAcceptConnection() {
 
 void Server::tryCheckStdinClosed() const {
 	if (!stdinDisconnected && fdClosed(0)) {
-		raise(SIGUSR1); //TODO: change to SIGUSR2 when proper shutdown is implemented.
+		raise(SIGUSR2);
 	}
 }
 
@@ -151,7 +153,7 @@ void Server::serveClientStart() {
 	keepAliveTimeoutSec = maxKeepAliveSec;
 
 	try {
-		while (true) {
+		while (!shutdownRequested) {
 			std::unique_ptr<Request> requestPtr = clientSocket->getRequestTimeout(keepAliveTimeoutSec * 1000);
 			if (requestPtr == nullptr) {
 				Loggers::logInfo(formatString("Requests finished."));
@@ -172,7 +174,7 @@ void Server::serveClientStart() {
 			*/
 
 			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
-			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket");
+			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket") && !shutdownRequested;
 
 			pid_t childPid = fork();
 			if (childPid == 0) {

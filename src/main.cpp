@@ -15,7 +15,7 @@
 namespace bpo = boost::program_options;
 
 void startSetLoggers(std::string outFilename, std::string errFilename);
-//TODO: get the stdout/stderr logger through a pipe too
+
 
 int main(int argc, char* argv[]) {
 	std::string stdoutName;

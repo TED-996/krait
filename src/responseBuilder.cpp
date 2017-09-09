@@ -206,7 +206,7 @@ void ResponseBuilder::addCacheHeaders(Response& response, const std::string& fil
 }
 
 
-std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) { //TODO: move to PythonApiManager
+std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
 	std::string extension;
 
 	if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {

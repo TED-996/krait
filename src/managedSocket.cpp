@@ -77,7 +77,7 @@ bool ManagedSocket::readExactly(void* destination, size_t nBytes) {
 }
 
 std::unique_ptr<Request> ManagedSocket::getRequest() {
-	static V2HttpParser parser(8192, 1024 * 1024 * 128); //TODO: fetch those dynamically
+	static V2HttpParser parser(8192, 1024 * 1024 * 128);
 	parser.reset();
 
 
@@ -134,8 +134,8 @@ void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
 }
 
 std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
-	static V2HttpParser parser(8192, 1024 * 1024 * 128); //TODO: fetch those dynamically
-	parser.reset(); //TODO: make this a no-op if already reset - or is it not called in a hot loop?
+	static V2HttpParser parser(8192, 1024 * 1024 * 128);
+	parser.reset();
 
 	char buffer[4096];
 	int pollResult;
@@ -286,7 +286,7 @@ boost::optional<WebsocketsFrame> ManagedSocket::getWebsocketsFrameTimeout(int ti
 
 	int pollResult = poll(&pfd, 1, timeoutMs);
 	if (pollResult == 1) {
-		return getWebsocketsFrame(); //TODO: this is blocking!
+		return getWebsocketsFrame(); //FIXME: this is a blocking call. Slow Loris vuln.
 	}
 	else if (pollResult < 0) {
 		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): polling for Websockets frame")

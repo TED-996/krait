@@ -65,7 +65,6 @@ class Cookie:
         Returns
             str: The cookie in its representation form.
         """
-        # TODO: make it re-initializable code.
         return "krait.cookie.Cookie("\
             + repr(self.name) + ", "\
             + repr(self.value)\
@@ -285,7 +284,7 @@ class CookieHttpOnlyAttribute(CookieAttribute):
     """
 
     def __init__(self):
-        super(CookieHttpOnlyAttribute, self).__init__("httponly", None)  # TODO: must be uppercase?
+        super(CookieHttpOnlyAttribute, self).__init__("HttpOnly", None)
 
 
 class CookieSecureAttribute(CookieAttribute):
@@ -295,7 +294,7 @@ class CookieSecureAttribute(CookieAttribute):
     """
 
     def __init__(self):
-        super(CookieSecureAttribute, self).__init__("secure", None)
+        super(CookieSecureAttribute, self).__init__("Secure", None)
 
 
 _cookies_cpt = None
