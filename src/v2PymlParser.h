@@ -265,7 +265,7 @@ private:
 	std::unique_ptr<const IPymlItem> rootItem;
 
 	std::stack<PymlWorkingItem> itemStack;
-	boost::object_pool<PymlWorkingItem> workingItemPool;  //TODO: Migrate to unique ptrs or something
+	boost::object_pool<PymlWorkingItem> workingItemPool;
 
 	IPymlCache& cache;
 

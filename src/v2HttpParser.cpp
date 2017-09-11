@@ -57,7 +57,6 @@ void V2HttpFsm::init() {
 		errorState
 	};
 
-	//TODO: apparently, the messages may (if buggy client) start with CRLFs...
 	add(inMethod, new HttpSetMethodTransition(&parser, new Skip(new Simple(' ', afterMethod))));
 	add(inMethod, new Always(inMethod));
 
@@ -99,8 +98,6 @@ void V2HttpFsm::init() {
 	add(inHeaderValue, new HttpAddHeaderTransition(&parser, new Push(new Simple('\r', afterHeaderValue))));
 	add(inHeaderValue, new Always(inHeaderValue));
 
-	//TODO: tolerate LFs without CRs? (assume part of header)
-
 	add(afterHeaderValue, new Simple('\n', newLine));
 
 	add(beforeHeaderExtension, new Simple(' ', beforeHeaderExtension));
@@ -116,7 +113,7 @@ void V2HttpFsm::init() {
 	add(errorState, new Always(errorState));
 
 	addFinalActionToMany([](FsmV2& fsm){
-		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Incomplete request. Insufficient information.")); //TODO: get more information
+		BOOST_THROW_EXCEPTION(httpParseError() << stringInfo("Incomplete request. Insufficient information."));
 	}, {
 			inMethod,
 			afterMethod,

@@ -95,9 +95,6 @@ void WebsocketsServer::sendPing() {
 	pingFrame.message = "";
 
 	clientSocket.sendWebsocketsFrame(pingFrame);
-
-
-	//TODO: remember that we're waiting for a ping.
 }
 
 void WebsocketsServer::sendClose() {
@@ -125,7 +122,6 @@ void WebsocketsServer::handleClose(WebsocketsFrame close) {
 }
 
 void WebsocketsServer::handlePong(WebsocketsFrame pong) {
-	//TODO: remember that the ping is here.
 }
 
 bool WebsocketsServer::start(Request& upgradeRequest) {

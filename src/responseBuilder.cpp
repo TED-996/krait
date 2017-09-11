@@ -80,7 +80,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 		addDefaultHeaders(*response, source.symFilename, request, cachePragma, isDynamic);
 	}
 	catch(notFoundError&) {
-		Loggers::logInfo(formatString("Not found building %1%", symFilename)); //TODO: encapsulate some info in NotFoundError
+		Loggers::logInfo(formatString("Not found building %1%", symFilename));
 		response = std::make_unique<Response>(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
 	}
 
@@ -206,7 +206,7 @@ void ResponseBuilder::addCacheHeaders(Response& response, const std::string& fil
 }
 
 
-std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) { //TODO: move to PythonApiManager
+std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
 	std::string extension;
 
 	if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {

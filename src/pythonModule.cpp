@@ -109,7 +109,6 @@ void PythonModule::resetModules(std::string projectDir) {
 		DBG("Python error in resetModules()!");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("resetModules()"));
-		//TODO: make more clear that it's probably a problem with your init script
 	}
 
 	modulesInitialized = true;
@@ -121,7 +120,7 @@ PythonModule::PythonModule(std::string name) {
 
 	try {
 		this->name = name;
-		moduleObject = import(bp::str(name));
+		moduleObject = bp::import(bp::str(name));
 		moduleGlobals = bp::extract<bp::dict>(moduleObject.attr("__dict__"));
 	}
 	catch (bp::error_already_set const&) {
@@ -179,7 +178,7 @@ std::string PythonModule::eval(std::string code) {
 }
 
 
-bp::object PythonModule::evalToObject(std::string code) { //TODO: references!
+bp::object PythonModule::evalToObject(std::string code) { 
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);

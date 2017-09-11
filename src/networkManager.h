@@ -18,7 +18,7 @@ public:
 	void initialize() override;
 
 	int getFd() override;
-	bool listen(size_t backlog) override;
+	bool listen(size_t backlog = -1) override;
 	std::unique_ptr<IManagedSocket> accept() override;
 	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs) override;
 };

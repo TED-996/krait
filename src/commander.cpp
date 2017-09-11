@@ -72,7 +72,6 @@ int openFifo(int flags, bool create) {
 			return -1;
 		}
 	}
-	//TODO: IMPORTANT: maybe parent exits while we try to open this... maybe do this on a timeout? maybe open nonblocking?
 	int fifoFd = open(fifoName.c_str(), flags | O_NONBLOCK);
 	if (fifoFd < 0) {
 		if (errno == ENXIO) {
@@ -93,8 +92,6 @@ int openFifo(int flags, bool create) {
 bool processCommand(pid_t mainPid, const char* cmd, int cmdLen);
 
 void commanderStart(pid_t mainPid, int fifoFd) {
-	//TODO: handle CTRL-C; X, etc.absIdx
-	//TODO: IMPORTANT: exit when parent exits!
 	char cmdBuffer[1024];
 
 	struct pollfd pfd;

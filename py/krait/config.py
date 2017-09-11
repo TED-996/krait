@@ -32,8 +32,6 @@ Usage
     In it, import :obj:`krait.config` and assign :obj:`krait.config.routes`
     to a list of :class:`krait.config.Route` objects.
 
-TODO: and test this.
-
 
 Reference
 =========

@@ -23,7 +23,6 @@ if(DO_STATIC_BUILD)
 	SET(BUILD_SHARED_LIBRARIES OFF)
 else()
 	set(STATIC_BOOST OFF)
-	# TODO: other flagS?
 endif()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
@@ -50,7 +49,7 @@ SET(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_LIB_SUFFIX})
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread chrono program_options)
+FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread program_options)
 if(Boost_FOUND)
     INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}")
     SET(Boost_USE_STATIC_LIBS ${STATIC_BOOST})
@@ -83,7 +82,7 @@ add_custom_command(TARGET build POST_BUILD
 add_custom_command(TARGET build POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/krait-cmdr ${BIN_DIR}/krait-cmdr)
 add_custom_command(TARGET build POST_BUILD
-    COMMAND /bin/chmod uga+xr ${BIN_DIR}/krait-cmdr)
+    COMMAND /bin/chmod uga+xr,g-w ${BIN_DIR}/krait ${BIN_DIR}/krait-cmdr)
 
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
@@ -100,4 +99,9 @@ add_custom_command(TARGET build_tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 
 
-install(DIRECTORY ${BUILD_DIR}/ DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${BUILD_DIR}/bin/
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+	USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ${BUILD_DIR}/share/
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/share
+	USE_SOURCE_PERMISSIONS)

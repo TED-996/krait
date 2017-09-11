@@ -69,6 +69,10 @@ void NetworkManager::initialize() {
 }
 
 bool NetworkManager::listen(size_t backlog) {
+	if (backlog == -1) {
+		backlog = SOMAXCONN;
+	}
+
 	if (this->socket == InvalidSocket) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (listen) after deconstruction."));
 	}
