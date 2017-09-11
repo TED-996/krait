@@ -282,7 +282,7 @@ bool Server::canContainPython(const std::string& filename) {
 }
 
 std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest) {
-	std::string source = readFromFile(filename); //TODO: expensive, chunk.
+	std::string source = readFromFile(filename);
 	tagDest.setTag(generateTagFromStat(filename));
 
 	std::unique_ptr<IPymlParser> parser;

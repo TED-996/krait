@@ -3,9 +3,7 @@
 #include<locale>
 #include<random>
 #include<chrono>
-#include<boost/date_time/posix_time/posix_time.hpp>
-#include<boost/date_time/local_time_adjustor.hpp>
-#include<boost/date_time/c_local_time_adjustor.hpp>
+#include<ctime>
 #include <boost/python.hpp>
 #include<poll.h>
 #include<errno.h>
@@ -111,18 +109,26 @@ pyErrorInfo getPyErrorInfo() {
 	return pyErrorInfo(pyErrAsString());
 }
 
-std::string unixTimeToString(std::time_t timeVal) {  //TODO: remove dependency on boost::time.
-	b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
+std::string unixTimeToString(std::time_t timeVal) {
+	/*b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
 
 	std::ostringstream result;
-
-	static const char fmt[] = "%a, %d %b %Y %H:%M:%S GMT";
-	std::locale outLocale(std::locale::classic(), new b::posix_time::time_facet(fmt));
+	*/
+	static const char* fmt = "%a, %d %b %Y %H:%M:%S GMT";
+	/*std::locale outLocale(std::locale::classic(), new b::posix_time::time_facet(fmt));
 	result.imbue(outLocale);
 
 	result << asPtime;
+	*/
+	struct tm* asGmt = std::gmtime(&timeVal);
+	char result[40];
+	size_t len = std::strftime(result, 40, fmt, asGmt);
 
-	return result.str();
+	if (len == 0) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("unixTimeToString: strftime failed."));
+	}
+
+	return std::string(result, len);
 }
 
 std::string generateTagFromStat(const std::string& filename) {

@@ -36,7 +36,7 @@ void SignalHandler::callOldHandler(int signal, siginfo_t* info, void* ucontext) 
 
 void SignalHandler::handleDefaultSignal(int signal, struct sigaction oldAction) {
 	if (signal == SIGTERM || signal == SIGINT || signal == SIGQUIT || signal == SIGKILL || signal == SIGHUP) {
-		//TODO: print a traceback or something
+		Loggers::logErr(formatString("[SIGNAL]: Received signal %1%, no traceback info available at the moment.", signal));
 	}
 	struct sigaction currentAction;
 	if (sigaction(signal, &oldAction, &currentAction) != 0) {

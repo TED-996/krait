@@ -178,7 +178,7 @@ std::string PythonModule::eval(std::string code) {
 }
 
 
-bp::object PythonModule::evalToObject(std::string code) { //TODO: references!
+bp::object PythonModule::evalToObject(std::string code) { 
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);

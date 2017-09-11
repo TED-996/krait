@@ -50,7 +50,7 @@ SET(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_LIB_SUFFIX})
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread chrono program_options)
+FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread program_options)
 if(Boost_FOUND)
     INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}")
     SET(Boost_USE_STATIC_LIBS ${STATIC_BOOST})

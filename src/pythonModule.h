@@ -1,6 +1,6 @@
 #pragma once
 
-#include<Python.h>
+#include<boost/python/detail/wrap_python.hpp>
 #include<boost/python.hpp>
 #include<boost/optional.hpp>
 #include<string>
