@@ -30,8 +30,6 @@ void V2PymlParser::consume(std::string::iterator start, std::string::iterator en
 		++start;
 	}
 	
-	//TODO: To support multiple passes (for performance), the prologue and the epilogue must be separated
-	//TODO: (to be called separately)
 	parserFsm.doFinalPass('\n');
 
 	if (itemStack.size() != 1) {
@@ -138,7 +136,7 @@ void V2PymlParser::pushPymlWorkingIf(std::string&& condition) {
 	}
 
 	itemStack.emplace(PymlWorkingItem::Type::If);
-	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition; //TODO: prepare + trim !!IMPORTANT
+	itemStack.top().getData<PymlWorkingItem::IfData>()->condition = condition;
 }
 
 
@@ -260,7 +258,6 @@ void V2PymlParser::pushPymlWorkingForIn(std::string&& entry, std::string&& colle
 	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
 	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %2% = %1%.value")
 		% krIterator % entryTrimmed).str();
-	//TODO: delete the IteratorWrapper! over time these add up (esp. with runtime reuse)!
 
 	pushPymlWorkingFor();
 	addCodeToPymlWorkingFor(0, std::move(initCode));
@@ -436,7 +433,6 @@ void V2PymlParserFsm::init() {
 	addBlockParser(importRoot, importRoot, '(', ')');
 	// Finish at import with whitespace
 	add(importRoot, new PymlAddEmbedTransition(&parser, new OrFinal(new Whitespace(start))));
-	// TODO: END ACTIONS: finalAddPymlStr - ???
 	// Finish import with @
 	add(importRoot, new PymlAddEmbedTransition(&parser, new Skip(new Simple('@', start))));
 	// Continue @import
@@ -481,7 +477,6 @@ void V2PymlParserFsm::init() {
 	// Finish by @...@
 	add(evalRawRoot, new PymlAddPyCodeTransition(&parser,
 	                                             new Skip(new Simple('@', start)), PymlWorkingItem::PyEvalRaw));
-	//TODO: do ^^^ this for (most) instances of WhitespaceFsmTransition (including things like /if)
 	// Escape strings
 	addStringLiteralParser(evalRawRoot, evalRawRoot, '\"', '\\');
 	addStringLiteralParser(evalRawRoot, evalRawRoot, '\'', '\\');

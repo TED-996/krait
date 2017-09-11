@@ -120,7 +120,7 @@ PythonModule::PythonModule(std::string name) {
 
 	try {
 		this->name = name;
-		moduleObject = import(bp::str(name));
+		moduleObject = bp::import(bp::str(name));
 		moduleGlobals = bp::extract<bp::dict>(moduleObject.attr("__dict__"));
 	}
 	catch (bp::error_already_set const&) {

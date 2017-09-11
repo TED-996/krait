@@ -23,7 +23,6 @@ if(DO_STATIC_BUILD)
 	SET(BUILD_SHARED_LIBRARIES OFF)
 else()
 	set(STATIC_BOOST OFF)
-	# TODO: other flagS?
 endif()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
