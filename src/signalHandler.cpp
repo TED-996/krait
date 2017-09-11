@@ -43,7 +43,7 @@ void SignalHandler::handleDefaultSignal(int signal, struct sigaction oldAction) 
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("sigaction(): before default call, setting handler to default"));
 	}
 	raise(signal);
-	if (sigaction(signal, &currentAction, NULL) != 0) {
+	if (sigaction(signal, &currentAction, nullptr) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfoFromFormat("sigaction(): after default call, resetting handler to user-defined"));
 	}
 }

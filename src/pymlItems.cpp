@@ -26,7 +26,7 @@ bool PymlItemSeq::isDynamic() const {
 }
 
 const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
-	if (last == NULL && items.size() != 0) {
+	if (last == nullptr && items.size() != 0) {
 		return items[0].get();
 	}
 
@@ -36,7 +36,7 @@ const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 std::string htmlEscape(std::string htmlCode);
@@ -58,13 +58,13 @@ std::string PymlItemPyExec::runPyml() const {
 
 std::string PymlItemIf::runPyml() const {
 	if (PythonModule::main().test(conditionCode)) {
-		if (itemIfTrue == NULL) {
+		if (itemIfTrue == nullptr) {
 			return "";
 		}
 		return itemIfTrue->runPyml();
 	}
 	else {
-		if (itemIfFalse == NULL) {
+		if (itemIfFalse == nullptr) {
 			return "";
 		}
 		return itemIfFalse->runPyml();
@@ -73,8 +73,8 @@ std::string PymlItemIf::runPyml() const {
 
 
 const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
-	if (last != NULL) {
-		return NULL;
+	if (last != nullptr) {
+		return nullptr;
 	}
 
 	if (PythonModule::main().test(conditionCode)) {
@@ -98,7 +98,7 @@ std::string PymlItemFor::runPyml() const {
 
 
 const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
-	if (last == NULL) {
+	if (last == nullptr) {
 		PythonModule::main().run(initCode);
 	}
 	else {
@@ -109,16 +109,16 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 		return loopItem.get();
 	}
 	else {
-		return NULL;
+		return nullptr;
 	}
 }
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
-	if (last == NULL) {
+	if (last == nullptr) {
 		return cache.get(PythonModule::main().eval(filename)).getRootItem();
 	}
 	else {
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -262,7 +262,7 @@ std::string htmlEscape(std::string htmlCode) {
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
-		if (replacements[(int)htmlCode[idx]] != NULL) {
+		if (replacements[(int)htmlCode[idx]] != nullptr) {
 			if (resultEmpty) {
 				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
 				resultEmpty = false;

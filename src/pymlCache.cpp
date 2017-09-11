@@ -25,7 +25,7 @@ IPymlFile& PymlCache::constructAddNew(std::string filename, std::time_t time) {
 	CacheTag tag;
 
 	std::unique_ptr<PymlFile> result = constructor(filename, tag);
-	if (onCacheMiss != NULL) {
+	if (onCacheMiss != nullptr) {
 		onCacheMiss(filename);
 	}
 

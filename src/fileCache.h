@@ -36,7 +36,7 @@ private:
 		memzero(resultEntry);
 
 		T* result = constructor(filename, pool, resultEntry.tag);
-		if (onCacheMiss != NULL) {
+		if (onCacheMiss != nullptr) {
 			onCacheMiss(filename);
 		}
 		resultEntry.time = time;

@@ -30,7 +30,7 @@ IteratorResult& IteratorResult::operator=(IteratorResult&& other) noexcept {
 
 void IteratorResult::exhaustIterator(PymlIterator&& iterator) {
 	totalLength = 0;
-	while (*iterator != NULL) {
+	while (*iterator != nullptr) {
 		if (iterator.isTmpStr(*iterator)) {
 			strIterated.push_back(ValueOrPtr<std::string>(**iterator));
 		}
@@ -53,7 +53,7 @@ const IteratorResult& IteratorResult::operator++() {
 
 const std::string* IteratorResult::operator*() {
 	if (currentIdx >= strIterated.size()) {
-		return NULL;
+		return nullptr;
 	}
 	return strIterated[currentIdx].get();
 }

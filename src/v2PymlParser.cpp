@@ -162,7 +162,7 @@ bool V2PymlParser::addSeqToPymlWorkingIf() {
 	}
 
 	PymlWorkingItem::IfData* data = itemStack.top().getData<PymlWorkingItem::IfData>();
-	if (data == NULL) {
+	if (data == nullptr) {
 		DBG_FMT("Bad item data; expected IfData, got %1%", itemStack.top().type);
 		return false;
 	}
@@ -195,7 +195,7 @@ bool V2PymlParser::addSeqToPymlWorkingFor() {
 	}
 
 	PymlWorkingItem::ForData* data = itemStack.top().getData<PymlWorkingItem::ForData>();
-	if (data == NULL) {
+	if (data == nullptr) {
 		DBG_FMT("Bad item data; expected ForData, got %1%", itemStack.top().type);
 		return false;
 	}

@@ -196,7 +196,7 @@ void ManagedSocket::respondWithObject(Response&& response) {
 	respondWithBuffer(responseData.c_str(), responseData.length());
 
 	const std::string* bodyNext = response.getBodyNext();
-	while (bodyNext != NULL) {
+	while (bodyNext != nullptr) {
 		respondWithBuffer(bodyNext->c_str(), bodyNext->length());
 		bodyNext = response.getBodyNext();
 	}

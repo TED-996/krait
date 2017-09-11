@@ -16,7 +16,7 @@ PymlFile::PymlFile(std::string::iterator sourceStart,
 }
 
 std::string PymlFile::runPyml() const {
-	if (rootItem == NULL) {
+	if (rootItem == nullptr) {
 		return "";
 	}
 	return rootItem->runPyml();
@@ -24,7 +24,7 @@ std::string PymlFile::runPyml() const {
 
 
 bool PymlFile::isDynamic() const {
-	if (rootItem == NULL) {
+	if (rootItem == nullptr) {
 		return false;
 	}
 	return rootItem->isDynamic();

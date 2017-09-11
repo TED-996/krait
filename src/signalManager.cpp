@@ -104,7 +104,7 @@ void SignalManager::waitChildrenBlocking() {
 }
 
 void SignalManager::waitChild(int pid) {
-	if (waitpid(pid, NULL, 0) != pid) {
+	if (waitpid(pid, nullptr, 0) != pid) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("waitpid(): waiting for request responder process") << errcodeInfoDef());
 	}
 	removePid(pid);

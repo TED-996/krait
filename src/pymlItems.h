@@ -18,11 +18,11 @@ public:
 	}
 
 	virtual const IPymlItem* getNext(const IPymlItem* last) const override {
-		return NULL;
+		return nullptr;
 	}
 
 	virtual const std::string* getEmbeddedString(std::string* storage) const override {
-		return NULL;
+		return nullptr;
 	}
 };
 
@@ -121,10 +121,10 @@ public:
 	}
 
 	const IPymlItem* getNext(const IPymlItem* last) const override {
-		if (last == NULL) {
+		if (last == nullptr) {
 			runPyml();
 		}
-		return NULL;
+		return nullptr;
 	}
 };
 
@@ -214,10 +214,10 @@ public:
 	}
 
 	const IPymlItem* getNext(const IPymlItem* last) const override {
-		if (last == NULL) {
+		if (last == nullptr) {
 			runPyml();
 		}
-		return NULL;
+		return nullptr;
 	}
 };
 
