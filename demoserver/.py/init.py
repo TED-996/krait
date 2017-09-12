@@ -5,10 +5,9 @@ import sys
 
 import krait
 from krait import config
+from krait import mvc
 
-# noinspection PyUnresolvedReferences
-# We need to import these so that the routing decorators on the controller classes run.
-from ctrl import index, db, http, ws
+from ctrl import db
 
 # ==========================================
 # Standard configuration (routing & caching)
@@ -16,8 +15,10 @@ from ctrl import index, db, http, ws
 
 
 # First, configure the routes
-# MVC routes have already been configured by the krait.mvc.route_ctrl_decorator decorators
-# on the controller classes imported above (This MUST be run after those imports)
+# MVC routes are configured by the krait.mvc.route_ctrl_decorator decorators on the controller classes.
+# Automatically import these controllers so that they add themselves as routes.
+mvc.import_ctrls_from("ctrl")
+
 config.routes.extend([
     # MVC routes have already been added.
     # Add special URLs

@@ -34,6 +34,9 @@ Reference
 =========
 """
 import config
+import importlib
+import os
+import re
 
 
 class CtrlBase(object):
@@ -103,6 +106,58 @@ def route_ctrl_decorator(verb="GET", url=None, regex=None):
         return class_type
 
     return decorator
+
+
+def import_ctrls_from(package_name):
+    """
+    Scans the package recursively and imports all modules inside it.
+    This 1) speeds up the following requests, as all modules are already imported
+    and 2) allows the controllers to add themselves to the routing system
+    (using the :obj:`krait.mvc.route_ctrl_decorator` decorator)
+
+    Args:
+        package_name (str): the name of the package.
+            This should be already accessible as ``import <package_name>``.
+    """
+
+    _recurse_import_package(package_name, True)
+
+
+def _recurse_import_package(name, is_first):
+    # No problem if we keep recompiling it, there may be some caching and it's mostly one-time anyway.
+    init_regex = re.compile("^__init__\.py[cdo]?$")
+    py_regex = re.compile("^(.*)\.py[cdo]?$")
+
+    try:
+        package_or_module = importlib.import_module(name)
+    except ImportError:
+        # Not a module / package.
+        if is_first:
+            # We expect at least the first import to succeed.
+            raise
+        else:
+            return
+
+    print "Imported", name
+    try:
+        submodules = package_or_module.__all__
+    except AttributeError:
+        # Doesn't contain '__all__' (not a package, or not custom __all__)
+        dir_name, file_name = os.path.split(package_or_module.__file__)
+        if not init_regex.match(file_name):
+            return
+
+        submodules = set()
+        for entry in os.listdir(dir_name):
+            entry_path = os.path.join(dir_name, entry)
+            # Add *files* that are not __init__.py:
+            py_match = py_regex.match(entry)
+            if os.path.isfile(entry_path) and py_match and py_match.group(1) != "__init__":
+                submodules.add(py_match.group(1))
+
+    for entry in submodules:
+        _recurse_import_package(name + "." + entry, False)
+
 
 
 init_ctrl = None

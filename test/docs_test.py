@@ -129,6 +129,7 @@ class DocsTest(unittest.TestCase):
 
         # TODO: make better tests
 
+    @unittest.skip("ReadTheDocs test skipped. Not relevant to current state.")
     def test_krait_rtd_up(self):
         if not test_utils.check_internet_access():
             self.skipTest("ReadTheDocs test skipped: No internet access.")
