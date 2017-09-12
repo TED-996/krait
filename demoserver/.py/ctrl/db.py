@@ -5,7 +5,10 @@ import krait
 sqlite_db = None
 
 
-class DbController(object):
+# This decorator routes requests to "/db" to this controller.
+# This module MUST be imported, otherwise routing to this page won't work.
+@krait.mvc.route_ctrl_decorator(url="/db")
+class DbController(krait.mvc.CtrlBase):
     def __init__(self):
         super(DbController, self).__init__()
 

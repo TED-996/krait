@@ -71,7 +71,7 @@ class Route(object):
         "ANY",  # Match any request.
         "WEBSOCKET"  # Match Websocket upgrade requests.
     ]
-    """The route verb options."""
+    """list of str: The route verb options."""
 
     def __init__(self, verb=None, url=None, regex=None, target=None, ctrl_class=None):
         self.verb = verb or "GET"
@@ -81,13 +81,15 @@ class Route(object):
         self.ctrl_class = ctrl_class
 
         if self.verb not in Route.route_verbs:
-            raise ValueError("Route verb {} not recognized\n"
+            raise ConfigError("Route verb {} not recognized\n"
                              "See krait.config.Route.route_verbs for options".format(self.verb))
         if target is not None and ctrl_class is not None:
-            raise ValueError("Both target and controller class specified, invalid route.")
+            raise ConfigError("Both target and controller class specified, invalid route.")
+        if ctrl_class is not None and verb == "WEBSOCKET":
+            raise ConfigError("WEBSOCKET verb not supported for MVC controllers.")
 
 
-routes = None
+routes = []
 """
 list of :class:`Route`:
 The list of routes to be read by Krait. The default is all GETs to default targets, deny anything else.
@@ -130,3 +132,11 @@ int:
 The number of seconds that clients should not re-request the resource, for long-term cached resources.
 This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.
 """
+
+
+class ConfigError(StandardError):
+    """
+    An error class that signifies a problem with the Krait site configuration.
+    Usually means a configuration setting is incorrect.
+    """
+    pass

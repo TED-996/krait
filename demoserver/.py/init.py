@@ -6,6 +6,8 @@ import sys
 import krait
 from krait import config
 
+# noinspection PyUnresolvedReferences
+# We need to import these so that the routing decorators on the controller classes run.
 from ctrl import index, db, http, ws
 
 # ==========================================
@@ -14,18 +16,15 @@ from ctrl import index, db, http, ws
 
 
 # First, configure the routes
-config.routes = [
-    # First, add routes to the MVC controllers.
-    config.Route(url="/", ctrl_class=index.IndexController),
-    config.Route(url="/db", ctrl_class=db.DbController),
-    config.Route(url="/http", ctrl_class=http.HttpController),
-    config.Route(regex="/http\\+.*", ctrl_class=http.HttpController),
-    config.Route(url="/ws", ctrl_class=ws.WsPageController),
-    # Then, add special URLs
+# MVC routes have already been configured by the krait.mvc.route_ctrl_decorator decorators
+# on the controller classes imported above (This MUST be run after those imports)
+config.routes.extend([
+    # MVC routes have already been added.
+    # Add special URLs
     config.Route("POST", url="/comment"),  # POSTs must be explicitly routed
     config.Route("WEBSOCKET", url="/ws_socket"),  # Websocket requests must also be explicitly routed.
     config.Route()  # This final route is a default route: all GETs will resolve to files with the same name.
-]
+])
 
 # Configure the caching. Caching uses regexes, so some characters have a special meaning (notably, ``.``)
 

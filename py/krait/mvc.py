@@ -25,14 +25,15 @@ See the tutorial (TODO) for a more detailed explanation.
     There are two alternatives:
     1. Use the routing engine, as seen in :obj:`krait.config` (**recommended**).
     2. Use a Python script as a normal target:
-        Create a Python script with the appropriate location and name to be reached by the URL.
-        Import ``krait.mvc``, then call :obj:`set_init_ctrl`, passing as an argument an object
-        of your controller type. Krait will then call its overridden :obj:`CtrlBase.get_view` method
-        and render the template.
+    Create a Python script with the appropriate location and name to be reached by the URL.
+    Import ``krait.mvc``, then call :obj:`set_init_ctrl`, passing as an argument an object
+    of your controller type. Krait will then call its overridden :obj:`CtrlBase.get_view` method
+    and render the template.
 
 Reference
 =========
 """
+import config
 
 
 class CtrlBase(object):
@@ -78,6 +79,30 @@ class SimpleCtrl(CtrlBase):
             str: :obj:`view`
         """
         return self.view
+
+
+def route_ctrl_decorator(verb="GET", url=None, regex=None):
+    """
+    Get a decorator that adds an MVC controller as a route target
+
+    Args:
+        verb (str, optional): The routing verb (most HTTP verbs, plus ``ANY``. ``WEBSOCKET`` not supported.)
+            See :obj:`krait.config.Route.route_verbs` for options; GET by default
+        url (str, optional): The URL to match, or None to skip
+        regex (str, optional): The regex to match, or None to skip
+
+    Returns:
+        A decorator that adds the MVC controller as a route target.
+    """
+    def decorator(class_type):
+        if config.routes is None:
+            config.routes = []
+
+        config.routes.append(config.Route(verb=verb, url=url, regex=regex, ctrl_class=class_type))
+
+        return class_type
+
+    return decorator
 
 
 init_ctrl = None
