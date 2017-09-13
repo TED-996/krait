@@ -138,7 +138,6 @@ def _recurse_import_package(name, is_first):
         else:
             return
 
-    print "Imported", name
     try:
         submodules = package_or_module.__all__
     except AttributeError:
