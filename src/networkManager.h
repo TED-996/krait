@@ -15,6 +15,9 @@ public:
 	static NetworkManager fromAnyOnPort(short port);
 	~NetworkManager() override;
 
+	NetworkManager& operator=(const NetworkManager& other) = delete;
+	NetworkManager& operator=(NetworkManager&& other) noexcept;
+
 	void initialize() override;
 
 	int getFd() override;

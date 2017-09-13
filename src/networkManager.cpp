@@ -16,12 +16,12 @@ NetworkManager::NetworkManager(int socket){
 }
 
 
-NetworkManager::NetworkManager(NetworkManager&& source) noexcept {
-	this->socket = source.socket;
-	this->listening = source.listening;
+NetworkManager::NetworkManager(NetworkManager&& other) noexcept {
+	this->socket = other.socket;
+	this->listening = other.listening;
 
-	source.socket = InvalidSocket;
-	source.listening = false;
+	other.socket = InvalidSocket;
+	other.listening = false;
 }
 
 NetworkManager::~NetworkManager() {
@@ -29,8 +29,23 @@ NetworkManager::~NetworkManager() {
 		::close(socket);
 		this->socket = InvalidSocket;
 	}
+	this->listening = false;
 }
 
+
+NetworkManager& NetworkManager::operator=(NetworkManager&& other) noexcept {
+	if (this->socket != InvalidSocket) {
+		::close(socket);
+	}
+
+	this->socket = other.socket;
+	this->listening = other.listening;
+
+	other.socket = InvalidSocket;
+	other.listening = false;
+
+	return *this;
+}
 
 NetworkManager NetworkManager::fromAnyOnPort(short port) {
 	struct sockaddr_in serverSockaddr;

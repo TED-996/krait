@@ -10,7 +10,8 @@ typedef boost::error_info<struct tag_string_info, const std::string> stringInfo;
 typedef boost::error_info<struct tag_errcode_info, const int> errcodeInfo;
 typedef boost::error_info<struct tag_pycode_info, const std::string> pyCodeInfo;
 typedef boost::error_info<struct tag_pyerr_info, const std::string> pyErrorInfo;
-typedef boost::error_info<struct tag_origin_method, const std::string> originCallInfo;
+typedef boost::error_info<struct tag_origin_method_info, const std::string> originCallInfo;
+typedef boost::error_info<struct tag_ssl_info, const std::string> sslErrorInfo;
 
 pyErrorInfo getPyErrorInfo();
 errcodeInfo errcodeInfoDef();
@@ -63,6 +64,10 @@ struct pymlError: virtual rootException
 };
 
 struct notImplementedError: virtual rootException
+{
+};
+
+struct sslError : virtual rootException
 {
 };
 

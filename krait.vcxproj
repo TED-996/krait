@@ -35,7 +35,7 @@
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
     <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
     <LinuxProjectType>{FC1A4D80-50E9-41DA-9192-61C0DBAA00D2}</LinuxProjectType>
-    <ProjectName>l</ProjectName>
+    <ProjectName>krait</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
@@ -135,6 +135,7 @@
     <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
+    <ClCompile Include="src\openSslNetworkManager.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="src\managedSocket.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
+    <ClInclude Include="src\openSslNetworkManager.h" />
     <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\responseBuilder.h" />
