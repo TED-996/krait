@@ -45,24 +45,24 @@ private:
 
 	//Methods
 public:
-	explicit PythonModule(std::string name);
+	explicit PythonModule(const std::string& name);
 	void clear();
 
-	void run(std::string command);
-	void execfile(std::string filename);
-	std::string eval(std::string code);
-	boost::python::object evalToObject(std::string code);
+	void run(const std::string& command);
+	void execfile(const std::string& filename);
+	std::string eval(const std::string& code);
+	boost::python::object evalToObject(const std::string& code);
 
 	template<typename T>
-	boost::optional<T> evalToOptional(std::string code) {
+	boost::optional<T> evalToOptional(const std::string& code) {
 		return extractOptional<T>(this->evalToObject(code));
 	}
 
-	bool test(std::string condition);
-	bool checkIsNone(std::string name);
+	bool test(const std::string& condition);
+	bool checkIsNone(const std::string& name);
 
-	boost::python::object callObject(boost::python::object obj, boost::python::object arg);
-	boost::python::object callObject(boost::python::object obj);
+	boost::python::object callObject(const boost::python::object& obj, const boost::python::object& arg);
+	boost::python::object callObject(const boost::python::object& obj);
 
 	void setGlobal(const std::string& name, const std::string& value);
 	void setGlobal(const std::string& name, const std::map<std::string, std::string>& value);
@@ -70,19 +70,19 @@ public:
 	void setGlobal(const std::string& name, const boost::python::object& value);
 	void setGlobalRequest(const std::string&, const Request& value);
 
-	std::string getGlobalStr(std::string name);
-	std::map<std::string, std::string> getGlobalMap(std::string name);
-	std::multimap<std::string, std::string> getGlobalTupleList(std::string name);
-	boost::python::object getGlobalVariable(std::string name);
+	std::string getGlobalStr(const std::string& name);
+	std::map<std::string, std::string> getGlobalMap(const std::string& name);
+	std::multimap<std::string, std::string> getGlobalTupleList(const std::string& name);
+	boost::python::object getGlobalVariable(const std::string& name);
 
 	template<typename T>
-	boost::optional<T> getGlobalOptional(std::string name) {
+	boost::optional<T> getGlobalOptional(const std::string& name) {
 		return extractOptional<T>(this->getGlobalVariable(name));
 	}
 
 	//Statics
 public:
-	static std::string prepareStr(std::string pyCode);
+	static std::string prepareStr(const std::string& pyCode);
 
 	template<typename T>
 	static boost::optional<T> extractOptional(boost::python::object value){
@@ -110,10 +110,10 @@ public:
 	}
 
 	static void initPython();
-	static void initModules(std::string projectDir);
+	static void initModules(const std::string& projectDir);
 	static void finishPython();
 private:
-	static void resetModules(std::string projectDir);
+	static void resetModules(const std::string& projectDir);
 
 	//Structs
 private:

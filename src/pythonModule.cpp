@@ -76,7 +76,7 @@ void PythonModule::finishPython() {
 	}
 }
 
-void PythonModule::initModules(std::string projectDir) {
+void PythonModule::initModules(const std::string& projectDir) {
 	DBG("in initModules()");
 	initPython();
 
@@ -89,7 +89,7 @@ void PythonModule::initModules(std::string projectDir) {
 	}
 }
 
-void PythonModule::resetModules(std::string projectDir) {
+void PythonModule::resetModules(const std::string& projectDir) {
 	DBG("in pythonReset()");
 	try {
 		if (modulesInitialized) {
@@ -114,7 +114,7 @@ void PythonModule::resetModules(std::string projectDir) {
 	modulesInitialized = true;
 }
 
-PythonModule::PythonModule(std::string name) {
+PythonModule::PythonModule(const std::string& name) {
 	DBG_FMT("PythonModule(%1%)", name);
 	initPython();
 
@@ -136,7 +136,7 @@ void PythonModule::clear() {
 }
 
 
-void PythonModule::run(std::string command) {
+void PythonModule::run(const std::string& command) {
 	DBG("in run()");
 	try {
 		bp::exec(bp::str(command), moduleGlobals, moduleGlobals);
@@ -149,7 +149,7 @@ void PythonModule::run(std::string command) {
 }
 
 
-void PythonModule::execfile(std::string filename) {
+void PythonModule::execfile(const std::string& filename) {
 	DBG("in execfile()");
 	try {
 		bp::exec_file(bp::str(filename), moduleGlobals, moduleGlobals);
@@ -163,7 +163,7 @@ void PythonModule::execfile(std::string filename) {
 	}
 }
 
-std::string PythonModule::eval(std::string code) {
+std::string PythonModule::eval(const std::string& code) {
 	DBG("in pythonEval()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
@@ -178,7 +178,7 @@ std::string PythonModule::eval(std::string code) {
 }
 
 
-bp::object PythonModule::evalToObject(std::string code) { 
+bp::object PythonModule::evalToObject(const std::string& code) {
 	DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
@@ -192,7 +192,7 @@ bp::object PythonModule::evalToObject(std::string code) {
 }
 
 
-bool PythonModule::test(std::string condition) {
+bool PythonModule::test(const std::string& condition) {
 	try {
 		bp::object result = bp::eval(bp::str(condition), moduleGlobals, moduleGlobals);
 		return (bool)result;
@@ -204,7 +204,7 @@ bool PythonModule::test(std::string condition) {
 	}
 }
 
-bp::object PythonModule::callObject(bp::object obj) {
+bp::object PythonModule::callObject(const bp::object& obj) {
 	DBG("in callObject()");
 	try {
 		return obj();
@@ -216,7 +216,7 @@ bp::object PythonModule::callObject(bp::object obj) {
 	}
 }
 
-bp::object PythonModule::callObject(bp::object obj, bp::object arg) {
+bp::object PythonModule::callObject(const bp::object& obj, const bp::object& arg) {
 	DBG("in callObject(arg)");
 	try {
 		return obj(arg);
@@ -229,7 +229,7 @@ bp::object PythonModule::callObject(bp::object obj, bp::object arg) {
 }
 
 
-bool PythonModule::checkIsNone(std::string name) {
+bool PythonModule::checkIsNone(const std::string& name) {
 	DBG("in pythonVarIsNone(name)");
 	try {
 		return bp::object(moduleObject.attr(name.c_str())).is_none();
@@ -277,7 +277,7 @@ void PythonModule::setGlobalRequest(const std::string& name, const Request& valu
 	}
 }
 
-std::string PythonModule::getGlobalStr(std::string name) {
+std::string PythonModule::getGlobalStr(const std::string& name) {
 	DBG("in pythonGetGlobalStr()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
@@ -291,7 +291,7 @@ std::string PythonModule::getGlobalStr(std::string name) {
 	}
 }
 
-std::map<std::string, std::string> PythonModule::getGlobalMap(std::string name) {
+std::map<std::string, std::string> PythonModule::getGlobalMap(const std::string& name) {
 	DBG("in getGlobalMap()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
@@ -313,7 +313,7 @@ std::map<std::string, std::string> PythonModule::getGlobalMap(std::string name) 
 	}
 }
 
-bp::object PythonModule::getGlobalVariable(std::string name) {
+bp::object PythonModule::getGlobalVariable(const std::string& name) {
 	DBG("in getGlobalVariable()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
@@ -326,7 +326,7 @@ bp::object PythonModule::getGlobalVariable(std::string name) {
 	}
 }
 
-std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(std::string name) {
+std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(const std::string& name) {
 	DBG("in getGlobalTupleList()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
@@ -345,10 +345,10 @@ std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(std::st
 		
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalTupleList(%1%)", name)));
 	}
-};
+}
 
 //Dedent std::string
-std::string PythonModule::prepareStr(std::string pyCode) {
+std::string PythonModule::prepareStr(const std::string& pyCode) {
 	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
 	if (pyCode.length() == 0 || !isspace(pyCode[0])) {
 		return pyCode;
