@@ -16,10 +16,10 @@
 #include "rawPythonPymlParser.h"
 #include "signalManager.h"
 #include "config.h"
+#include "serverSocket.h"
 
 //#define DBG_DISABLE
 #include"dbg.h"
-#include "networkManager.h"
 
 
 namespace b = boost;
@@ -35,7 +35,7 @@ Server::Server(std::string serverRoot, int port)
 	pythonInitializer(serverRoot),
 	config(),
 	cacheController(config, serverRoot),
-	networkManager(std::make_unique<NetworkManager>(NetworkManager::fromAnyOnPort(port))),
+	networkManager(std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(port))),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,

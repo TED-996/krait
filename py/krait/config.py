@@ -133,6 +133,11 @@ The number of seconds that clients should not re-request the resource, for long-
 This corresponds to the Max-Age of the HTTP responses, for long-term, public or private, cached resources.
 """
 
+ssl_certificate_path = None
+"""
+str:
+The path to the certificate to be used in SSL connections. Must be in PEM format.
+"""
 
 class ConfigError(StandardError):
     """

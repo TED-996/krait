@@ -82,8 +82,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -101,8 +100,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -120,8 +118,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -134,8 +131,8 @@
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
-    <ClCompile Include="src\networkManager.cpp" />
-    <ClCompile Include="src\openSslNetworkManager.cpp" />
+    <ClCompile Include="src\serverSocket.cpp" />
+    <ClCompile Include="src\openSslServerSocket.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\pythonInitializer.cpp" />
@@ -177,11 +174,11 @@
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
-    <ClInclude Include="src\INetworkManager.h" />
+    <ClInclude Include="src\IServerSocket.h" />
     <ClInclude Include="src\managedSocket.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
-    <ClInclude Include="src\networkManager.h" />
-    <ClInclude Include="src\openSslNetworkManager.h" />
+    <ClInclude Include="src\serverSocket.h" />
+    <ClInclude Include="src\openSslServerSocket.h" />
     <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\pythonInitializer.h" />

@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <arpa/inet.h>
-#include "networkManager.h"
+#include "serverSocket.h"
 #include "except.h"
 #include "managedSocket.h"
 
@@ -10,13 +10,13 @@
 #include"dbg.h"
 
 
-NetworkManager::NetworkManager(int socket){
+ServerSocket::ServerSocket(int socket){
 	this->socket = socket;
 	this->listening = false;
 }
 
 
-NetworkManager::NetworkManager(NetworkManager&& other) noexcept {
+ServerSocket::ServerSocket(ServerSocket&& other) noexcept {
 	this->socket = other.socket;
 	this->listening = other.listening;
 
@@ -24,7 +24,7 @@ NetworkManager::NetworkManager(NetworkManager&& other) noexcept {
 	other.listening = false;
 }
 
-NetworkManager::~NetworkManager() {
+ServerSocket::~ServerSocket() {
 	if (this->socket != InvalidSocket) {
 		::close(socket);
 		this->socket = InvalidSocket;
@@ -33,7 +33,7 @@ NetworkManager::~NetworkManager() {
 }
 
 
-NetworkManager& NetworkManager::operator=(NetworkManager&& other) noexcept {
+ServerSocket& ServerSocket::operator=(ServerSocket&& other) noexcept {
 	if (this->socket != InvalidSocket) {
 		::close(socket);
 	}
@@ -47,7 +47,7 @@ NetworkManager& NetworkManager::operator=(NetworkManager&& other) noexcept {
 	return *this;
 }
 
-NetworkManager NetworkManager::fromAnyOnPort(short port) {
+ServerSocket ServerSocket::fromAnyOnPort(short port) {
 	struct sockaddr_in serverSockaddr;
 	memset(&serverSockaddr, 0, sizeof(serverSockaddr));
 
@@ -58,38 +58,38 @@ NetworkManager NetworkManager::fromAnyOnPort(short port) {
 	int sd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sd == -1) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not create socket in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("getListenSocket: could not create socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
 	const int reuseAddr = 1;
 	int enable = (int)reuseAddr;
 	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: coult not set reuseAddr in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("getListenSocket: coult not set reuseAddr in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
 	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not bind socket in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("getListenSocket: could not bind socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
-	return NetworkManager(sd);
+	return ServerSocket(sd);
 }
 
-int NetworkManager::getFd() {
+int ServerSocket::getFd() {
 	return this->socket;
 }
 
-void NetworkManager::initialize() {
+void ServerSocket::initialize() {
 }
 
-bool NetworkManager::listen(size_t backlog) {
+bool ServerSocket::listen(size_t backlog) {
 	if (backlog == -1) {
 		backlog = SOMAXCONN;
 	}
 
 	if (this->socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (listen) after deconstruction."));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("ServerSocket used (listen) after deconstruction."));
 	}
 	if (listening) {
 		return true; //Make it idempotent.
@@ -102,27 +102,27 @@ bool NetworkManager::listen(size_t backlog) {
 	return this->listening;
 }
 
-std::unique_ptr<IManagedSocket> NetworkManager::accept() {
+std::unique_ptr<IManagedSocket> ServerSocket::accept() {
 	if (socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (accept) after deconstruction."));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("ServerSocket used (accept) after deconstruction."));
 	}
 	if (!listening) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager not listening before call to accept()"));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("ServerSocket not listening before call to accept()"));
 	}
 
 	int newSocket = ::accept(this->socket, nullptr, nullptr);
 	if (newSocket == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in NetworkManager"));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in ServerSocket"));
 	}
 	return std::make_unique<ManagedSocket>(newSocket);
 }
 
-std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
+std::unique_ptr<IManagedSocket> ServerSocket::acceptTimeout(int timeoutMs) {
 	if (socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (acceptTimeout) after deconstruction."));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("ServerSocket used (acceptTimeout) after deconstruction."));
 	}
 	if (!listening) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager not listening before call to acceptTimeout()"));
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("ServerSocket not listening before call to acceptTimeout()"));
 	}
 
 	pollfd pfd;

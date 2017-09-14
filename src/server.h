@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <boost/filesystem/path.hpp>
 #include "except.h"
 #include "pythonInitializer.h"
@@ -11,7 +10,8 @@
 #include "cacheController.h"
 #include "config.h"
 #include "responseBuilder.h"
-#include "INetworkManager.h"
+#include "IManagedSocket.h"
+#include "IServerSocket.h"
 
 
 class Server
@@ -28,7 +28,7 @@ class Server
 	Config config;
 	CacheController cacheController;
 
-	std::unique_ptr<INetworkManager> networkManager;
+	std::unique_ptr<IServerSocket> networkManager;
 	std::unique_ptr<IManagedSocket> clientSocket;
 
 	bool stdinDisconnected;
