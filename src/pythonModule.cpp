@@ -73,6 +73,7 @@ void PythonModule::finishPython() {
 
 			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("finishPython()"));
 		}
+		pythonInitialized = false;
 	}
 }
 

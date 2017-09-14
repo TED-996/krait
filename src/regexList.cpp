@@ -43,7 +43,7 @@ RegexList RegexList::fromPythonObject(boost::python::object source) {
 	return RegexList(regexes);
 }
 
-bool RegexList::isMatch(std::string target) {
+bool RegexList::isMatch(std::string target) const {
 	boost::cmatch matchVariables;
 	for (const auto& it: targets) {
 		if (boost::regex_match(target.c_str(), matchVariables, it)) {

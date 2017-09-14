@@ -15,7 +15,7 @@ public:
 	RegexList() {
 	}
 
-	bool isMatch(std::string target);
+	bool isMatch(std::string target) const;
 
 	static RegexList fromFile(std::string filename);
 

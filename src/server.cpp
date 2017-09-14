@@ -26,11 +26,13 @@ namespace b = boost;
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
+
 Server* Server::instance = nullptr;
 
 Server::Server(std::string serverRoot, int port)
 	:
 	serverRoot(bf::canonical(bf::absolute(serverRoot))),
+	pythonInitializer(serverRoot),
 	config(),
 	cacheController(config, serverRoot),
 	networkManager(std::make_unique<NetworkManager>(NetworkManager::fromAnyOnPort(port))),
@@ -48,31 +50,12 @@ Server::Server(std::string serverRoot, int port)
 	}
 	Server::instance = this;
 
-	this->serverRoot = bf::path(serverRoot);
-	
-	DBG("routes got");
-
-	
-	try {
-		PythonModule::initModules(serverRoot);
-	}
-	catch (pythonError& err) {
-		Loggers::logErr(formatString("Error running init.py: %1%", err.what()));
-		exit(1);
-	}
-
-	DBG("python initialized");
-
-	config.load();
-	cacheController.load();
-
 	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 
 	stdinDisconnected = fdClosed(0);
 	
 	shutdownRequested = false;
 }
-
 
 Server::~Server() {
 }

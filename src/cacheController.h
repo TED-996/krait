@@ -20,10 +20,10 @@ public:
 	};
 
 private:
-	RegexList noStoreTargets;
-	RegexList privateTargets;
-	RegexList publicTargets;
-	RegexList longTermTargets;
+	const RegexList& noStoreTargets;
+	const RegexList& privateTargets;
+	const RegexList& publicTargets;
+	const RegexList& longTermTargets;
 
 	std::string filenameRoot;
 
@@ -31,12 +31,8 @@ private:
 	int maxAgeLongTerm;
 
 	std::map<std::pair<std::string, bool>, CachePragma> pragmaCache;
-
-	bool loaded;
-
 public:
 	CacheController(Config& config, std::string filenameRoot);
-	void load();
 
 	CachePragma getCacheControl(std::string targetFilename, bool defaultIsStore);
 

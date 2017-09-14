@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <boost/filesystem/path.hpp>
 #include "except.h"
-#include "response.h"
+#include "pythonInitializer.h"
 #include "pymlFile.h"
 #include "stringPiper.h"
 #include "pymlCache.h"
@@ -24,6 +24,7 @@ class Server
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
+	PythonInitializer pythonInitializer;
 	Config config;
 	CacheController cacheController;
 

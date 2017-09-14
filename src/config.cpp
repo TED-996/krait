@@ -6,6 +6,11 @@
 
 namespace bp = boost::python;
 
+Config::Config() {
+	loadRoutes();
+	loadCacheConfig();
+}
+
 void Config::loadRoutes() {
 	try {
 		bp::object pyRoutes = PythonModule::config().getGlobalVariable("routes");
@@ -25,20 +30,12 @@ void Config::loadRoutes() {
 	}
 }
 
-Config::Config() {
-	initialized = false;
-	routes.clear();
-}
+void Config::loadCacheConfig() {
+	noStoreTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_no_store"));
+	privateTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_private"));
+	publicTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_public"));
+	longTermTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_long_term"));
 
-void Config::load() {
-	loadRoutes();
-	initialized = true;
-}
-
-std::vector<Route>& Config::getRoutes() {
-	if (!initialized) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Configuration not initialized, you must call load() at least once."));
-	}
-
-	return this->routes;
+	maxAgeDefault = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_default"));
+	maxAgeLongTerm = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_long_term"));
 }

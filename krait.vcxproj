@@ -138,6 +138,7 @@
     <ClCompile Include="src\openSslNetworkManager.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
+    <ClCompile Include="src\pythonInitializer.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
     <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="src\openSslNetworkManager.h" />
     <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
+    <ClInclude Include="src\pythonInitializer.h" />
     <ClInclude Include="src\responseBuilder.h" />
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />
