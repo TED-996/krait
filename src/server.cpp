@@ -29,13 +29,13 @@ namespace ba = boost::algorithm;
 
 Server* Server::instance = nullptr;
 
-Server::Server(std::string serverRoot, int port)
+Server::Server(ArgvConfig argvConfig)
 	:
-	serverRoot(bf::canonical(bf::absolute(serverRoot))),
-	pythonInitializer(serverRoot),
-	config(),
-	cacheController(config, serverRoot),
-	networkManager(std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(port))),
+	serverRoot(bf::canonical(bf::absolute(argvConfig.getSiteRoot()))),
+	pythonInitializer(argvConfig.getSiteRoot()),
+	config(argvConfig),
+	cacheController(config, argvConfig.getSiteRoot()),
+	networkManager(std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(argvConfig.getHttpPort().get()))),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
@@ -50,7 +50,7 @@ Server::Server(std::string serverRoot, int port)
 	}
 	Server::instance = this;
 
-	Loggers::logInfo(formatString("Server initialized on port %1%", port));
+	Loggers::logInfo(formatString("Server initialized on port %1%", argvConfig.getHttpPort().get()));
 
 	stdinDisconnected = fdClosed(0);
 	

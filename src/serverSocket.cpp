@@ -47,7 +47,7 @@ ServerSocket& ServerSocket::operator=(ServerSocket&& other) noexcept {
 	return *this;
 }
 
-ServerSocket ServerSocket::fromAnyOnPort(short port) {
+ServerSocket ServerSocket::fromAnyOnPort(u_int16_t port) {
 	struct sockaddr_in serverSockaddr;
 	memset(&serverSockaddr, 0, sizeof(serverSockaddr));
 

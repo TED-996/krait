@@ -2,10 +2,13 @@
 #include <vector>
 #include "routes.h"
 #include "regexList.h"
+#include "argvConfig.h"
 
 class Config
 {
 private:
+	ArgvConfig argvConfig;
+
 	std::vector<Route> routes;
 	RegexList noStoreTargets;
 	RegexList privateTargets;
@@ -14,11 +17,27 @@ private:
 
 	int maxAgeDefault;
 	int maxAgeLongTerm;
+
+	boost::optional<std::string> certFilename;
+	boost::optional<std::string> certKeyFilename;
 	
 	void loadRoutes();
 	void loadCacheConfig();
+	void loadSslConfig();
 public:
-	Config();
+	explicit Config(const ArgvConfig& argvConfig);
+
+	const std::string& getSiteRoot() const {
+		return argvConfig.getSiteRoot();
+	}
+
+	const boost::optional<u_int16_t>& getHttpPort() const {
+		return argvConfig.getHttpPort();
+	}
+
+	const boost::optional<u_int16_t>& getHttpsPort() const {
+		return argvConfig.getHttpsPort();
+	}
 
 	const std::vector<Route>& getRoutes() const {
 		return routes;
@@ -46,5 +65,13 @@ public:
 
 	int getMaxAgeLongTerm() const {
 		return maxAgeLongTerm;
+	}
+
+	const boost::optional<std::string>& getCertFilename() const {
+		return certFilename;
+	}
+
+	const boost::optional<std::string>& getCertKeyFilename() const {
+		return certKeyFilename;
 	}
 };

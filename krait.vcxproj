@@ -128,6 +128,7 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="src\argvConfig.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
@@ -145,7 +146,6 @@
     <ClCompile Include="src\iteratorResult.cpp" />
     <ClCompile Include="src\logger.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\main_cmdr.cpp" />
     <ClCompile Include="src\main_tests.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\path_tests.cpp" />
@@ -171,6 +171,7 @@
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\argvConfig.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />

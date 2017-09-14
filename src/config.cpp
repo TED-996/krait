@@ -6,7 +6,8 @@
 
 namespace bp = boost::python;
 
-Config::Config() {
+Config::Config(const ArgvConfig& argvConfig)
+	: argvConfig(argvConfig) {
 	loadRoutes();
 	loadCacheConfig();
 }
@@ -38,4 +39,15 @@ void Config::loadCacheConfig() {
 
 	maxAgeDefault = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_default"));
 	maxAgeLongTerm = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_long_term"));
+}
+
+void Config::loadSslConfig() {
+	if (argvConfig.getHttpsPort() == boost::none) {
+		certFilename = boost::none;
+		certKeyFilename = boost::none;
+	}
+	else {
+		certFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_certificate_path");
+		certKeyFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_private_key_path");
+	}
 }

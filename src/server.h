@@ -56,7 +56,7 @@ class Server
 	void updateParentCaches();
 
 public:
-	Server(std::string serverRoot, int port);
+	explicit Server(ArgvConfig argvConfig);
 	~Server();
 
 	void runServer();

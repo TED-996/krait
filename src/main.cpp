@@ -88,7 +88,8 @@ int main(int argc, char* argv[]) {
 	SignalManager::registerSignal(std::make_unique<KillSignalHandler>());
 
 	try {
-		Server server(siteRoot, port);
+		ArgvConfig config(siteRoot, port, boost::none);
+		Server server(config);
 
 		server.runServer();
 	}

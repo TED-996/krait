@@ -6,8 +6,8 @@
 #include <arpa/inet.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include "server.h"
 #include <sys/poll.h>
+#include "except.h"
 
 
 std::string getOpenSslErrors();
@@ -27,15 +27,16 @@ void OpenSslServerSocket::OpenSslInitStruct::ensureInit() {
 	(void)raiiInstance;
 }
 
-OpenSslServerSocket::OpenSslServerSocket(int socket)
-	: socket(socket) {
+OpenSslServerSocket::OpenSslServerSocket(Config& config, int socket)
+	: socket(socket), config(config) {
 	listening = false;
 	ctx = nullptr;
 
 	OpenSslInitStruct::ensureInit();
 }
 
-OpenSslServerSocket::OpenSslServerSocket(OpenSslServerSocket&& other) noexcept {
+OpenSslServerSocket::OpenSslServerSocket(OpenSslServerSocket&& other) noexcept
+	: config(other.config) {
 	this->socket = other.socket;
 	this->listening = other.listening;
 	this->ctx = other.ctx;
@@ -83,7 +84,7 @@ void OpenSslServerSocket::initialize() {
 
 	ctx = SSL_CTX_new(method);
 	if (!ctx) {
-		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_new failed") <<  sslErrorInfo(getOpenSslErrors()));
+		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_new failed") << sslErrorInfo(getOpenSslErrors()));
 	}
 
 #ifdef SSL_CTX_set_ecdh_auto
@@ -91,15 +92,20 @@ void OpenSslServerSocket::initialize() {
 #endif
 
 	//TODO: configure cert + key
-	/*
-	if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
-		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_certificate_file failed") <<  sslErrorInfo(getOpenSslErrors()));
+	if (config.getCertFilename() == boost::none) {
+		BOOST_THROW_EXCEPTION(serverError()
+			<< stringInfo("OpenSslServerSocket initialied WITHOUT krait.config.ssl_certificate_path being configured."));
+	}
+	
+	if (SSL_CTX_use_certificate_file(ctx, config.getCertFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
+		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_certificate_file failed") << sslErrorInfo(getOpenSslErrors()));
 	}
 
-	if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
-		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") <<  sslErrorInfo(getOpenSslErrors()));
+	if (config.getCertKeyFilename() != boost::none) {
+		if (SSL_CTX_use_PrivateKey_file(ctx, config.getCertKeyFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
+			BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") << sslErrorInfo(getOpenSslErrors()));
+		}
 	}
-	*/
 }
 
 bool OpenSslServerSocket::listen(size_t backlog) {

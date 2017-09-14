@@ -3,6 +3,7 @@
 #if SSL_LIB == 1
 
 #include "IServerSocket.h"
+#include "config.h"
 #include <openssl/ssl.h>
 
 
@@ -23,9 +24,11 @@ class OpenSslServerSocket : public IServerSocket
 	int socket;
 	bool listening;
 
+	const Config& config;
 	SSL_CTX* ctx;
+
 public:
-	explicit OpenSslServerSocket(int socket);
+	OpenSslServerSocket(Config& config, int socket);
 	OpenSslServerSocket(OpenSslServerSocket&) = delete;
 	OpenSslServerSocket(OpenSslServerSocket&& other) noexcept;
 	~OpenSslServerSocket();
