@@ -6,7 +6,7 @@ inline static std::string formatStringRecurse(boost::format& message) {
 }
 
 template<typename TValue, typename... TArgs>
-std::string formatStringRecurse(boost::format& message, TValue&& arg, TArgs&& ... args) {
+inline std::string formatStringRecurse(boost::format& message, TValue&& arg, TArgs&& ... args) {
 	message % std::forward<TValue>(arg);
 	return formatStringRecurse(message, std::forward<TArgs>(args)...);
 }

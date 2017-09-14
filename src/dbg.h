@@ -17,10 +17,18 @@
 #include<iostream>
 
 #undef DBG
-#define DBG(message) std::cout << message << std::endl
+template<typename T>
+inline void DBG(const T& message) {
+	std::cout << message << std::endl;
+}
+
 #else
+
 #undef DBG
-#define DBG(message)
+template<typename T>
+inline void DBG(const T& message) {
+}
+
 #endif
 
 #endif
@@ -32,10 +40,18 @@
 #include "formatHelper.h"
 
 #undef DBG_FMT
-#define DBG_FMT(format, ...) std::cout << formatString(format, __VA_ARGS__) << std::endl
+template<typename... TArgs>
+inline void DBG_FMT(const char* fmt, TArgs&&... args) {
+	DBG(formatString(fmt, std::forward<TArgs>(args)...));
+}
+
 #else
+
 #undef DBG_FMT
-#define DBG_FMT(format, ...)
+template<typename... TArgs>
+inline void DBG_FMT(const char* fmt, TArgs&&... args) {
+}
+
 #endif
 
 #endif
