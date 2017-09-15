@@ -8,9 +8,8 @@
 #include <openssl/err.h>
 #include <sys/poll.h>
 #include "except.h"
-
-
-std::string getOpenSslErrors();
+#include "sslUtils.h"
+#include "openSslManagedSocket.h"
 
 
 OpenSslServerSocket::OpenSslInitStruct::OpenSslInitStruct() {
@@ -27,7 +26,7 @@ void OpenSslServerSocket::OpenSslInitStruct::ensureInit() {
 	(void)raiiInstance;
 }
 
-OpenSslServerSocket::OpenSslServerSocket(Config& config, int socket)
+OpenSslServerSocket::OpenSslServerSocket(const Config& config, int socket)
 	: socket(socket), config(config) {
 	listening = false;
 	ctx = nullptr;
@@ -84,26 +83,25 @@ void OpenSslServerSocket::initialize() {
 
 	ctx = SSL_CTX_new(method);
 	if (!ctx) {
-		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_new failed") << sslErrorInfo(getOpenSslErrors()));
+		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_new failed") << SslUtils::getSslErrorInfo());
 	}
 
 #ifdef SSL_CTX_set_ecdh_auto
 	SSL_CTX_set_ecdh_auto(ctx, 1);
 #endif
 
-	//TODO: configure cert + key
 	if (config.getCertFilename() == boost::none) {
 		BOOST_THROW_EXCEPTION(serverError()
 			<< stringInfo("OpenSslServerSocket initialied WITHOUT krait.config.ssl_certificate_path being configured."));
 	}
 	
 	if (SSL_CTX_use_certificate_file(ctx, config.getCertFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
-		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_certificate_file failed") << sslErrorInfo(getOpenSslErrors()));
+		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_certificate_file failed") << SslUtils::getSslErrorInfo());
 	}
 
 	if (config.getCertKeyFilename() != boost::none) {
 		if (SSL_CTX_use_PrivateKey_file(ctx, config.getCertKeyFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
-			BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") << sslErrorInfo(getOpenSslErrors()));
+			BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") << SslUtils::getSslErrorInfo());
 		}
 	}
 }
@@ -141,10 +139,9 @@ std::unique_ptr<IManagedSocket> OpenSslServerSocket::accept() {
 
 	int newSocket = ::accept(this->socket, nullptr, nullptr);
 	if (newSocket == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in OpenSslServerSocket"));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in OpenSslServerSocket") << errcodeInfoDef());
 	}
-	//return std::make_unique<OpenSslManagedSocket>(newSocket);
-	return nullptr;
+	return std::make_unique<OpenSslManagedSocket>(newSocket, ctx);
 }
 
 std::unique_ptr<IManagedSocket> OpenSslServerSocket::acceptTimeout(int timeoutMs) {
@@ -162,7 +159,7 @@ std::unique_ptr<IManagedSocket> OpenSslServerSocket::acceptTimeout(int timeoutMs
 
 	int pollResult = poll(&pfd, 1, timeoutMs);
 	if (pollResult < 0) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client."));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client.") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return nullptr;
@@ -174,7 +171,7 @@ std::unique_ptr<IManagedSocket> OpenSslServerSocket::acceptTimeout(int timeoutMs
 
 int getOpenSslErrorsCallback(const char* str, size_t len, void* u);
 
-std::string getOpenSslErrors() {
+std::string SslUtils::getSslErrors() {
 	std::string result;
 	
 	ERR_print_errors_cb(getOpenSslErrorsCallback, &result);
@@ -187,5 +184,35 @@ int getOpenSslErrorsCallback(const char* str, size_t len, void* u) {
 	result->append(str, len);
 
 	return 1;
+}
+
+
+OpenSslServerSocket OpenSslServerSocket::fromAnyOnPort(uint16_t port, const Config& config) {
+	struct sockaddr_in serverSockaddr;
+	memset(&serverSockaddr, 0, sizeof(serverSockaddr));
+
+	serverSockaddr.sin_family = AF_INET;
+	serverSockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serverSockaddr.sin_port = htons(port);
+
+	int sd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	if (sd == -1) {
+		BOOST_THROW_EXCEPTION(networkError()
+			<< stringInfo("getListenSocket: could not create socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+	}
+
+	const int reuseAddr = 1;
+	int enable = (int)reuseAddr;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
+		BOOST_THROW_EXCEPTION(networkError()
+			<< stringInfo("getListenSocket: coult not set reuseAddr in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+	}
+
+	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
+		BOOST_THROW_EXCEPTION(networkError()
+			<< stringInfo("getListenSocket: could not bind socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+	}
+
+	return OpenSslServerSocket(config, sd);
 }
 #endif

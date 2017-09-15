@@ -58,19 +58,19 @@ ServerSocket ServerSocket::fromAnyOnPort(u_int16_t port) {
 	int sd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sd == -1) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not create socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("socket: could not create socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
 	const int reuseAddr = 1;
 	int enable = (int)reuseAddr;
 	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: coult not set reuseAddr in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("setsockopt: coult not set reuseAddr in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
 	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
 		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not bind socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
+			<< stringInfo("bind: could not bind socket in ServerSocket::fromAnyOnPort.") << errcodeInfoDef());
 	}
 
 	return ServerSocket(sd);
@@ -112,7 +112,7 @@ std::unique_ptr<IManagedSocket> ServerSocket::accept() {
 
 	int newSocket = ::accept(this->socket, nullptr, nullptr);
 	if (newSocket == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in ServerSocket"));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in ServerSocket") << errcodeInfoDef());
 	}
 	return std::make_unique<ManagedSocket>(newSocket);
 }
@@ -132,7 +132,7 @@ std::unique_ptr<IManagedSocket> ServerSocket::acceptTimeout(int timeoutMs) {
 
 	int pollResult = poll(&pfd, 1, timeoutMs);
 	if (pollResult < 0) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client."));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client.") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return nullptr;

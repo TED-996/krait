@@ -28,7 +28,7 @@ class OpenSslServerSocket : public IServerSocket
 	SSL_CTX* ctx;
 
 public:
-	OpenSslServerSocket(Config& config, int socket);
+	OpenSslServerSocket(const Config& config, int socket);
 	OpenSslServerSocket(OpenSslServerSocket&) = delete;
 	OpenSslServerSocket(OpenSslServerSocket&& other) noexcept;
 	~OpenSslServerSocket();
@@ -41,6 +41,10 @@ public:
 	bool listen(size_t backlog) override;
 	std::unique_ptr<IManagedSocket> accept() override;
 	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs) override;
+
+	static OpenSslServerSocket fromAnyOnPort(uint16_t port, const Config& config);
 };
+
+typedef OpenSslServerSocket SslServerSocket;
 
 #endif
