@@ -134,6 +134,7 @@
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
+    <ClCompile Include="src\raiiAlarm.cpp" />
     <ClCompile Include="src\serverSocket.cpp" />
     <ClCompile Include="src\openSslServerSocket.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />
+    <ClInclude Include="src\raiiAlarm.h" />
     <ClInclude Include="src\sslServerSocket.h" />
     <ClInclude Include="src\sslUtils.h" />
     <ClInclude Include="src\serverSocket.h" />
