@@ -1,14 +1,24 @@
 ﻿#include "openSslManagedSocket.h"
+#include "raiiAlarm.h"
+
 
 #if SSL_LIB == 1
 
+#include <sys/poll.h>
 #include "except.h"
 #include "sslUtils.h"
+#include "logger.h"
+#include "dbgStopwatch.h"
+#include "v2HttpParser.h"
 
 
 OpenSslManagedSocket::OpenSslManagedSocket(int socket, SSL_CTX* ctx)
 	: ManagedSocket(socket), ssl(SSL_new(ctx)) {
 	SSL_set_fd(ssl, socket);
+}
+
+OpenSslManagedSocket::~OpenSslManagedSocket() {
+	SSL_free(ssl);
 }
 
 void OpenSslManagedSocket::initialize() {
@@ -17,16 +27,44 @@ void OpenSslManagedSocket::initialize() {
 	}
 }
 
-std::unique_ptr<Request> OpenSslManagedSocket::getRequestTimeout(int timeoutMs) {
-	"TODO: alarm & siginterrupt: https ://stackoverflow.com/questions/18548849/read-system-call-doesnt-fail-when-an-alarm-signal-is-received"
+int OpenSslManagedSocket::write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
+	int bytesWritten;
+	*shouldRetry = false;
+
+	if (timeoutSeconds == -1) {
+		bytesWritten = SSL_write(ssl, data, nBytes);
+	}
+	else {
+		RaiiAlarm alarm(timeoutSeconds, true);
+		bytesWritten = SSL_write(ssl, data, nBytes);
+
+		if (alarm.isFinished()) {
+			return -1;
+		}
+	}
+	*shouldRetry = (bytesWritten < 0 && BIO_should_retry(SSL_get_wbio(ssl)));
+	return bytesWritten;
 }
 
-int OpenSslManagedSocket::write(const void* data, size_t nBytes) {
-	return SSL_write(ssl, data, nBytes);
-}
+int OpenSslManagedSocket::read(void* destination, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
+	int bytesRead;
+	*shouldRetry = false;
 
-int OpenSslManagedSocket::read(void* destination, size_t nBytes) {
-	return SSL_read(ssl, destination, nBytes);
+	if (timeoutSeconds == -1) {
+		bytesRead = SSL_read(ssl, destination, nBytes);
+	}
+	else {
+		RaiiAlarm alarm(timeoutSeconds, true);
+		bytesRead = SSL_read(ssl, destination, nBytes);
+
+		if (alarm.isFinished()) {
+			return -1;
+		}
+	}
+	*shouldRetry = (bytesRead < 0 && BIO_should_retry(SSL_get_rbio(ssl)));
+	return bytesRead;
+	
+	//return SSL_read(ssl, destination, nBytes);
 }
 
 #endif

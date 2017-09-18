@@ -10,13 +10,13 @@ class OpenSslManagedSocket : public ManagedSocket
 private:
 	SSL* ssl;
 
-	int write(const void* data, size_t nBytes) override;
-	int read(void* destination, size_t nBytes) override;
+	int write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) override;
+	int read(void* destination, size_t nBytes, int timeoutSeconds, bool* shouldRetry) override;
 public:
 	OpenSslManagedSocket(int socket, SSL_CTX* ctx);
+	~OpenSslManagedSocket();
 
 	void initialize() override;
-	std::unique_ptr<Request> getRequestTimeout(int timeoutMs) override;
 };
 
 #endif
