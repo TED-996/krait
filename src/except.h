@@ -71,6 +71,10 @@ struct sslError : virtual rootException
 {
 };
 
+struct configError : virtual rootException
+{
+};
+
 template<typename... TArgs>
 stringInfo stringInfoFromFormat(const char* fmt, TArgs&& ... args) {
 	return stringInfo(formatString(fmt, std::forward<TArgs>(args)...));
