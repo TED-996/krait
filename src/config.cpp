@@ -49,5 +49,6 @@ void Config::loadSslConfig() {
 	else {
 		certFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_certificate_path");
 		certKeyFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_private_key_path");
+		certKeyPassphrase = PythonModule::config().getGlobalOptional<std::string>("ssl_key_passphrase");
 	}
 }

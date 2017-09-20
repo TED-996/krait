@@ -78,6 +78,14 @@ OpenSslServerSocket& OpenSslServerSocket::operator=(OpenSslServerSocket&& other)
 	return *this;
 }
 
+int sslPemPasswdCb(char *buf, int size, int rwflag, void *password)
+{
+	strncpy(buf, (const char *)(password), size);
+	buf[size - 1] = '\0';
+	return(strlen(buf));
+}
+
+
 void OpenSslServerSocket::initialize() {
 	const SSL_METHOD *method = SSLv23_server_method();
 
@@ -94,15 +102,27 @@ void OpenSslServerSocket::initialize() {
 		BOOST_THROW_EXCEPTION(serverError()
 			<< stringInfo("OpenSslServerSocket initialied WITHOUT krait.config.ssl_certificate_path being configured."));
 	}
+	if (config.getCertKeyFilename() == boost::none) {
+		BOOST_THROW_EXCEPTION(serverError()
+			<< stringInfo("OpenSSLServerSocket initialized WITHOUT krait.config.ssl_private_key_path being configured."));
+	}
 	
 	if (SSL_CTX_use_certificate_file(ctx, config.getCertFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
 		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_certificate_file failed") << SslUtils::getSslErrorInfo());
 	}
 
-	if (config.getCertKeyFilename() != boost::none) {
-		if (SSL_CTX_use_PrivateKey_file(ctx, config.getCertKeyFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
-			BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") << SslUtils::getSslErrorInfo());
-		}
+	if (config.getCertKeyPassphrase() != boost::none) {
+		SSL_CTX_set_default_passwd_cb(ctx, sslPemPasswdCb);
+		SSL_CTX_set_default_passwd_cb_userdata(ctx,
+			const_cast<void*>(
+				static_cast<const void*>(
+					config.getCertKeyPassphrase().get().c_str()
+			))
+		);
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(ctx, config.getCertKeyFilename().get().c_str(), SSL_FILETYPE_PEM) <= 0) {
+		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_CTX_use_PrivateKey_file failed") << SslUtils::getSslErrorInfo());
 	}
 }
 

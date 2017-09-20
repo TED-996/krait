@@ -16,7 +16,6 @@
 #include "rawPythonPymlParser.h"
 #include "signalManager.h"
 #include "config.h"
-#include "serverSocket.h"
 
 //#define DBG_DISABLE
 #include"dbg.h"
@@ -29,13 +28,14 @@ namespace ba = boost::algorithm;
 
 Server* Server::instance = nullptr;
 
+
 Server::Server(ArgvConfig argvConfig)
 	:
 	serverRoot(bf::canonical(bf::absolute(argvConfig.getSiteRoot()))),
 	pythonInitializer(argvConfig.getSiteRoot()),
 	config(argvConfig),
 	cacheController(config, argvConfig.getSiteRoot()),
-	networkManager(std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(argvConfig.getHttpPort().get()))),
+	networkManager(config.getHttpPort(), config.getHttpsPort(), config),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
@@ -62,7 +62,7 @@ Server::~Server() {
 
 void Server::runServer() {
 	try {
-		networkManager->listen();
+		networkManager.listen();
 	}
 	catch (const networkError&) {
 		Loggers::errLogger.log("Could not set server to listen.");
@@ -92,9 +92,9 @@ void Server::tryAcceptConnection() {
 	const int timeout = 100;
 	std::unique_ptr<IManagedSocket> newClient;
 	try {
-		newClient = networkManager->acceptTimeout(timeout);
+		newClient = networkManager.acceptTimeout(timeout);
 	}
-	catch (const networkError& err) {
+	catch (const networkError&) {
 		Loggers::errLogger.log("Could not get new client.");
 		exit(1);
 	}
@@ -111,7 +111,7 @@ void Server::tryAcceptConnection() {
 	if (pid == 0) {
 		SignalManager::clearPids();
 		clientSocket = std::move(newClient);
-		networkManager.reset(); // Destruct the network manager to close the socket.
+		networkManager.close(); // Close the listen sockets.
 
 		cacheRequestPipe.closeRead();
 

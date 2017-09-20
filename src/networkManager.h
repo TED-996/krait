@@ -15,5 +15,7 @@ class NetworkManager
 public:
 	NetworkManager(boost::optional<u_int16_t> httpPort, boost::optional<u_int16_t> httpsPort, const Config& config);
 
+	void listen(size_t backlog = -1);
 	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs);
+	void close();
 };

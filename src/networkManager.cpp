@@ -18,11 +18,13 @@ NetworkManager::NetworkManager(boost::optional<u_int16_t> httpPort, boost::optio
 	: httpSocket(nullptr), httpsSocket(nullptr){
 	if (httpPort != boost::none) {
 		httpSocket = std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(httpPort.get()));
+		httpSocket->initialize();
 		pollFds.push_back(getPollFd(httpSocket->getFd()));
 		sockets.emplace_back(httpSocket);
 	}
 	if (httpsPort != boost::none) {
 		httpsSocket = std::make_unique<SslServerSocket>(SslServerSocket::fromAnyOnPort(httpsPort.get(), config));
+		httpsSocket->initialize();
 		pollFds.push_back(getPollFd(httpsSocket->getFd()));
 		sockets.emplace_back(httpsSocket);
 	}
@@ -32,7 +34,21 @@ NetworkManager::NetworkManager(boost::optional<u_int16_t> httpPort, boost::optio
 	}
 }
 
+
+void NetworkManager::listen(size_t backlog) {
+	if (httpSocket != nullptr) {
+		httpSocket->listen(backlog);
+	}
+	if (httpsSocket != nullptr) {
+		httpsSocket->listen(backlog);
+	}
+}
+
 std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
+	if (sockets.size() == 0) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager accept called without any open sockets."));
+	}
+
 	for (auto& it : pollFds) {
 		it.revents = 0;
 	}
@@ -52,4 +68,12 @@ std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
 	}
 
 	BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager poll returned existing clients, but no accept() was found."));
+}
+
+void NetworkManager::close() {
+	httpSocket.reset();
+	httpsSocket.reset();
+
+	pollFds.clear();
+	sockets.clear();
 }

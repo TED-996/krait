@@ -48,8 +48,12 @@ def build():
     server_setup.build()
 
 
-def start(port):
-    server_setup.port = int(port)
+def start(port_spec):
+    http_port_str, _, https_port_str = port_spec.partition("/")
+
+    server_setup.http_port = None if not http_port_str else int(http_port_str)
+    server_setup.https_port = None if not https_port_str else int(https_port_str)
+
     server_setup.start_demoserver()
 
 

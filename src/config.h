@@ -20,6 +20,7 @@ private:
 
 	boost::optional<std::string> certFilename;
 	boost::optional<std::string> certKeyFilename;
+	boost::optional<std::string> certKeyPassphrase;
 	
 	void loadRoutes();
 	void loadCacheConfig();
@@ -73,5 +74,9 @@ public:
 
 	const boost::optional<std::string>& getCertKeyFilename() const {
 		return certKeyFilename;
+	}
+
+	const boost::optional<std::string>& getCertKeyPassphrase() const {
+		return certKeyPassphrase;
 	}
 };

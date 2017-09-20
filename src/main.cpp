@@ -15,12 +15,13 @@
 namespace bpo = boost::program_options;
 
 void startSetLoggers(std::string outFilename, std::string errFilename);
+bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* httpPort, boost::optional<u_int16_t>* httpsPort);
 
 
 int main(int argc, char* argv[]) {
 	std::string stdoutName;
 	std::string stderrName;
-	int port;
+	std::string portSpecifier;
 	std::string siteRoot;
 
 	DBG("Krait debug messaging is active.");
@@ -31,9 +32,12 @@ int main(int argc, char* argv[]) {
 
 	bpo::options_description mainDesc("Krait options");
 	mainDesc.add_options()
-			("port,p", bpo::value<int>(&port)->required(), "Set port for server to run on")
-			("stdout", bpo::value<std::string>(&stdoutName)->default_value("stdout"), "output logs (default is \"stdout\" for standard output)")
-			("stderr", bpo::value<std::string>(&stderrName)->default_value("stderr"), "error logs (default is \"stderr\" for standard error output)");
+			("port,p", bpo::value<std::string>(&portSpecifier)->required(),
+				"Set ports for server to run on, as <http>/<https> (for example 80/443); one of them may be missing.")
+			("stdout", bpo::value<std::string>(&stdoutName)->default_value("stdout"),
+				"output logs (default is \"stdout\" for standard output)")
+			("stderr", bpo::value<std::string>(&stderrName)->default_value("stderr"),
+				"error logs (default is \"stderr\" for standard error output)");
 
 	bpo::options_description hiddenDesc("Hidden options");
 	hiddenDesc.add_options()
@@ -56,24 +60,25 @@ int main(int argc, char* argv[]) {
 
 		if (parsedArgs.count("help") != 0) {
 			std::cout << visibleOptions << '\n';
-			return 0;
+			exit(0);
 		}
 
 		bpo::notify(parsedArgs);
 	}
 	catch (boost::program_options::required_option& e) {
-		std::cerr << "Invalid arguments: missing option " << e.get_option_name() << std::endl << "Run 'krait --help' for more information" << std::endl;
-		return 10;
+		std::cerr << "Invalid arguments: missing option " << e.get_option_name()
+			<< std::endl << "Run 'krait --help' for more information" << std::endl;
+		exit(10);
 	}
 	catch (boost::program_options::error& e) {
 		std::cerr << "Invalid arguments: " << e.what() << std::endl << "Run 'krait --help' for more information" << std::endl;
-		return 10;
+		exit(10);
 	}
 
 	if ((stdoutName != "stdout" ? 1 : 0) + (stderrName != "stderr" ? 1 : 0 == 1)) {
-		std::cerr << "Invalid arguments: specifying options stdout or stderr to non-default values requires both to be specified." << std::endl <<
-				"Run 'krait --help' for more information" << std::endl;
-		return 10;
+		std::cerr << "Invalid arguments: specifying options stdout or stderr to non-default values requires both to be specified."
+			<< std::endl << "Run 'krait --help' for more information" << std::endl;
+		exit(10);
 	}
 
 	if (stdoutName != "stdout" && stderrName != "stderr") {
@@ -87,8 +92,17 @@ int main(int argc, char* argv[]) {
 	SignalManager::registerSignal(std::make_unique<StopSignalHandler>());
 	SignalManager::registerSignal(std::make_unique<KillSignalHandler>());
 
+	boost::optional<u_int16_t> httpPort;
+	boost::optional<u_int16_t> httpsPort;
+
+	if (!splitPorts(portSpecifier, &httpPort, &httpsPort)) {
+		std::cerr << "Invalid port specifier. Format is <http>/<https>, (for example 80/443); one of them may be missing. "
+			"These must be valid ports.";
+		exit(10);
+	}
+
 	try {
-		ArgvConfig config(siteRoot, port, boost::none);
+		ArgvConfig config(siteRoot, httpPort, boost::none);
 		Server server(config);
 
 		server.runServer();
@@ -122,7 +136,7 @@ void startSetLoggers(std::string outFilename, std::string errFilename) {
 	pid_t pid = fork();
 
 	if (pid == -1) {
-		std::cerr << "Error fork()ing for the logger\n";
+		std::cerr << "Error foring for the logger\n";
 		exit(10);
 	}
 
@@ -144,4 +158,49 @@ void startSetLoggers(std::string outFilename, std::string errFilename) {
 
 	close(infoPipe[1]);
 	close(errPipe[1]);
+}
+
+bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* httpPort, boost::optional<u_int16_t>* httpsPort) {
+	const char separator = '/';
+	size_t sepIdx = portSpecifier.find(separator);
+	if (sepIdx == -1) {
+		return false;
+	}
+
+	if (separator == 0) {
+		*httpPort = boost::none;
+	}
+	else {
+		size_t idx = 0;
+		auto result = std::stoul(portSpecifier, &idx);
+
+		//The number should extend all the way to the separator.
+		if (idx != sepIdx) {
+			return false;
+		}
+		//The number should fit inside a u_int16_t
+		if (result < 0 || result > (1 << 16) - 1) {
+			return false;
+		}
+		*httpPort = result;
+	}
+	if (separator == portSpecifier.length() - 1) {
+		*httpsPort = boost::none;
+	}
+	else {
+		size_t idx = separator + 1;
+		auto result = std::stoi(portSpecifier, &idx);
+		
+		//The number should extend all the way to the end.
+		if (idx != portSpecifier.size()) {
+			return false;
+		}
+		//The number should fit inside a u_int16_t
+		if (result < 0 || result >(1 << 16) - 1) {
+			return false;
+		}
+		*httpsPort = result;
+	}
+
+	return true;
 }

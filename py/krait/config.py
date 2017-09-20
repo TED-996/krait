@@ -136,14 +136,24 @@ This corresponds to the Max-Age of the HTTP responses, for long-term, public or 
 ssl_certificate_path = None
 """
 str, optional:
-The path to the certificate to be used in SSL connections. Must be in PEM format. If :obj:`None`, SSL is disabled.
+The path to the certificate to be used in SSL connections. Must be in PEM format.
+If :obj:`None`, SSL will not work.
 """
 
 ssl_private_key_path = None
 """
 str, optional:
 The path to the private key to be used to decrypt the SSL certificate above. Must be in PEM format.
-If :obj:`None`, the certificate (if it exists) is assumed to be unprotected by a private key.
+If :obj:`None`, SSL will not work.
+"""
+
+ssl_key_passphrase = None
+"""
+str, optional:
+The passphrase to the SSL certificate's private key. SHOULD NOT be hardcoded, but read from a file
+(not in source control) instead.
+If :obj:`None`, the private key is assumed to not be protected by a passphrase.
+SSL will not work if the key is, however, protected.
 """
 
 class ConfigError(StandardError):

@@ -11,7 +11,7 @@
 #include "config.h"
 #include "responseBuilder.h"
 #include "IManagedSocket.h"
-#include "IServerSocket.h"
+#include "networkManager.h"
 
 
 class Server
@@ -28,7 +28,7 @@ class Server
 	Config config;
 	CacheController cacheController;
 
-	std::unique_ptr<IServerSocket> networkManager;
+	NetworkManager networkManager;
 	std::unique_ptr<IManagedSocket> clientSocket;
 
 	bool stdinDisconnected;
