@@ -20,13 +20,13 @@ NetworkManager::NetworkManager(boost::optional<u_int16_t> httpPort, boost::optio
 		httpSocket = std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(httpPort.get()));
 		httpSocket->initialize();
 		pollFds.push_back(getPollFd(httpSocket->getFd()));
-		sockets.emplace_back(httpSocket);
+		sockets.push_back(std::ref(*httpSocket));
 	}
 	if (httpsPort != boost::none) {
 		httpsSocket = std::make_unique<SslServerSocket>(SslServerSocket::fromAnyOnPort(httpsPort.get(), config));
 		httpsSocket->initialize();
 		pollFds.push_back(getPollFd(httpsSocket->getFd()));
-		sockets.emplace_back(httpsSocket);
+		sockets.push_back(std::ref(*httpsSocket));
 	}
 
 	if (httpPort == boost::none && httpsPort == boost::none) {
@@ -63,7 +63,7 @@ std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
 
 	for (int i = 0; i < pollFds.size(); i++) {
 		if (pollFds[i].revents == POLLIN) {
-			return sockets[i]->accept();
+			return sockets[i].get().accept();
 		}
 	}
 

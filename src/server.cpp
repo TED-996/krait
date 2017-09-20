@@ -285,8 +285,8 @@ std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& f
 
 void Server::onServerCacheMiss(const std::string& filename) {
 	if (interpretCacheRequest) {
-		cacheRequestPipe.pipeWrite(filename);
 		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
+		cacheRequestPipe.pipeWrite(filename);
 	}
 }
 

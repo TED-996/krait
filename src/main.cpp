@@ -163,11 +163,12 @@ void startSetLoggers(std::string outFilename, std::string errFilename) {
 bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* httpPort, boost::optional<u_int16_t>* httpsPort) {
 	const char separator = '/';
 	size_t sepIdx = portSpecifier.find(separator);
+
 	if (sepIdx == -1) {
 		return false;
 	}
 
-	if (separator == 0) {
+	if (sepIdx == 0) {
 		*httpPort = boost::none;
 	}
 	else {
@@ -179,24 +180,25 @@ bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* ht
 			return false;
 		}
 		//The number should fit inside a u_int16_t
-		if (result < 0 || result > (1 << 16) - 1) {
+		if (result > (1 << 16) - 1) {
 			return false;
 		}
 		*httpPort = result;
 	}
-	if (separator == portSpecifier.length() - 1) {
+
+	if (sepIdx == portSpecifier.length() - 1) {
 		*httpsPort = boost::none;
 	}
 	else {
 		size_t idx = separator + 1;
-		auto result = std::stoi(portSpecifier, &idx);
+		auto result = std::stoul(portSpecifier, &idx);
 		
 		//The number should extend all the way to the end.
 		if (idx != portSpecifier.size()) {
 			return false;
 		}
 		//The number should fit inside a u_int16_t
-		if (result < 0 || result >(1 << 16) - 1) {
+		if (result >(1 << 16) - 1) {
 			return false;
 		}
 		*httpsPort = result;
