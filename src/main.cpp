@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	try {
-		ArgvConfig config(siteRoot, httpPort, boost::none);
+		ArgvConfig config(siteRoot, httpPort, httpsPort);
 		Server server(config);
 
 		server.runServer();
@@ -164,9 +164,10 @@ bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* ht
 	const char separator = '/';
 	size_t sepIdx = portSpecifier.find(separator);
 
-	if (sepIdx == -1) {
+	if (sepIdx == std::string::npos) {
 		return false;
 	}
+	DBG_FMT("sepIdx %1% in %2%", sepIdx, portSpecifier);
 
 	if (sepIdx == 0) {
 		*httpPort = boost::none;
@@ -190,15 +191,15 @@ bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* ht
 		*httpsPort = boost::none;
 	}
 	else {
-		size_t idx = separator + 1;
-		auto result = std::stoul(portSpecifier, &idx);
+		size_t idx = sepIdx + 1;
+		auto result = std::stoul(portSpecifier.substr(sepIdx + 1), &idx);
 		
 		//The number should extend all the way to the end.
-		if (idx != portSpecifier.size()) {
+		if (idx != portSpecifier.size() - (sepIdx + 1)) {
 			return false;
 		}
 		//The number should fit inside a u_int16_t
-		if (result >(1 << 16) - 1) {
+		if (result > (1 << 16) - 1) {
 			return false;
 		}
 		*httpsPort = result;

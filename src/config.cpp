@@ -10,6 +10,7 @@ Config::Config(const ArgvConfig& argvConfig)
 	: argvConfig(argvConfig) {
 	loadRoutes();
 	loadCacheConfig();
+	loadSslConfig();
 }
 
 void Config::loadRoutes() {
