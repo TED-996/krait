@@ -50,7 +50,13 @@ Server::Server(ArgvConfig argvConfig)
 	}
 	Server::instance = this;
 
-	Loggers::logInfo(formatString("Server initialized on port %1%", argvConfig.getHttpPort().get()));
+	if (argvConfig.getHttpPort() != boost::none) {
+		Loggers::logInfo(formatString("HTTP Server initialized on port %1%", argvConfig.getHttpPort().get()));
+	}
+	if (argvConfig.getHttpsPort() != boost::none) {
+		Loggers::logInfo(formatString("HTTPS Server initialized on port %1%", argvConfig.getHttpsPort().get()));
+	}
+
 
 	stdinDisconnected = fdClosed(0);
 	
@@ -95,7 +101,11 @@ void Server::tryAcceptConnection() {
 		newClient = networkManager.acceptTimeout(timeout);
 	}
 	catch (const networkError&) {
-		Loggers::errLogger.log("Could not get new client.");
+		Loggers::errLogger.log("Could not get new client: network error.");
+		exit(1);
+	}
+	catch (const sslError&) {
+		Loggers::errLogger.log("Could not get new client: SSL error.");
 		exit(1);
 	}
 
@@ -134,6 +144,7 @@ void Server::serveClientStart() {
 	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
 	keepAliveTimeoutSec = maxKeepAliveSec;
+	clientSocket->initialize();
 
 	try {
 		while (!shutdownRequested) {

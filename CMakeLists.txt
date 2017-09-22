@@ -13,6 +13,10 @@ if(NOT DEFINED DO_PROFILE_BUILD)
     set(DO_PROFILE_BUILD OFF)
 endif()
 
+if (NOT DEFINED CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-fno-strict-aliasing -Wformat -Werror=format-security -fwrapv -Wall -g -O0")
 SET(CMAKE_CXX_FLAGS_RELEASE "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -O3 -s -Wall")
