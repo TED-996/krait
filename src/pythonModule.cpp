@@ -278,6 +278,14 @@ void PythonModule::setGlobalRequest(const std::string& name, const Request& valu
 	}
 }
 
+void PythonModule::setGlobalNone(const std::string& name) {
+	setGlobal(name, bp::object());
+}
+
+void PythonModule::setGlobalEmptyList(const std::string& name) {
+	setGlobal(name, bp::list());
+}
+
 std::string PythonModule::getGlobalStr(const std::string& name) {
 	DBG("in pythonGetGlobalStr()");
 	try {

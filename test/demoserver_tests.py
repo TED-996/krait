@@ -52,12 +52,12 @@ class DemoserverTests(unittest.TestCase):
         try:
             self.driver.get(url)
         except WebDriverException as ex:
-            self.fail("Could not get demoserver page {}.\nError: {}".format(local_url, ex))
+            self.fail("Could not get demoserver page {}.\nError: {}".format(url, ex))
 
     def _test_index(self, host):
         self._driver_get(host, "/")
 
-        self._check_header("/")
+        self._check_header("/", host)
         self.assertIn("Welcome to Krait!", self.driver.page_source, "`Welcome to Krait!` missing.")
         self.assertIn("Why choose Krait?", self.driver.page_source, "`Why choose Krait?` missing.")
 
@@ -74,7 +74,7 @@ class DemoserverTests(unittest.TestCase):
     def _test_db(self, host):
         self._driver_get(host, "/db")
 
-        self._check_header("/db")
+        self._check_header("/db", host)
 
         self.assertIn("access the DB", self.driver.page_source, "`access the DB` missing.")
         self.assertIn("Leave your own message!", self.driver.page_source, '`Leave your own message!` missing.')
@@ -162,7 +162,7 @@ class DemoserverTests(unittest.TestCase):
         except NoSuchElementException:
             self.fail("Missing element looking for newly-inserted comment.")
 
-    def _check_header(self, active_href):
+    def _check_header(self, active_href, host):
         try:
             header = self.driver.find_element_by_class_name("header")
         except NoSuchElementException:
@@ -201,7 +201,7 @@ class DemoserverTests(unittest.TestCase):
                               "Header link: Expected exactly one <a> in <li>, got {}".format(len(a_in_li)))
             self.assertEquals(a_in_li[0], a_item,
                               "Header link: Wrong <a> in <li>.")
-            self.assertEquals(a_item.get_attribute("href"), self.host + link,
+            self.assertEquals(a_item.get_attribute("href"), host + link,
                               "Header link: href different from expected value.")
             self.assertEquals(a_item.text, name,
                               "Header link: text different from expected value.")
@@ -210,9 +210,9 @@ class DemoserverTests(unittest.TestCase):
                               "Header link: button expected not to be active and was active.")
 
     def _test_http(self, host):
-        self._driver_get("/http", host)
+        self._driver_get(host, "/http")
 
-        self._check_header("/http")
+        self._check_header("/http", host)
 
         self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
         self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
@@ -221,7 +221,7 @@ class DemoserverTests(unittest.TestCase):
                       "GET line missing from HTTP request readback.")
 
         self._driver_get(host, "/http%2Btest%25%20%20%25")
-        self._check_header("/http")
+        self._check_header("/http", host)
         self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
         self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
                       "`This is an approximation of your HTTP request:` missing.")
@@ -231,7 +231,7 @@ class DemoserverTests(unittest.TestCase):
     def _test_ws(self, host):
         self._driver_get(host, "/ws")
 
-        self._check_header("/ws")
+        self._check_header("/ws", host)
 
         start_time = time.clock()
         timeout = 20.0  # in seconds

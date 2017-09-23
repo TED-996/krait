@@ -33,6 +33,7 @@ Reference
 import threading
 import krait
 
+
 class WebsocketsRequest(object):
     """
     Represents a Websockets request.

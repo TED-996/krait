@@ -136,6 +136,7 @@ void Server::tryAcceptConnection() {
 		}
 		exit(255); //The function above should call exit()!
 	}
+	newClient->detachContext();
 	newClient.reset(); // Destruct the new client to close the socket.
 
 	SignalManager::addPid((int)pid);
@@ -169,63 +170,37 @@ void Server::serveClientStart() {
 			}
 
 			/*
-			If-Modified-Since unsuported.
+			//If-Modified-Since unsuported.
 			if (request.headerExists("If-Modified-Since")) {
-				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%. Unsupported.", *request.getHeader("If-Modified-Since")));
+				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%. Unsupported.",
+					*request.getHeader("If-Modified-Since")));
 			}
 			*/
 
 			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
 			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket") && !shutdownRequested;
 
-			pid_t childPid = fork();
-			if (childPid == 0) {
-				SignalManager::clearPids();
-
-				try {
-					clientSocket->atFork();
-
-					if (request.isUpgrade("websocket")) {
-						serveRequestWebsockets(request);
-					}
-					else {
-						serveRequest(request);
-					}
-
-					Loggers::logInfo("Serving a request finished.");
-				}
-				catch (networkError&) {
-					Loggers::logErr("Could not respond to client request (network error - disconnected?).");
-					clientSocket.reset();
-					exit(1);
-				}
-				catch (pythonError& err) {
-					Loggers::logErr(formatString("Python error:\n%1%", err.what()));
-					clientSocket.reset();
-					exit(1);
-				}
-				catch (std::exception& err) {
-					Loggers::logErr(formatString("Error serving request:\n%1%", err.what()));
-					clientSocket.reset();
-					exit(1);
-				}
-				
-				clientSocket.reset();
-				exit(0);
+			if (request.isUpgrade("websocket")) {
+				serveRequestWebsockets(request);
 			}
 			else {
-				SignalManager::addPid((int)childPid);
-				SignalManager::waitChild((int)childPid);
-				Loggers::logInfo("Rejoined with single request server.");
+				serveRequest(request);
 			}
+
+			Loggers::logInfo("Serving a request finished.");
 
 			if (!keepAlive) {
 				break;
 			}
 		}
 	}
-	catch (networkError&) {
+	catch (networkError& ex) {
 		Loggers::logErr("Client disconnected.");
+		DBG_FMT("Network erorr:\n%1%", ex.what());
+	}
+	catch (sslError& ex) {
+		Loggers::logErr("Client SSL error.");
+		DBG_FMT("SSL error:\n%1%", ex.what());
 	}
 	catch (rootException& ex) {
 		if (isHead) {
@@ -234,9 +209,11 @@ void Server::serveClientStart() {
 		else {
 			clientSocket->respondWithObject(Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
-		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
+		Loggers::logErr(formatString("Error serving client:\n%1%", ex.what()));
 	}
-
+	catch (std::exception& ex) {
+		Loggers::logErr(formatString("Unexpected error!\n%1%", ex.what()));
+	}
 
 	clientSocket.reset();
 	exit(0);
