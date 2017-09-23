@@ -16,6 +16,9 @@ public:
 	virtual int getFd() = 0;
 
 	virtual void initialize() = 0;
+	virtual void atFork() = 0;
+	virtual void detachContext() = 0;
+
 	virtual std::unique_ptr<Request> getRequest() = 0;
 	virtual std::unique_ptr<Request> getRequestTimeout(int timeoutMs) = 0;
 

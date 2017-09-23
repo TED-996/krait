@@ -17,6 +17,8 @@ public:
 	~OpenSslManagedSocket();
 
 	void initialize() override;
+	void atFork() override;
+	void detachContext() override;
 };
 
 #endif

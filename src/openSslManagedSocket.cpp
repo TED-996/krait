@@ -5,6 +5,7 @@
 #if SSL_LIB == 1
 
 #include <sys/poll.h>
+#include <openssl/rand.h>
 #include "except.h"
 #include "sslUtils.h"
 #include "logger.h"
@@ -18,16 +19,38 @@ OpenSslManagedSocket::OpenSslManagedSocket(int socket, SSL_CTX* ctx)
 }
 
 OpenSslManagedSocket::~OpenSslManagedSocket() {
-	SSL_free(ssl);
+	if (ssl != nullptr) {
+		SSL_free(ssl);
+	}
 }
 
 void OpenSslManagedSocket::initialize() {
+	if (ssl == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("OpenSslManagedSocket::initialize: Managed socket used after context detach."));
+	}
+	
 	if (SSL_accept(ssl) <= 0) {
 		BOOST_THROW_EXCEPTION(sslError() << stringInfo("SSL_accept: performing SSL handshake") << SslUtils::getSslErrorInfo());
 	}
 }
 
+void OpenSslManagedSocket::atFork() {
+	if (ssl == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("OpenSslManagedSocket::atFork: Managed socket used after context detach."));
+	}
+
+	RAND_poll();
+}
+
+void OpenSslManagedSocket::detachContext() {
+	ssl = nullptr;
+}
+
 int OpenSslManagedSocket::write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
+	if (ssl == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("OpenSslManagedSocket::write: Managed socket used after context detach."));
+	}
+
 	int bytesWritten;
 	*shouldRetry = false;
 
@@ -47,6 +70,10 @@ int OpenSslManagedSocket::write(const void* data, size_t nBytes, int timeoutSeco
 }
 
 int OpenSslManagedSocket::read(void* destination, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
+	if (ssl == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("OpenSslManagedSocket::read: Managed socket used after context detach."));
+	}
+
 	int bytesRead;
 	*shouldRetry = false;
 

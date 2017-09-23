@@ -28,6 +28,9 @@ public:
 	}
 
 	void initialize() override;
+	void atFork() override;
+	void detachContext() override;
+
 	std::unique_ptr<Request> getRequest() override;
 	std::unique_ptr<Request> getRequestTimeout(int timeoutMs) override;
 	WebsocketsFrame getWebsocketsFrame() override;

@@ -119,13 +119,21 @@ void Server::tryAcceptConnection() {
 			<< stringInfo("fork(): creating process to serve socket. Is the system out of resources?") << errcodeInfoDef());
 	}
 	if (pid == 0) {
-		SignalManager::clearPids();
-		clientSocket = std::move(newClient);
-		networkManager.close(); // Close the listen sockets.
+		try {
+			SignalManager::clearPids();
+			clientSocket = std::move(newClient);
+			clientSocket->atFork();
 
-		cacheRequestPipe.closeRead();
+			//networkManager.detachContext();
+			networkManager.close(); // Close the listen sockets.
 
-		serveClientStart();
+			cacheRequestPipe.closeRead();
+
+			serveClientStart();
+		}
+		catch(const std::exception& ex) {
+			Loggers::logErr(formatString("Exception serving client: %1%", ex.what()));
+		}
 		exit(255); //The function above should call exit()!
 	}
 	newClient.reset(); // Destruct the new client to close the socket.
@@ -173,7 +181,10 @@ void Server::serveClientStart() {
 			pid_t childPid = fork();
 			if (childPid == 0) {
 				SignalManager::clearPids();
+
 				try {
+					clientSocket->atFork();
+
 					if (request.isUpgrade("websocket")) {
 						serveRequestWebsockets(request);
 					}
@@ -184,12 +195,17 @@ void Server::serveClientStart() {
 					Loggers::logInfo("Serving a request finished.");
 				}
 				catch (networkError&) {
-					Loggers::errLogger.log("Could not respond to client request (network error - disconnected?).");
+					Loggers::logErr("Could not respond to client request (network error - disconnected?).");
 					clientSocket.reset();
 					exit(1);
 				}
 				catch (pythonError& err) {
-					Loggers::errLogger.log(formatString("Python error:\n%1%", err.what()));
+					Loggers::logErr(formatString("Python error:\n%1%", err.what()));
+					clientSocket.reset();
+					exit(1);
+				}
+				catch (std::exception& err) {
+					Loggers::logErr(formatString("Error serving request:\n%1%", err.what()));
 					clientSocket.reset();
 					exit(1);
 				}

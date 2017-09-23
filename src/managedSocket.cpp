@@ -38,6 +38,11 @@ ManagedSocket::~ManagedSocket() {
 void ManagedSocket::initialize() {
 }
 
+void ManagedSocket::atFork() {
+}
+
+void ManagedSocket::detachContext() {
+}
 
 int ManagedSocket::write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
 	int bytesWritten;
