@@ -35,7 +35,7 @@
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
     <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
     <LinuxProjectType>{FC1A4D80-50E9-41DA-9192-61C0DBAA00D2}</LinuxProjectType>
-    <ProjectName>l</ProjectName>
+    <ProjectName>krait</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
@@ -82,8 +82,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -101,8 +100,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -120,8 +118,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -131,12 +128,18 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="src\argvConfig.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
+    <ClCompile Include="src\openSslManagedSocket.cpp" />
+    <ClCompile Include="src\raiiAlarm.cpp" />
+    <ClCompile Include="src\serverSocket.cpp" />
+    <ClCompile Include="src\openSslServerSocket.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
+    <ClCompile Include="src\pythonInitializer.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
     <ClCompile Include="src\signalHandler.cpp" />
     <ClCompile Include="src\cacheController.cpp" />
@@ -146,7 +149,6 @@
     <ClCompile Include="src\iteratorResult.cpp" />
     <ClCompile Include="src\logger.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\main_cmdr.cpp" />
     <ClCompile Include="src\main_tests.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\path_tests.cpp" />
@@ -172,15 +174,23 @@
     <ClCompile Include="src\websocketsServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\argvConfig.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
-    <ClInclude Include="src\INetworkManager.h" />
+    <ClInclude Include="src\IServerSocket.h" />
     <ClInclude Include="src\managedSocket.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
+    <ClInclude Include="src\openSslManagedSocket.h" />
+    <ClInclude Include="src\raiiAlarm.h" />
+    <ClInclude Include="src\sslServerSocket.h" />
+    <ClInclude Include="src\sslUtils.h" />
+    <ClInclude Include="src\serverSocket.h" />
+    <ClInclude Include="src\openSslServerSocket.h" />
     <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
+    <ClInclude Include="src\pythonInitializer.h" />
     <ClInclude Include="src\responseBuilder.h" />
     <ClInclude Include="src\signalHandler.h" />
     <ClInclude Include="src\cacheController.h" />

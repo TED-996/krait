@@ -73,6 +73,7 @@ void PythonModule::finishPython() {
 
 			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("finishPython()"));
 		}
+		pythonInitialized = false;
 	}
 }
 
@@ -275,6 +276,14 @@ void PythonModule::setGlobalRequest(const std::string& name, const Request& valu
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("setGlobalRequest(%1%, <Request>)", name)));
 	}
+}
+
+void PythonModule::setGlobalNone(const std::string& name) {
+	setGlobal(name, bp::object());
+}
+
+void PythonModule::setGlobalEmptyList(const std::string& name) {
+	setGlobal(name, bp::list());
 }
 
 std::string PythonModule::getGlobalStr(const std::string& name) {

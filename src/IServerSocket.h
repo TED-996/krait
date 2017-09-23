@@ -2,10 +2,10 @@
 #include <memory>
 #include "IManagedSocket.h"
 
-class INetworkManager
+class IServerSocket
 {
 public:
-	virtual ~INetworkManager() = default;
+	virtual ~IServerSocket() = default;
 	
 	virtual void initialize() = 0;
 

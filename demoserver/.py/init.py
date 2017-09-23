@@ -41,6 +41,16 @@ config.cache_long_term = [".*\.js", ".*\.css"]
 config.cache_max_age_default = 6 * 60  # 6 minutes
 config.cache_max_age_long_term = 24 * 60 * 60  # 24 hours
 
+# Finally, configure SSL
+
+# Set SSL certificate
+config.ssl_certificate_path = os.path.join(krait.site_root, ".private", "ssl", "cert.pem")
+# Set SSL private key
+config.ssl_private_key_path = os.path.join(krait.site_root, ".private", "ssl", "key.pem")
+# Then the SSL key passphrase. We read this from a file, as this file (init.py) may be committed.
+with open(os.path.join(krait.site_root, ".private", "ssl", "pk_passphrase")) as f:
+    config.ssl_key_passphrase = f.read()
+
 
 # ==============================================
 # Non-standard configuration (globals & cleanup)

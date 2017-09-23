@@ -1,127 +1,79 @@
-﻿#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <arpa/inet.h>
-#include "networkManager.h"
+﻿#include "networkManager.h"
+#include "serverSocket.h"
+#include "openSslServerSocket.h"
 #include "except.h"
-#include "managedSocket.h"
-
-#define DBG_DISABLE
-#include"dbg.h"
 
 
-NetworkManager::NetworkManager(int socket){
-	this->socket = socket;
-	this->listening = false;
+struct pollfd getPollFd(int socket) {
+	struct pollfd result;
+	result.fd = socket;
+	result.events = POLLIN;
+	result.revents = 0;
+
+	return result;
 }
 
 
-NetworkManager::NetworkManager(NetworkManager&& source) noexcept {
-	this->socket = source.socket;
-	this->listening = source.listening;
+NetworkManager::NetworkManager(boost::optional<u_int16_t> httpPort, boost::optional<u_int16_t> httpsPort, const Config& config) 
+	: httpSocket(nullptr), httpsSocket(nullptr){
+	if (httpPort != boost::none) {
+		httpSocket = std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(httpPort.get()));
+		httpSocket->initialize();
+		pollFds.push_back(getPollFd(httpSocket->getFd()));
+		sockets.push_back(std::ref(*httpSocket));
+	}
+	if (httpsPort != boost::none) {
+		httpsSocket = std::make_unique<SslServerSocket>(SslServerSocket::fromAnyOnPort(httpsPort.get(), config));
+		httpsSocket->initialize();
+		pollFds.push_back(getPollFd(httpsSocket->getFd()));
+		sockets.push_back(std::ref(*httpsSocket));
+	}
 
-	source.socket = InvalidSocket;
-	source.listening = false;
-}
-
-NetworkManager::~NetworkManager() {
-	if (this->socket != InvalidSocket) {
-		::close(socket);
-		this->socket = InvalidSocket;
+	if (httpPort == boost::none && httpsPort == boost::none) {
+		BOOST_THROW_EXCEPTION(configError() << stringInfo("No HTTP/HTTPS ports specified, please set at least one."));
 	}
 }
 
 
-NetworkManager NetworkManager::fromAnyOnPort(short port) {
-	struct sockaddr_in serverSockaddr;
-	memset(&serverSockaddr, 0, sizeof(serverSockaddr));
-
-	serverSockaddr.sin_family = AF_INET;
-	serverSockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serverSockaddr.sin_port = htons(port);
-
-	int sd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-	if (sd == -1) {
-		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not create socket in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
+void NetworkManager::listen(size_t backlog) {
+	if (httpSocket != nullptr) {
+		httpSocket->listen(backlog);
 	}
-
-	const int reuseAddr = 1;
-	int enable = (int)reuseAddr;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
-		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: coult not set reuseAddr in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
+	if (httpsSocket != nullptr) {
+		httpsSocket->listen(backlog);
 	}
-
-	if (bind(sd, (sockaddr*)&serverSockaddr, sizeof(sockaddr)) != 0) {
-		BOOST_THROW_EXCEPTION(networkError()
-			<< stringInfo("getListenSocket: could not bind socket in NetworkManager::fromAnyOnPort.") << errcodeInfoDef());
-	}
-
-	return NetworkManager(sd);
-}
-
-int NetworkManager::getFd() {
-	return this->socket;
-}
-
-void NetworkManager::initialize() {
-}
-
-bool NetworkManager::listen(size_t backlog) {
-	if (backlog == -1) {
-		backlog = SOMAXCONN;
-	}
-
-	if (this->socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (listen) after deconstruction."));
-	}
-	if (listening) {
-		return true; //Make it idempotent.
-	}
-
-	this->listening = (::listen(this->socket, (int)backlog) == 0);
-	if (!this->listening) {
-		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("listen(): Setting socket to listening.") << errcodeInfoDef());
-	}
-	return this->listening;
-}
-
-std::unique_ptr<IManagedSocket> NetworkManager::accept() {
-	if (socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (accept) after deconstruction."));
-	}
-	if (!listening) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager not listening before call to accept()"));
-	}
-
-	int newSocket = ::accept(this->socket, nullptr, nullptr);
-	if (newSocket == -1) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("accept(): accepting new socket in NetworkManager"));
-	}
-	return std::make_unique<ManagedSocket>(newSocket);
 }
 
 std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
-	if (socket == InvalidSocket) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager used (acceptTimeout) after deconstruction."));
-	}
-	if (!listening) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager not listening before call to acceptTimeout()"));
+	if (sockets.size() == 0) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager accept called without any open sockets."));
 	}
 
-	pollfd pfd;
-	pfd.fd = this->socket;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
+	for (auto& it : pollFds) {
+		it.revents = 0;
+	}
 
-	int pollResult = poll(&pfd, 1, timeoutMs);
+	int pollResult = poll(pollFds.data(), pollFds.size(), timeoutMs);
 	if (pollResult < 0) {
-		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client."));
+		BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting to accept new client.") << errcodeInfoDef());
 	}
 	if (pollResult == 0) {
 		return nullptr;
 	}
-	
-	return accept();
+
+	for (int i = 0; i < pollFds.size(); i++) {
+		if (pollFds[i].revents == POLLIN) {
+			return sockets[i].get().accept();
+		}
+	}
+
+	BOOST_THROW_EXCEPTION(serverError() << stringInfo("NetworkManager poll returned existing clients, but no accept() was found."));
+}
+
+void NetworkManager::close() {
+	httpSocket.reset();
+	httpsSocket.reset();
+
+	pollFds.clear();
+	sockets.clear();
 }

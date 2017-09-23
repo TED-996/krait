@@ -1,17 +1,17 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <boost/filesystem/path.hpp>
 #include "except.h"
-#include "response.h"
+#include "pythonInitializer.h"
 #include "pymlFile.h"
 #include "stringPiper.h"
 #include "pymlCache.h"
 #include "cacheController.h"
 #include "config.h"
 #include "responseBuilder.h"
-#include "INetworkManager.h"
+#include "IManagedSocket.h"
+#include "networkManager.h"
 
 
 class Server
@@ -24,10 +24,11 @@ class Server
 	int keepAliveTimeoutSec;
 	bool keepAlive;
 
+	PythonInitializer pythonInitializer;
 	Config config;
 	CacheController cacheController;
 
-	std::unique_ptr<INetworkManager> networkManager;
+	NetworkManager networkManager;
 	std::unique_ptr<IManagedSocket> clientSocket;
 
 	bool stdinDisconnected;
@@ -55,7 +56,7 @@ class Server
 	void updateParentCaches();
 
 public:
-	Server(std::string serverRoot, int port);
+	explicit Server(ArgvConfig argvConfig);
 	~Server();
 
 	void runServer();

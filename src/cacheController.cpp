@@ -10,37 +10,17 @@
 namespace bp = boost::python;
 
 
-CacheController::CacheController(Config& config, std::string filenameRoot)
-	:
-	noStoreTargets(),
-	privateTargets(),
-	publicTargets(),
-	longTermTargets(),
-	filenameRoot(filenameRoot) {
-
-	maxAgeDefault = -1;
-	maxAgeLongTerm = -1;
-
-	loaded = false;
-}
-
-void CacheController::load() {
-	this->noStoreTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_no_store"));
-	this->privateTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_private"));
-	this->publicTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_public"));
-	this->longTermTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_long_term"));
-
-	this->maxAgeDefault = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_default"));
-	this->maxAgeLongTerm = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_long_term"));
-
-	loaded = true;
+CacheController::CacheController(Config& config, std::string filenameRoot) :
+	noStoreTargets(config.getNoStoreTargets()),
+	privateTargets(config.getPrivateTargets()),
+	publicTargets(config.getPublicTargets()),
+	longTermTargets(config.getLongTermTargets()),
+	filenameRoot(filenameRoot){
+	maxAgeDefault = config.getMaxAgeDefault();
+	maxAgeLongTerm = config.getMaxAgeLongTerm();
 }
 
 CacheController::CachePragma CacheController::getCacheControl(std::string targetFilename, bool defaultIsStore) {
-	if (!loaded) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Cache controller not loaded. Call load() first."));
-	}
-
 	std::string relFilename = boost::filesystem::relative(targetFilename, filenameRoot).string();
 
 	std::pair<std::string, bool> cacheKey = std::make_pair(relFilename, defaultIsStore);

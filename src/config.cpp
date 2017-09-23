@@ -6,6 +6,13 @@
 
 namespace bp = boost::python;
 
+Config::Config(const ArgvConfig& argvConfig)
+	: argvConfig(argvConfig) {
+	loadRoutes();
+	loadCacheConfig();
+	loadSslConfig();
+}
+
 void Config::loadRoutes() {
 	try {
 		bp::object pyRoutes = PythonModule::config().getGlobalVariable("routes");
@@ -25,20 +32,24 @@ void Config::loadRoutes() {
 	}
 }
 
-Config::Config() {
-	initialized = false;
-	routes.clear();
+void Config::loadCacheConfig() {
+	noStoreTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_no_store"));
+	privateTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_private"));
+	publicTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_public"));
+	longTermTargets = RegexList::fromPythonObject(PythonModule::config().getGlobalVariable("cache_long_term"));
+
+	maxAgeDefault = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_default"));
+	maxAgeLongTerm = bp::extract<int>(PythonModule::config().getGlobalVariable("cache_max_age_long_term"));
 }
 
-void Config::load() {
-	loadRoutes();
-	initialized = true;
-}
-
-std::vector<Route>& Config::getRoutes() {
-	if (!initialized) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Configuration not initialized, you must call load() at least once."));
+void Config::loadSslConfig() {
+	if (argvConfig.getHttpsPort() == boost::none) {
+		certFilename = boost::none;
+		certKeyFilename = boost::none;
 	}
-
-	return this->routes;
+	else {
+		certFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_certificate_path");
+		certKeyFilename = PythonModule::config().getGlobalOptional<std::string>("ssl_private_key_path");
+		certKeyPassphrase = PythonModule::config().getGlobalOptional<std::string>("ssl_key_passphrase");
+	}
 }

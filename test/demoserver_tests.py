@@ -21,23 +21,43 @@ class DemoserverTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         server_setup.setup(skip_build=True)
-        DemoserverTests.host = server_setup.start_demoserver()
+        cls.http_host, cls.https_host = server_setup.start_demoserver()
 
-        DemoserverTests.driver = webdriver.Chrome()
+        cls.driver = webdriver.Chrome()
 
-    def driver_get(self, local_url):
+    def test_http(self):
+        host = self.http_host
+        if host is None:
+            self.fail("HTTP server not started.")
+
+        self._test_with_host(host)
+
+    def test_https(self):
+        host = self.https_host
+        if host is None:
+            self.fail("HTTP server not started.")
+
+        self._test_with_host(host)
+
+    def _test_with_host(self, host):
+        self._test_index(host)
+        self._test_db(host)
+        self._test_http(host)
+        self._test_ws(host)
+
+    def _driver_get(self, host, local_url):
         # local_url should NOT be empty. Root page is at "/".
-        url = self.host + local_url
+        url = host + local_url
 
         try:
             self.driver.get(url)
         except WebDriverException as ex:
-            self.fail("Could not get demoserver page {}.\nError: {}".format(local_url, ex))
+            self.fail("Could not get demoserver page {}.\nError: {}".format(url, ex))
 
-    def test_index(self):
-        self.driver_get("/")
+    def _test_index(self, host):
+        self._driver_get(host, "/")
 
-        self.check_header("/")
+        self._check_header("/", host)
         self.assertIn("Welcome to Krait!", self.driver.page_source, "`Welcome to Krait!` missing.")
         self.assertIn("Why choose Krait?", self.driver.page_source, "`Why choose Krait?` missing.")
 
@@ -51,10 +71,10 @@ class DemoserverTests(unittest.TestCase):
         self.assertNotIn("False is True! Run for your life!", self.driver.page_source,
                          "'False is True' message, should not appear. Ifs are broken.")
 
-    def test_db(self):
-        self.driver_get("/db")
+    def _test_db(self, host):
+        self._driver_get(host, "/db")
 
-        self.check_header("/db")
+        self._check_header("/db", host)
 
         self.assertIn("access the DB", self.driver.page_source, "`access the DB` missing.")
         self.assertIn("Leave your own message!", self.driver.page_source, '`Leave your own message!` missing.')
@@ -67,7 +87,7 @@ class DemoserverTests(unittest.TestCase):
         except NoSuchElementException:
             self.fail("Missing form element.")
 
-        pre_count = self.db_get_comment_count()
+        pre_count = self._db_get_comment_count()
 
         random_text = "".join([random.choice(string.ascii_letters + string.digits) for _ in xrange(8)])
         injection_test = '<tag attr="\'quotes\'">&amp;&lt;&gt;I swear it\'s not malware. Token:{}</tag>'\
@@ -88,7 +108,7 @@ class DemoserverTests(unittest.TestCase):
 
         self.assertIn("access the DB", self.driver.page_source, "Comment failed to redirect back to DB page.")
 
-        new_cmt_item = self.db_find_comment_by_params(new_name, new_message)
+        new_cmt_item = self._db_find_comment_by_params(new_name, new_message)
 
         self.assertNotEqual(new_cmt_item, None, "New comment not posted.")
 
@@ -98,12 +118,12 @@ class DemoserverTests(unittest.TestCase):
         # self.assertIn(escaped_html, self.driver.page_source,
         #              "HTML misquoted. Expected {}".format(escaped_html))
 
-        post_count = self.db_get_comment_count()
+        post_count = self._db_get_comment_count()
         self.assertEquals(pre_count + 1, post_count, "Comment count not incremented.")
 
         # TODO: DELETE COMMENT!
 
-    def db_get_comment_count(self):
+    def _db_get_comment_count(self):
         try:
             counter = self.driver.find_element_by_id("comment-counter")
             counts = [int(num) for num in counter.text.split() if num.isdigit()]
@@ -118,7 +138,7 @@ class DemoserverTests(unittest.TestCase):
             self.fail("Comment counter missing.")
 
     @staticmethod
-    def escape_html(value):
+    def _escape_html(value):
         escape_table = {
             "&": "&amp;",
             '"': "&quot;",
@@ -129,7 +149,7 @@ class DemoserverTests(unittest.TestCase):
 
         return "".join(escape_table.get(ch, ch) for ch in value)
 
-    def db_find_comment_by_params(self, name, message):
+    def _db_find_comment_by_params(self, name, message):
         try:
             for cmt_item in self.driver.find_elements_by_class_name("comment-item"):
                 cmt_name = cmt_item.find_element_by_class_name("comment-name")
@@ -142,7 +162,7 @@ class DemoserverTests(unittest.TestCase):
         except NoSuchElementException:
             self.fail("Missing element looking for newly-inserted comment.")
 
-    def check_header(self, active_href):
+    def _check_header(self, active_href, host):
         try:
             header = self.driver.find_element_by_class_name("header")
         except NoSuchElementException:
@@ -181,7 +201,7 @@ class DemoserverTests(unittest.TestCase):
                               "Header link: Expected exactly one <a> in <li>, got {}".format(len(a_in_li)))
             self.assertEquals(a_in_li[0], a_item,
                               "Header link: Wrong <a> in <li>.")
-            self.assertEquals(a_item.get_attribute("href"), self.host + link,
+            self.assertEquals(a_item.get_attribute("href"), host + link,
                               "Header link: href different from expected value.")
             self.assertEquals(a_item.text, name,
                               "Header link: text different from expected value.")
@@ -189,10 +209,10 @@ class DemoserverTests(unittest.TestCase):
                               "Header link: button expected to be active and was not." if expected_active else
                               "Header link: button expected not to be active and was active.")
 
-    def test_http(self):
-        self.driver_get("/http")
+    def _test_http(self, host):
+        self._driver_get(host, "/http")
 
-        self.check_header("/http")
+        self._check_header("/http", host)
 
         self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
         self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
@@ -200,18 +220,18 @@ class DemoserverTests(unittest.TestCase):
         self.assertIn("GET /http HTTP/1.1", self.driver.page_source,
                       "GET line missing from HTTP request readback.")
 
-        self.driver_get("/http%2Btest%25%20%20%25")
-        self.check_header("/http")
+        self._driver_get(host, "/http%2Btest%25%20%20%25")
+        self._check_header("/http", host)
         self.assertIn("Your Request", self.driver.page_source, "`Your Request` missing.")
         self.assertIn("This is an approximation of your HTTP request:", self.driver.page_source,
                       "`This is an approximation of your HTTP request:` missing.")
         self.assertIn("GET /http%2Btest%25%20%20%25 HTTP/1.1", self.driver.page_source,
                       "URL quoting error.")
 
-    def test_ws(self):
-        self.driver_get("/ws")
+    def _test_ws(self, host):
+        self._driver_get(host, "/ws")
 
-        self.check_header("/ws")
+        self._check_header("/ws", host)
 
         start_time = time.clock()
         timeout = 20.0  # in seconds
@@ -219,7 +239,7 @@ class DemoserverTests(unittest.TestCase):
         passed = False
 
         while time.clock() - start_time < timeout:
-            if self.ws_check_pingpong():
+            if self._ws_check_pingpong():
                 passed = True
                 break
 
@@ -228,7 +248,7 @@ class DemoserverTests(unittest.TestCase):
         if not passed:
             self.fail("Websockets connection failed: timeout waiting for two-way PING-PONG exceeded.")
 
-    def ws_check_pingpong(self):
+    def _ws_check_pingpong(self):
         ticker = self.driver.find_element_by_id("ticker")
         msgs_server = ticker.find_elements_by_class_name("msg_server")
         msgs_client = ticker.find_elements_by_class_name("msg_client")

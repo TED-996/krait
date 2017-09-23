@@ -8,13 +8,14 @@ private:
 
 	int socket;
 
-	int write(const void* data, size_t nBytes) override;
-	int read(void* destination, size_t nBytes) override;
+	int write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) override;
+	int read(void* destination, size_t nBytes, int timeoutSeconds, bool* shouldRetry) override;
 
 	void respondWithBuffer(const void* response, size_t size);
 	bool readExactly(void* destination, size_t nBytes);
+	bool writeExactly(void* data, size_t nBytes);
 
-	int getFd() override;
+	
 public:
 	explicit ManagedSocket(int socket);
 	ManagedSocket(ManagedSocket&) = delete;
@@ -22,7 +23,14 @@ public:
 
 	~ManagedSocket() override;
 
+	int getFd() override {
+		return socket;
+	}
+
 	void initialize() override;
+	void atFork() override;
+	void detachContext() override;
+
 	std::unique_ptr<Request> getRequest() override;
 	std::unique_ptr<Request> getRequestTimeout(int timeoutMs) override;
 	WebsocketsFrame getWebsocketsFrame() override;

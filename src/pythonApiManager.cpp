@@ -3,9 +3,17 @@
 
 void PythonApiManager::set(const Request& request, bool isWebsockets) const {
 	PythonModule::krait().setGlobalRequest("request", request);
+	PythonModule::krait().setGlobalNone("response");
+	PythonModule::krait().setGlobalEmptyList("extra_headers");
+	PythonModule::krait().setGlobalNone("_content_type");
+	PythonModule::cookie().setGlobalNone("_cookies_cpt");
+	PythonModule::mvc().setGlobalNone("init_ctrl");
+	PythonModule::mvc().setGlobalEmptyList("ctrl_stack");
+	PythonModule::mvc().setGlobalNone("curr_ctrl");
 	
 	if (isWebsockets) {
 		PythonModule::websockets().run("request = WebsocketsRequest(krait.request)");
+		PythonModule::websockets().setGlobalNone("response");
 	}
 }
 

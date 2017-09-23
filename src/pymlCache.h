@@ -13,7 +13,6 @@ public:
 	{
 		char data[32];
 
-
 		CacheTag();
 		explicit CacheTag(std::string data);
 		CacheTag(const CacheTag& source);
@@ -31,7 +30,6 @@ private:
 		std::time_t time;
 		std::unique_ptr<PymlFile> item;
 		CacheTag tag;
-
 
 		CacheEntry(std::time_t time, std::unique_ptr<PymlFile>&& pymlFile, CacheTag& tag)
 			: time(time),

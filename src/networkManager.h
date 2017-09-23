@@ -1,24 +1,22 @@
 ﻿#pragma once
-#include "INetworkManager.h"
+#include <sys/poll.h>
+#include <boost/optional.hpp>
+#include <functional>
+#include "IServerSocket.h"
+#include "config.h"
 
-class NetworkManager : public INetworkManager
+class NetworkManager
 {
-private:
-	static const int InvalidSocket = -1;
+	std::unique_ptr<IServerSocket> httpSocket;
+	std::unique_ptr<IServerSocket> httpsSocket;
 
-	int socket;
-	bool listening;
+	std::vector<pollfd> pollFds;
+	std::vector<std::reference_wrapper<IServerSocket>> sockets;
+
 public:
-	explicit NetworkManager(int socket);
-	NetworkManager(NetworkManager&) = delete;
-	NetworkManager(NetworkManager&& source) noexcept;
-	static NetworkManager fromAnyOnPort(short port);
-	~NetworkManager() override;
+	NetworkManager(boost::optional<u_int16_t> httpPort, boost::optional<u_int16_t> httpsPort, const Config& config);
 
-	void initialize() override;
-
-	int getFd() override;
-	bool listen(size_t backlog = -1) override;
-	std::unique_ptr<IManagedSocket> accept() override;
-	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs) override;
+	void listen(size_t backlog = -1);
+	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs);
+	void close();
 };

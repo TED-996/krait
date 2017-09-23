@@ -3,11 +3,18 @@ project(krait)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# Configuration
+###############
+
 if (NOT DEFINED DO_STATIC_BUILD)
     set(DO_STATIC_BUILD OFF)
 endif()
 if(NOT DEFINED DO_PROFILE_BUILD)
     set(DO_PROFILE_BUILD OFF)
+endif()
+
+if (NOT DEFINED CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 
@@ -25,6 +32,18 @@ else()
     set(STATIC_BOOST OFF)
 endif()
 
+if (NOT DEFINED USE_SSL_IMPL)
+	set(USE_SSL_IMPL "OpenSSL")
+endif()
+
+if (NOT DEFINED USE_STATIC_SSL)
+	set(USE_STATIC_SSL ${DO_STATIC_BUILD})
+endif()
+
+
+# Subdirectories
+################
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 get_directory_property(SOURCE_FILES
@@ -36,14 +55,17 @@ get_directory_property(MAIN_FILES
 get_filename_component(SOURCE_MAIN_CPP "src/main.cpp" ABSOLUTE)
 get_filename_component(SOURCE_MAIN_TEST_CPP "src/main_tests.cpp" ABSOLUTE)
 
+# Libraries
+###########
 
+# Python
 SET(ORIGINAL_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
 FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_LIB_SUFFIX})
-
 include_directories(${PYTHON_INCLUDE_DIRS})
 
+# Boost
 FIND_PACKAGE(Boost COMPONENTS python filesystem regex thread program_options)
 if(Boost_FOUND)
     INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}")
@@ -54,13 +76,31 @@ else()
     MESSAGE(FATAL_ERROR "Unable to find correct Boost version. Did you set BOOST_ROOT?")
 endif()
 
+# SSL Support
+set(SSL_LIB "")
+if (${USE_SSL_IMPL} STREQUAL "OpenSSL")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSSL_LIB=1")
+	
+	SET(OPENSSL_USE_STATIC_LIBS ${USE_STATIC_SSL})
+
+	FIND_PACKAGE(OpenSSL REQUIRED)
+
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	set(SSL_LIB ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+else()
+	MESSAGE("Building WITHOUT SSL support.")
+endif()
+
+# Building
+##########
+
 set(BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 set(BIN_DIR ${BUILD_DIR}/bin)
 set(SHARE_DIR ${BUILD_DIR}/share/krait)
 
 add_executable(build ${SOURCE_MAIN_CPP} ${SOURCE_FILES})
 
-target_link_libraries(build ${PYTHON_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(build ${PYTHON_LIBRARY} ${Boost_LIBRARIES} ${SSL_LIB})
 set_target_properties(build PROPERTIES OUTPUT_NAME ${BIN_DIR}/${CMAKE_PROJECT_NAME})
 
 add_custom_target(create_dirs
@@ -89,6 +129,8 @@ add_custom_command(TARGET build POST_BUILD
      COMMAND /bin/chmod ${CHMOD_FLAGS} ${BIN_DIR}/krait)
 
 
+# Testing
+#########
 # Disable unit tests for now.
 #[[
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
@@ -104,6 +146,9 @@ add_custom_command(TARGET build_tests POST_BUILD
 add_custom_command(TARGET build_tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/globals ${BUILD_DIR}/globals)
 ]]
+
+# Installing
+############
 
 install(DIRECTORY ${BUILD_DIR}/bin/
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

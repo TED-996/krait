@@ -18,24 +18,28 @@ private:
 	//Statics
 public:
 	static PythonModule& main() {
-		static PythonModule* mod = new PythonModule("__main__");
-		return *mod;
+		static PythonModule mod("__main__");
+		return mod;
 	}
 	static PythonModule& krait() {
-		static PythonModule* mod = new PythonModule("krait");
-		return *mod;
+		static PythonModule mod("krait");
+		return mod;
 	}
 	static PythonModule& mvc() {
-		static PythonModule* mod = new PythonModule("krait");
-		return *mod;
+		static PythonModule mod("krait");
+		return mod;
 	}
 	static PythonModule& websockets() {
-		static PythonModule* mod = new PythonModule("krait.websockets");
-		return *mod;
+		static PythonModule mod("krait.websockets");
+		return mod;
 	}
 	static PythonModule& config() {
-		static PythonModule* mod = new PythonModule("krait.config");
-		return *mod;
+		static PythonModule mod("krait.config");
+		return mod;
+	}
+	static PythonModule& cookie() {
+		static PythonModule mod("krait.cookie");
+		return mod;
 	}
 
 private:
@@ -69,6 +73,8 @@ public:
 	void setGlobal(const std::string& name, const std::multimap<std::string, std::string>& value);
 	void setGlobal(const std::string& name, const boost::python::object& value);
 	void setGlobalRequest(const std::string&, const Request& value);
+	void setGlobalNone(const std::string& name);
+	void setGlobalEmptyList(const std::string& name);
 
 	std::string getGlobalStr(const std::string& name);
 	std::map<std::string, std::string> getGlobalMap(const std::string& name);

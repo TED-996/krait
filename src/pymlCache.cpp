@@ -32,7 +32,7 @@ IPymlFile& PymlCache::constructAddNew(std::string filename, std::time_t time) {
 	cacheMap.emplace(
 		std::piecewise_construct,
 		std::forward_as_tuple(filename),
-		std::forward_as_tuple(time, std::move(result), tag)
+		std::forward_as_tuple(time, std::move(result), tag) //TODO: use new knowledge about rvalue references to simplify this
 	);
 	return *cacheMap[filename].item;
 }

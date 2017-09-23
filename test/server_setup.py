@@ -5,7 +5,8 @@ import posixpath as rpath
 import os
 
 host = "localhost"
-port = 8090
+http_port = 8090
+https_port = 8091
 remote_path = "~/vs_projects/krait"
 
 built = False
@@ -36,9 +37,13 @@ def start_demoserver():
     stop_demoserver()
 
     with fab.cd(remote_path):
-        fab.sudo("build/bin/krait-cmdr start -p {} {}".format(port, rpath.join(remote_path, "demoserver")))
+        fab.sudo("build/bin/krait-cmdr start -p {}/{} {}".format(
+            http_port or "", https_port or "", rpath.join(remote_path, "demoserver")))
 
-    return "http://{}:{}".format(host, port)
+    return \
+        "http://{}:{}".format(host, http_port) if http_port else None,\
+        "https://{}:{}".format(host, https_port) if https_port else None
+
 
 
 def stop_demoserver(force=False):

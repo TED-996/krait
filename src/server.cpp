@@ -19,21 +19,23 @@
 
 //#define DBG_DISABLE
 #include"dbg.h"
-#include "networkManager.h"
 
 
 namespace b = boost;
 namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
+
 Server* Server::instance = nullptr;
 
-Server::Server(std::string serverRoot, int port)
+
+Server::Server(ArgvConfig argvConfig)
 	:
-	serverRoot(bf::canonical(bf::absolute(serverRoot))),
-	config(),
-	cacheController(config, serverRoot),
-	networkManager(std::make_unique<NetworkManager>(NetworkManager::fromAnyOnPort(port))),
+	serverRoot(bf::canonical(bf::absolute(argvConfig.getSiteRoot()))),
+	pythonInitializer(argvConfig.getSiteRoot()),
+	config(argvConfig),
+	cacheController(config, argvConfig.getSiteRoot()),
+	networkManager(config.getHttpPort(), config.getHttpsPort(), config),
 	clientSocket(nullptr),
 	serverCache(
 		std::bind(&Server::constructPymlFromFilename,
@@ -48,38 +50,25 @@ Server::Server(std::string serverRoot, int port)
 	}
 	Server::instance = this;
 
-	this->serverRoot = bf::path(serverRoot);
-	
-	DBG("routes got");
-
-	
-	try {
-		PythonModule::initModules(serverRoot);
+	if (argvConfig.getHttpPort() != boost::none) {
+		Loggers::logInfo(formatString("HTTP Server initialized on port %1%", argvConfig.getHttpPort().get()));
 	}
-	catch (pythonError& err) {
-		Loggers::logErr(formatString("Error running init.py: %1%", err.what()));
-		exit(1);
+	if (argvConfig.getHttpsPort() != boost::none) {
+		Loggers::logInfo(formatString("HTTPS Server initialized on port %1%", argvConfig.getHttpsPort().get()));
 	}
 
-	DBG("python initialized");
-
-	config.load();
-	cacheController.load();
-
-	Loggers::logInfo(formatString("Server initialized on port %1%", port));
 
 	stdinDisconnected = fdClosed(0);
 	
 	shutdownRequested = false;
 }
 
-
 Server::~Server() {
 }
 
 void Server::runServer() {
 	try {
-		networkManager->listen();
+		networkManager.listen();
 	}
 	catch (const networkError&) {
 		Loggers::errLogger.log("Could not set server to listen.");
@@ -109,10 +98,14 @@ void Server::tryAcceptConnection() {
 	const int timeout = 100;
 	std::unique_ptr<IManagedSocket> newClient;
 	try {
-		newClient = networkManager->acceptTimeout(timeout);
+		newClient = networkManager.acceptTimeout(timeout);
 	}
-	catch (const networkError& err) {
-		Loggers::errLogger.log("Could not get new client.");
+	catch (const networkError&) {
+		Loggers::errLogger.log("Could not get new client: network error.");
+		exit(1);
+	}
+	catch (const sslError&) {
+		Loggers::errLogger.log("Could not get new client: SSL error.");
 		exit(1);
 	}
 
@@ -126,15 +119,24 @@ void Server::tryAcceptConnection() {
 			<< stringInfo("fork(): creating process to serve socket. Is the system out of resources?") << errcodeInfoDef());
 	}
 	if (pid == 0) {
-		SignalManager::clearPids();
-		clientSocket = std::move(newClient);
-		networkManager.reset(); // Destruct the network manager to close the socket.
+		try {
+			SignalManager::clearPids();
+			clientSocket = std::move(newClient);
+			clientSocket->atFork();
 
-		cacheRequestPipe.closeRead();
+			//networkManager.detachContext();
+			networkManager.close(); // Close the listen sockets.
 
-		serveClientStart();
+			cacheRequestPipe.closeRead();
+
+			serveClientStart();
+		}
+		catch(const std::exception& ex) {
+			Loggers::logErr(formatString("Exception serving client: %1%", ex.what()));
+		}
 		exit(255); //The function above should call exit()!
 	}
+	newClient->detachContext();
 	newClient.reset(); // Destruct the new client to close the socket.
 
 	SignalManager::addPid((int)pid);
@@ -151,6 +153,7 @@ void Server::serveClientStart() {
 	Loggers::logInfo("Serving a new client");
 	bool isHead = false;
 	keepAliveTimeoutSec = maxKeepAliveSec;
+	clientSocket->initialize();
 
 	try {
 		while (!shutdownRequested) {
@@ -167,55 +170,37 @@ void Server::serveClientStart() {
 			}
 
 			/*
-			If-Modified-Since unsuported.
+			//If-Modified-Since unsuported.
 			if (request.headerExists("If-Modified-Since")) {
-				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%. Unsupported.", *request.getHeader("If-Modified-Since")));
+				Loggers::logInfo(formatString("Client tried If-Modified-Since with date %1%. Unsupported.",
+					*request.getHeader("If-Modified-Since")));
 			}
 			*/
 
 			keepAliveTimeoutSec = std::min(maxKeepAliveSec, request.getKeepAliveTimeout());
 			keepAlive = request.isKeepAlive() && keepAliveTimeoutSec != 0 && !request.isUpgrade("websocket") && !shutdownRequested;
 
-			pid_t childPid = fork();
-			if (childPid == 0) {
-				SignalManager::clearPids();
-				try {
-					if (request.isUpgrade("websocket")) {
-						serveRequestWebsockets(request);
-					}
-					else {
-						serveRequest(request);
-					}
-
-					Loggers::logInfo("Serving a request finished.");
-				}
-				catch (networkError&) {
-					Loggers::errLogger.log("Could not respond to client request (network error - disconnected?).");
-					clientSocket.reset();
-					exit(1);
-				}
-				catch (pythonError& err) {
-					Loggers::errLogger.log(formatString("Python error:\n%1%", err.what()));
-					clientSocket.reset();
-					exit(1);
-				}
-				
-				clientSocket.reset();
-				exit(0);
+			if (request.isUpgrade("websocket")) {
+				serveRequestWebsockets(request);
 			}
 			else {
-				SignalManager::addPid((int)childPid);
-				SignalManager::waitChild((int)childPid);
-				Loggers::logInfo("Rejoined with single request server.");
+				serveRequest(request);
 			}
+
+			Loggers::logInfo("Serving a request finished.");
 
 			if (!keepAlive) {
 				break;
 			}
 		}
 	}
-	catch (networkError&) {
+	catch (networkError& ex) {
 		Loggers::logErr("Client disconnected.");
+		DBG_FMT("Network erorr:\n%1%", ex.what());
+	}
+	catch (sslError& ex) {
+		Loggers::logErr("Client SSL error.");
+		DBG_FMT("SSL error:\n%1%", ex.what());
 	}
 	catch (rootException& ex) {
 		if (isHead) {
@@ -224,9 +209,11 @@ void Server::serveClientStart() {
 		else {
 			clientSocket->respondWithObject(Response(500, "<html><body><h1>500 Internal Server Error</h1></body></html>", true));
 		}
-		Loggers::logErr(formatString("Error serving client: %1%", ex.what()));
+		Loggers::logErr(formatString("Error serving client:\n%1%", ex.what()));
 	}
-
+	catch (std::exception& ex) {
+		Loggers::logErr(formatString("Unexpected error!\n%1%", ex.what()));
+	}
 
 	clientSocket.reset();
 	exit(0);
@@ -302,8 +289,8 @@ std::unique_ptr<PymlFile> Server::constructPymlFromFilename(const std::string& f
 
 void Server::onServerCacheMiss(const std::string& filename) {
 	if (interpretCacheRequest) {
-		cacheRequestPipe.pipeWrite(filename);
 		Loggers::logInfo(formatString("Cache miss on url %1%", filename));
+		cacheRequestPipe.pipeWrite(filename);
 	}
 }
 
