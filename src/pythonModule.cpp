@@ -1,14 +1,15 @@
 #include "pythonModule.h"
-#include<boost/python.hpp>
-#include<boost/format.hpp>
-#include<string>
-#include<cstdlib>
-#include"path.h"
-#include"except.h"
+#include <boost/python.hpp>
+#include <boost/format.hpp>
+#include <string>
+#include <cstdlib>
+#include "path.h"
+#include "except.h"
+#include "routes.h"
+#include "response.h"
 
 #define DBG_DISABLE
-#include"dbg.h"
-#include "routes.h"
+#include "dbg.h"
 
 namespace b = boost;
 namespace bp = boost::python;
@@ -34,6 +35,11 @@ void PythonModule::initPython() {
 			&PythonObjectToRouteConverter::convertible,
 			&PythonObjectToRouteConverter::construct,
 			boost::python::type_id<Route>());
+		bp::converter::registry::push_back(
+			&PythonObjectToResponsePtrConverter::convertible,
+			&PythonObjectToResponsePtrConverter::construct,
+			boost::python::type_id<PtrWrapper<Response>>());
+
 		DBG("converters done");
 
 		bp::object mainModule = bp::import("__main__");
@@ -47,8 +53,8 @@ void PythonModule::initPython() {
 
 		bp::exec_file(bp::str((getShareRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in initPython()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in initPython().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("initPython()"));
 	}
@@ -68,8 +74,8 @@ void PythonModule::finishPython() {
 		try {
 			Py_Finalize();
 		}
-		catch (bp::error_already_set const&) {
-			DBG("Python error in finishPython()!");
+		catch (const bp::error_already_set&) {
+			DBG("Python error in finishPython().");
 
 			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("finishPython()"));
 		}
@@ -85,7 +91,7 @@ void PythonModule::initModules(const std::string& projectDir) {
 		resetModules(projectDir);
 	}
 	catch (pythonError& err) {
-		DBG("Python error in initModules()!");
+		DBG("Python error in initModules().");
 		BOOST_THROW_EXCEPTION(pythonError() << stringInfo(err.what()) << originCallInfo("initModules()"));
 	}
 }
@@ -106,8 +112,8 @@ void PythonModule::resetModules(const std::string& projectDir) {
 
 		requestType = PythonModule::krait().moduleGlobals["Request"];
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in resetModules()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in resetModules().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("resetModules()"));
 	}
@@ -124,8 +130,8 @@ PythonModule::PythonModule(const std::string& name) {
 		moduleObject = bp::import(bp::str(name));
 		moduleGlobals = bp::extract<bp::dict>(moduleObject.attr("__dict__"));
 	}
-	catch (bp::error_already_set const&) {
-		DBG_FMT("Python error in PythonModule(%1%)!", name);
+	catch (const bp::error_already_set&) {
+		DBG_FMT("Python error in PythonModule(%1%).", name);
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("PythonModule()"));
 	}
@@ -142,8 +148,8 @@ void PythonModule::run(const std::string& command) {
 	try {
 		bp::exec(bp::str(command), moduleGlobals, moduleGlobals);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in run()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in run().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("run()") << pyCodeInfo(command));
 	}
@@ -155,8 +161,8 @@ void PythonModule::execfile(const std::string& filename) {
 	try {
 		bp::exec_file(bp::str(filename), moduleGlobals, moduleGlobals);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in execfile()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in execfile().");
 
 		BOOST_THROW_EXCEPTION(pythonError()
 			<< getPyErrorInfo() << originCallInfo("execfile()")
@@ -171,8 +177,8 @@ std::string PythonModule::eval(const std::string& code) {
 		bp::str resultStr(result);
 		return bp::extract<std::string>(resultStr);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in pythonEval()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in pythonEval().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("eval()") << pyCodeInfo(code));
 	}
@@ -185,8 +191,8 @@ bp::object PythonModule::evalToObject(const std::string& code) {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
 		return result;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in pythonEval()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in pythonEval().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("evalToObject()") << pyCodeInfo(code));
 	}
@@ -198,8 +204,8 @@ bool PythonModule::test(const std::string& condition) {
 		bp::object result = bp::eval(bp::str(condition), moduleGlobals, moduleGlobals);
 		return (bool)result;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in test()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in test().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("test()") << pyCodeInfo(condition));
 	}
@@ -210,8 +216,8 @@ bp::object PythonModule::callObject(const bp::object& obj) {
 	try {
 		return obj();
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in callObject()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in callObject().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("callObject(obj)"));
 	}
@@ -222,8 +228,8 @@ bp::object PythonModule::callObject(const bp::object& obj, const bp::object& arg
 	try {
 		return obj(arg);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in callObject(arg)!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in callObject(arg).");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("callObject(obj, arg)"));
 	}
@@ -235,8 +241,8 @@ bool PythonModule::checkIsNone(const std::string& name) {
 	try {
 		return bp::object(moduleObject.attr(name.c_str())).is_none();
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in checkIsNone(name)!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in checkIsNone(name).");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("name()") << pyCodeInfo(name));
 	}
@@ -247,8 +253,8 @@ void PythonModule::setGlobal(const std::string& name, const bp::object& value) {
 	try {
 		moduleObject.attr(name.c_str()) = value;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in setGlobal()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in setGlobal().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("setGlobal(%1%, obj)", name)));
 	}
@@ -271,7 +277,7 @@ void PythonModule::setGlobalRequest(const std::string& name, const Request& valu
 	try {
 		setGlobal(name, bp::object(value));
 	}
-	catch (bp::error_already_set const&) {
+	catch (const bp::error_already_set&) {
 		DBG("Python error in setGlobalRequest(), converting Request to PyObject");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("setGlobalRequest(%1%, <Request>)", name)));
@@ -293,8 +299,8 @@ std::string PythonModule::getGlobalStr(const std::string& name) {
 		bp::str globalStr(globalObj);
 		return bp::extract<std::string>(globalStr);
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in getGlobalStr()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in getGlobalStr().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalStr(%1%)", name)));
 	}
@@ -315,8 +321,8 @@ std::map<std::string, std::string> PythonModule::getGlobalMap(const std::string&
 		}
 		return result;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in getGlobalMap()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in getGlobalMap().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalMap(%1%)", name)));
 	}
@@ -328,8 +334,8 @@ bp::object PythonModule::getGlobalVariable(const std::string& name) {
 		bp::object globalObj = moduleObject.attr(name.c_str());
 		return globalObj;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in getGlobalVariable()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in getGlobalVariable().");
 		
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalVariable(%1%)", name)));
 	}
@@ -345,14 +351,26 @@ std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(const s
 		for (int i = 0; i < listLen; i++) {
 			std::string key = bp::extract<std::string>(bp::str(globalObj[i][0]));
 			std::string value = bp::extract<std::string>(bp::str(globalObj[i][1]));
-			result.insert(make_pair(key, value));
+			result.insert(make_pair(std::move(key), std::move(value)));
 		}
 		return result;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in getGlobalTupleList()!");
+	catch (const bp::error_already_set&) {
+		DBG("Python error in getGlobalTupleList().");
 		
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalTupleList(%1%)", name)));
+	}
+}
+
+Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
+	DBG("in getGlobalTupleList()");
+	try {
+		return bp::extract<PtrWrapper<Response>>(moduleObject.attr(name.c_str()))()();
+	}
+	catch (const bp::error_already_set&) {
+		DBG("Python error in getGlobalResponsePtr().");
+
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo(formatString("getGlobalResponsePtr(%1%)", name)));
 	}
 }
 
@@ -528,7 +546,7 @@ void PythonModule::PythonObjectToRouteConverter::construct(PyObject* objPtr, bp:
 			regex = boost::regex(regexStr.get());
 		}
 
-		// ReSharper disable CppNonReclaimedResourceAcquisition
+		// ReSharper disable once CppNonReclaimedResourceAcquisition
 		new(storage) Route(
 			toRouteVerb(static_cast<std::string>(bp::extract<std::string>(obj.attr("verb")))),
 			regex,
@@ -536,13 +554,73 @@ void PythonModule::PythonObjectToRouteConverter::construct(PyObject* objPtr, bp:
 			extractOptional<std::string>(obj.attr("target")),
 			extractOptional<bp::object>(obj.attr("ctrl_class"))
 		);
-		// ReSharper restore CppNonReclaimedResourceAcquisition
+		data->convertible = storage;
+	}
+	catch (const bp::error_already_set&) {
+		DBG("Python error in PythonObjectToRouteConverter::construct.");
+		
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("PythonObjectToRouteConverter::construct()"));
+	}
+}
+
+void* PythonModule::PythonObjectToResponsePtrConverter::convertible(PyObject* objPtr) {
+	DBG("in PythonObjectToResponsePtrConverter:");
+
+	if (PyObject_HasAttrString(objPtr, "http_version") &&
+		PyObject_HasAttrString(objPtr, "status_code") &&
+		PyObject_HasAttrString(objPtr, "headers") &&
+		PyObject_HasAttrString(objPtr, "body")) {
+		DBG("OK");
+		return objPtr;
+	}
+	DBG("NOT OK");
+	return nullptr;
+}
+
+void PythonModule::PythonObjectToResponsePtrConverter::construct(PyObject* objPtr, bp::converter::rvalue_from_python_stage1_data* data) {
+	try {
+		bp::object obj = bp::object(bp::handle<>(bp::borrowed(objPtr)));
+		void* storage = ((bp::converter::rvalue_from_python_storage<Route>*)data)->storage.bytes;
+
+		int statusCode;
+		std::unordered_multimap<std::string, std::string> headers;
+		std::string body;
+		try {
+			std::string httpVersion = bp::extract<std::string>(obj.attr("http_version"));
+			if (httpVersion != "HTTP/1.1") {
+				BOOST_THROW_EXCEPTION(siteError() << stringInfo("HTTP version not HTTP/1.1."));
+			}
+
+			statusCode = bp::extract<int>(obj.attr("status_code"));
+
+			bp::object headersObj = obj.attr("headers");
+			int listLen = bp::len(headersObj);
+
+			for (int i = 0; i < listLen; i++) {
+				std::string key = bp::extract<std::string>(bp::str(headersObj[i][0]));
+				std::string value = bp::extract<std::string>(bp::str(headersObj[i][1]));
+				headers.insert(make_pair(std::move(key), std::move(value)));
+			}
+
+			body = bp::extract<std::string>(obj.attr("body"));
+		}
+		catch(const bp::error_already_set&) {
+			BOOST_THROW_EXCEPTION(pythonError() << stringInfo("krait.response malformed (most likely incorrect types)")
+				<< getPyErrorInfo() << originCallInfo("PythonObjectToResponsePtrConverter::construct()"));
+		}
+
+		// ReSharper disable once CppNonReclaimedResourceAcquisition
+		Response* result = new Response(
+			1, 1, statusCode, headers, body, false
+		);
+		// ReSharper disable once CppNonReclaimedResourceAcquisition
+		new(storage) PtrWrapper<Response>(result);
 
 		data->convertible = storage;
 	}
-	catch (bp::error_already_set const&) {
-		DBG("Python error in PythonObjectToRouteConverter::construct!");
-		
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("PythonObjectToRouteConverter::construct()"));
+	catch (const bp::error_already_set&) {
+		DBG("Python error in PythonObjectToResponsePtrConverter::construct.");
+
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("PythonObjectToResponsePtrConverter::construct()"));
 	}
 }

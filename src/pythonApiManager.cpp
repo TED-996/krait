@@ -1,6 +1,10 @@
 ﻿#include "pythonApiManager.h"
 #include "pythonModule.h"
 
+#define DBG_DISABLE
+#include "dbg.h"
+
+
 void PythonApiManager::set(const Request& request, bool isWebsockets) const {
 	PythonModule::krait().setGlobalRequest("request", request);
 	PythonModule::krait().setGlobalNone("response");
@@ -22,7 +26,8 @@ bool PythonApiManager::isCustomResponse() const {
 }
 
 std::unique_ptr<Response> PythonApiManager::getCustomResponse() const {
-	return std::make_unique<Response>(PythonModule::krait().eval("str(response)"));
+	DBG("PythonApiManager::getCustomResponse");
+	return std::unique_ptr<Response>(PythonModule::krait().getGlobalResponsePtr("response"));
 }
 
 void PythonApiManager::addHeaders(Response& response) const {

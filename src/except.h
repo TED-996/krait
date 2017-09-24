@@ -23,55 +23,59 @@ struct rootException : virtual boost::exception, virtual std::exception
 	}
 };
 
-struct syscallError: virtual rootException
+struct syscallError: public rootException
 {
 };
 
-struct pythonError: virtual rootException
+struct pythonError: public rootException
 {
 };
 
-struct networkError: virtual rootException
+struct networkError: public rootException
 {
 };
 
-struct httpParseError: virtual rootException
+struct httpParseError: public rootException
 {
 };
 
-struct routeParseError: virtual rootException
+struct routeParseError: public rootException
 {
 };
 
-struct routeError: virtual rootException
+struct routeError: public rootException
 {
 };
 
-struct notFoundError : virtual rootException
+struct notFoundError : public rootException
 {
 };
 
-struct serverError: virtual rootException
+struct serverError: public rootException
 {
 };
 
-struct cmdrError: virtual rootException
+struct cmdrError: public rootException
 {
 };
 
-struct pymlError: virtual rootException
+struct pymlError: public rootException
 {
 };
 
-struct notImplementedError: virtual rootException
+struct notImplementedError: public rootException
 {
 };
 
-struct sslError : virtual rootException
+struct sslError : public rootException
 {
 };
 
-struct configError : virtual rootException
+struct configError : public rootException
+{
+};
+
+struct siteError : public rootException
 {
 };
 

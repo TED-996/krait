@@ -1,12 +1,13 @@
 #pragma once
 
-#include<boost/python/detail/wrap_python.hpp>
-#include<boost/python.hpp>
-#include<boost/optional.hpp>
-#include<string>
-#include<map>
-#include"request.h"
-#include"except.h"
+#include <boost/python/detail/wrap_python.hpp>
+#include <boost/python.hpp>
+#include <boost/optional.hpp>
+#include <string>
+#include <map>
+#include "request.h"
+#include "response.h"
+#include "except.h"
 
 class PythonModule
 {
@@ -79,6 +80,8 @@ public:
 	std::string getGlobalStr(const std::string& name);
 	std::map<std::string, std::string> getGlobalMap(const std::string& name);
 	std::multimap<std::string, std::string> getGlobalTupleList(const std::string& name);
+	Response* getGlobalResponsePtr(const std::string& name);
+
 	boost::python::object getGlobalVariable(const std::string& name);
 
 	template<typename T>
@@ -123,6 +126,22 @@ private:
 
 	//Structs
 private:
+	template<typename T>
+	struct PtrWrapper
+	{
+		T* value;
+		PtrWrapper() noexcept : value(nullptr){}
+		PtrWrapper(T* value) noexcept : value(value){}
+
+		PtrWrapper(const PtrWrapper& other) noexcept = default;
+		PtrWrapper(PtrWrapper&& other) noexcept = default;
+		PtrWrapper& operator=(const PtrWrapper& other) noexcept = default;
+		PtrWrapper& operator=(PtrWrapper&& other) noexcept = default;
+
+		operator T*() const noexcept { return value; }
+		T* operator()() const noexcept { return value; }
+	};
+
 	struct StringMapToPythonObjectConverter
 	{
 		static PyObject* convert(std::map<std::string, std::string> const& map);
@@ -139,6 +158,12 @@ private:
 	};
 
 	struct PythonObjectToRouteConverter
+	{
+		static void* convertible(PyObject* objPtr);
+		static void construct(PyObject* objPtr, boost::python::converter::rvalue_from_python_stage1_data* data);
+	};
+
+	struct PythonObjectToResponsePtrConverter
 	{
 		static void* convertible(PyObject* objPtr);
 		static void construct(PyObject* objPtr, boost::python::converter::rvalue_from_python_stage1_data* data);

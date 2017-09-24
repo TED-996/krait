@@ -32,6 +32,9 @@ public:
 	Response(int statusCode, const std::string& body, bool connClose);
 	Response(int statusCode, IteratorResult&& bodyIterator, bool connClose);
 
+	Response(const Response& other) = delete;
+	Response(Response&& other) noexcept = default;
+
 	void setHttpVersion(int httpMajor, int httpMinor) {
 		this->httpMajor = httpMajor;
 		this->httpMinor = httpMinor;
