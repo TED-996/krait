@@ -6,6 +6,7 @@
 
 #define DBG_DISABLE
 #include "dbg.h"
+#include "dbgStopwatch.h"
 
 namespace b = boost;
 
@@ -211,9 +212,95 @@ std::string Response::getResponseHeaders() const {
 }
 
 const std::string* Response::getBodyNext() {
-	const std::string* result = *bodyIterator;
-	++bodyIterator;
-	return result;
+	DbgStopwatch stopwatch("Response::getBodyNext");
+	(void)stopwatch;
+
+	static const size_t strCapacity = 65536;
+	static std::string concatStr(strCapacity, '\0');
+	concatStr.clear();  // Usually this does NOT resize the string. We need the capacity!
+
+	if (concatStr.capacity() < strCapacity) {
+		DBG("std::string implementation doesn't keep the capacity over a clear(), disabling optimization.");
+		const std::string* result = *bodyIterator;
+		++bodyIterator;
+		return result;
+	}
+
+	bool isConcat = false;
+	const std::string* firstString = nullptr;
+
+	/* Loop invariant:
+	 * Either:
+	 *		1. firstString == nullptr, in which case no string has been read yet
+	 *		2. firstString != nullptr and !isConcat, in which case we read ONLY the first string but
+	 *			we're not sure whether to concat it or send it
+	 *		3. firstString != nullptr and isConcat, in which case we've read AT LEAST 2 strings and
+	 *			ALL strings read so far are in concatStr
+	 */
+
+	while (true) {
+		const std::string* thisString = *bodyIterator;
+		if (thisString == nullptr) {
+			// Case 3:
+			if (isConcat) {
+				return &concatStr;
+			}
+			// Case 2:
+			if (firstString != nullptr) {
+				return firstString;
+			}
+			// Case 1:
+			if (firstString == nullptr) {
+				return nullptr;
+			}
+			// Yeah, there's some redunancy, but Clang will definitely pick up on that, right?
+		}
+
+		// Case 1: If it's the first and already doesn't fit, send it.
+		if (firstString == nullptr && thisString->size() > strCapacity) {
+			++bodyIterator;
+			return thisString;
+		}
+
+		// Case 3:
+		if (isConcat) {
+			// If we've already concatted and it does fit, keep it
+			if (thisString->size() <= concatStr.capacity() - concatStr.size()) {
+				concatStr.append(*thisString);
+
+				//Increment since we're keeping it.
+				++bodyIterator;
+			}
+			// If we've already concatted, but it doesn't fit, scrap it
+			else {
+				//Don't increment since we're scrapping it.
+				return &concatStr;
+			}
+		}
+		//Case 1: It's the first AND it fits (see first if)
+		else if (firstString == nullptr) {
+			firstString = thisString;
+			// Increment since we're keeping it.
+			++bodyIterator;
+		}
+		// Case 2: It's the second string, after the first one fit.
+		else {
+			// If both strings fit, concat them.
+			if (firstString->size() + thisString->size() <= strCapacity) {
+				concatStr.append(*firstString);
+				concatStr.append(*thisString);
+				isConcat = true;
+
+				// Increment since we're keeping the second one.
+				++bodyIterator;
+			}
+			// If only the first fits, send the first one and scrap the second.
+			else {
+				// Don't increment since we're scrapping the second one.
+				return firstString;
+			}
+		}
+	}
 }
 
 

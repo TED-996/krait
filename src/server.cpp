@@ -19,6 +19,7 @@
 
 //#define DBG_DISABLE
 #include"dbg.h"
+#include "dbgStopwatch.h"
 
 
 namespace b = boost;
@@ -162,6 +163,10 @@ void Server::serveClientStart() {
 				Loggers::logInfo(formatString("Requests finished."));
 				break;
 			}
+
+			DbgStopwatch stopwatch(formatString("Serving request %1% %2%", httpVerbToString(requestPtr->getVerb()), requestPtr->getUrl()));
+			(void)stopwatch;
+			
 			Request& request = *requestPtr;
 			Loggers::logInfo(formatString("REQUEST: %1% %2%", httpVerbToString(request.getVerb()), request.getUrl()));
 

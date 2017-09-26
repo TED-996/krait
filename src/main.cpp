@@ -2,14 +2,12 @@
 #include <iostream>
 #include <string>
 #include <boost/program_options.hpp>
-
 #include "logger.h"
 #include "server.h"
 #include "commander.h"
 #include "signalManager.h"
 #include "except.h"
 
-//#define DBG_DISABLE
 #include "dbg.h"
 
 namespace bpo = boost::program_options;
@@ -132,7 +130,6 @@ void startSetLoggers(std::string outFilename, std::string errFilename) {
 		exit(10);
 	}
 
-	//DBG("Forking");
 	pid_t pid = fork();
 
 	if (pid == -1) {
@@ -167,7 +164,6 @@ bool splitPorts(const std::string& portSpecifier, boost::optional<u_int16_t>* ht
 	if (sepIdx == std::string::npos) {
 		return false;
 	}
-	DBG_FMT("sepIdx %1% in %2%", sepIdx, portSpecifier);
 
 	if (sepIdx == 0) {
 		*httpPort = boost::none;

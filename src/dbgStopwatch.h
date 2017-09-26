@@ -142,7 +142,7 @@ typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> DbgAggregatedStopwatch;
 class DbgStopwatch
 {
 public:
-	explicit DbgStopwatch(std::string&& name){
+	explicit DbgStopwatch(const std::string& name){
 	}
 
 	void restart() {
@@ -158,12 +158,12 @@ public:
 template<typename TStopwatch>
 class _DbgAggregatedStopwatch
 {
-	typedef typename TStopwatch::clock clock;
-	typedef typename clock::duration duration;
-	typedef typename clock::time_point time_point;
+	typedef int clock;
+	typedef int duration;
+	typedef int time_point;
 
 public:
-	explicit _DbgAggregatedStopwatch(std::string&& name) {
+	explicit _DbgAggregatedStopwatch(const std::string& name) {
 	}
 
 	void discard() {
@@ -179,7 +179,7 @@ public:
 class DbgDependentStopwatch
 {
 public:
-	typedef std::chrono::high_resolution_clock clock;
+	typedef int clock;
 
 private:
 	typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> Aggregator;

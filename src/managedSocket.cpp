@@ -13,11 +13,11 @@
 #include "except.h"
 #include "logger.h"
 #include "v2HttpParser.h"
+#include "raiiAlarm.h"
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include"dbg.h"
 #include "dbgStopwatch.h"
-#include "raiiAlarm.h"
 
 
 ManagedSocket::ManagedSocket(int socket) : socket(socket) {
@@ -158,6 +158,9 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
 }
 
 void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
+	DbgStopwatch stopwatch("ManagedSocket::respondWithBuffer");
+	(void)stopwatch;
+
 	const void* ptr = response;
 	const void* const end = (const void*)((const char*)response + size);
 
@@ -231,14 +234,31 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 }
 
 void ManagedSocket::respondWithObject(Response&& response) {
-	std::string responseData = response.getResponseHeaders();
+	DbgStopwatch stopwatch("Sending response");
+	(void)stopwatch;
 
-	respondWithBuffer(responseData.c_str(), responseData.length());
+	{
+		DbgStopwatch inner("Sending headers");
+		(void)inner;
 
-	const std::string* bodyNext = response.getBodyNext();
-	while (bodyNext != nullptr) {
-		respondWithBuffer(bodyNext->c_str(), bodyNext->length());
-		bodyNext = response.getBodyNext();
+		std::string responseData = response.getResponseHeaders();
+
+		respondWithBuffer(responseData.c_str(), responseData.length());
+
+		inner.stopPrint();
+	}
+
+	{
+		DbgStopwatch inner("Sending body");
+		(void)inner;
+
+		const std::string* bodyNext = response.getBodyNext();
+		while (bodyNext != nullptr) {
+			respondWithBuffer(bodyNext->c_str(), bodyNext->length());
+			bodyNext = response.getBodyNext();
+		}
+
+		inner.stopPrint();
 	}
 }
 
