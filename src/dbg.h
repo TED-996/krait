@@ -16,18 +16,17 @@
 #ifndef DBG_DISABLE
 #include<iostream>
 
-#undef DBG
 template<typename T>
-inline void DBG(const T& message) {
+inline void _DBG(const T& message) {
 	std::cout << message << std::endl;
 }
+#undef DBG
+#define DBG(message) _DBG(message)
 
 #else
 
 #undef DBG
-template<typename T>
-inline void DBG(const T& message) {
-}
+#define DBG(message)
 
 #endif
 
@@ -39,19 +38,19 @@ inline void DBG(const T& message) {
 #include<iostream>
 #include "formatHelper.h"
 
-#undef DBG_FMT
 template<typename... TArgs>
-inline void DBG_FMT(const char* fmt, TArgs&&... args) {
+inline void _DBG_FMT(const char* fmt, TArgs&&... args) {
 	DBG(formatString(fmt, std::forward<TArgs>(args)...));
 }
+#undef DBG_FMT
+#define DBG_FMT(fmt, ...) _DBG_FMT(fmt, __VA_ARGS__)
 
 #else
 
 #undef DBG_FMT
-template<typename... TArgs>
-inline void DBG_FMT(const char* fmt, TArgs&&... args) {
-}
+#define DBG_FMT(fmt, ...)
 
 #endif
 
 #endif
+

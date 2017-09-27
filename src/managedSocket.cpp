@@ -158,8 +158,7 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
 }
 
 void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
-	DbgStopwatch stopwatch("ManagedSocket::respondWithBuffer");
-	(void)stopwatch;
+	DbgStopwatch("ManagedSocket::respondWithBuffer");
 
 	const void* ptr = response;
 	const void* const end = (const void*)((const char*)response + size);
@@ -191,7 +190,7 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 
-	DbgAggregatedStopwatch stopwatch("ManagedSocket::getRequestTimeout");
+	DbgAggregatedStopwatch("ManagedSocket::getRequestTimeout");
 
 	while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
 		if (pollResult < 0) {
@@ -211,7 +210,7 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 		}
 
 		try {
-			DbgDependentStopwatch networkStopwatch(stopwatch);
+			DbgDependentStopwatchDef();
 			parser.consume(buffer, bytesRead);
 		}
 		catch (httpParseError err) {
@@ -234,31 +233,24 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 }
 
 void ManagedSocket::respondWithObject(Response&& response) {
-	DbgStopwatch stopwatch("Sending response");
-	(void)stopwatch;
+	DbgStopwatch("Sending response");
 
 	{
-		DbgStopwatch inner("Sending headers");
-		(void)inner;
+		DbgStopwatchVar(inner, "Sending headers");
 
 		std::string responseData = response.getResponseHeaders();
 
 		respondWithBuffer(responseData.c_str(), responseData.length());
-
-		inner.stopPrint();
 	}
 
 	{
-		DbgStopwatch inner("Sending body");
-		(void)inner;
+		DbgStopwatchVar(inner, "Sending body");
 
 		const std::string* bodyNext = response.getBodyNext();
 		while (bodyNext != nullptr) {
 			respondWithBuffer(bodyNext->c_str(), bodyNext->length());
 			bodyNext = response.getBodyNext();
 		}
-
-		inner.stopPrint();
 	}
 }
 

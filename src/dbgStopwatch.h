@@ -1,12 +1,12 @@
 ﻿#pragma once
-#include <string>
 
 #include "dbg.h"
 
 #ifndef DBG_DISABLE
+#include <string>
 #include <chrono>
 
-class DbgStopwatch
+class _DbgStopwatch
 {
 	typedef std::chrono::high_resolution_clock clock;
 
@@ -14,7 +14,7 @@ class DbgStopwatch
 	clock::time_point start;
 	bool running;
 public:
-	explicit DbgStopwatch(std::string&& name)
+	explicit _DbgStopwatch(std::string&& name)
 		: name(std::move(name)) {
 		restart();
 	}
@@ -27,7 +27,7 @@ public:
 	void stopPrint() {
 		if (running) {
 			clock::time_point stop = clock::now();
-			DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
+			_DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
 				std::chrono::duration<double, std::milli>(stop - start).count());
 			running = false;
 		}
@@ -37,7 +37,7 @@ public:
 		running = false;
 	}
 
-	~DbgStopwatch() {
+	~_DbgStopwatch() {
 		if (running) {
 			stopPrint();
 		}
@@ -45,7 +45,7 @@ public:
 };
 
 template<typename TStopwatch>
-class _DbgAggregatedStopwatch
+class __DbgAggregatedStopwatch
 {
 	typedef typename TStopwatch::clock clock;
 	typedef typename clock::duration duration;
@@ -54,16 +54,16 @@ class _DbgAggregatedStopwatch
 	std::string name;
 	duration total;
 public:
-	explicit _DbgAggregatedStopwatch(std::string&& name) : name(std::move(name)), total() {
+	explicit __DbgAggregatedStopwatch(std::string&& name) : name(std::move(name)), total() {
 	}
 
-	_DbgAggregatedStopwatch(const _DbgAggregatedStopwatch& other) = delete;
+	__DbgAggregatedStopwatch(const __DbgAggregatedStopwatch& other) = delete;
 
-	_DbgAggregatedStopwatch(_DbgAggregatedStopwatch&& other) noexcept = delete;
+	__DbgAggregatedStopwatch(__DbgAggregatedStopwatch&& other) noexcept = delete;
 
-	_DbgAggregatedStopwatch& operator=(const _DbgAggregatedStopwatch& other) = delete;
+	__DbgAggregatedStopwatch& operator=(const __DbgAggregatedStopwatch& other) = delete;
 
-	_DbgAggregatedStopwatch& operator=(_DbgAggregatedStopwatch&& other) noexcept = delete;
+	__DbgAggregatedStopwatch& operator=(__DbgAggregatedStopwatch&& other) noexcept = delete;
 
 	void discard() {
 		total = duration();
@@ -71,7 +71,7 @@ public:
 
 	void stopPrint() {
 		if (total.count() != 0) {
-			DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
+			_DBG_FMT("[DbgStopwatch] [%1%] %2%ms", name,
 				std::chrono::duration<double, std::milli>(total).count());
 			total = duration();
 		}
@@ -81,35 +81,35 @@ public:
 		total += amount;
 	}
 
-	~_DbgAggregatedStopwatch() {
+	~__DbgAggregatedStopwatch() {
 		stopPrint();
 	}
 };
 
-class DbgDependentStopwatch
+class _DbgDependentStopwatch
 {
 public:
 	typedef std::chrono::high_resolution_clock clock;
 private:
-	typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> Aggregator;
+	typedef __DbgAggregatedStopwatch<_DbgDependentStopwatch> Aggregator;
 	
 	clock::time_point start;
 	bool running;
 	Aggregator& aggregator;
 
 public:
-	DbgDependentStopwatch(Aggregator& aggregator)
+	_DbgDependentStopwatch(Aggregator& aggregator)
 		: aggregator(aggregator) {
 		restart();
 	}
 
-	DbgDependentStopwatch(const DbgDependentStopwatch& other) = delete;
+	_DbgDependentStopwatch(const _DbgDependentStopwatch& other) = delete;
 
-	DbgDependentStopwatch(DbgDependentStopwatch&& other) noexcept = delete;
+	_DbgDependentStopwatch(_DbgDependentStopwatch&& other) noexcept = delete;
 
-	DbgDependentStopwatch& operator=(const DbgDependentStopwatch& other) = delete;
+	_DbgDependentStopwatch& operator=(const _DbgDependentStopwatch& other) = delete;
 
-	DbgDependentStopwatch& operator=(DbgDependentStopwatch&& other) noexcept = delete;
+	_DbgDependentStopwatch& operator=(_DbgDependentStopwatch&& other) noexcept = delete;
 
 	void restart() {
 		start = clock::now();
@@ -128,75 +128,53 @@ public:
 		running = false;
 	}
 
-	~DbgDependentStopwatch() {
+	~_DbgDependentStopwatch() {
 		if (running) {
 			stopAdd();
 		}
 	}
 };
 
-typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> DbgAggregatedStopwatch;
+typedef __DbgAggregatedStopwatch<_DbgDependentStopwatch> _DbgAggregatedStopwatch;
+
+
+#define DbgStopwatchVar(var, name) \
+	_DbgStopwatch var((name)); \
+	(void)var;
+
+#define DbgStopwatch(name) DbgStopwatchVar(stopwatch, (name))
+
+
+#define DbgAggregatedStopwatchVar(var, name) \
+	_DbgAggregatedStopwatch var((name)); \
+	(void)var;
+
+#define DbgAggregatedStopwatch(name) DbgAggregatedStopwatchVar(aggrStopwatch, (name))
+
+
+#define DbgDependentStopwatchVar(var, aggregator) \
+	_DbgDependentStopwatch var((aggregator)); \
+	(void)var;
+
+#define DbgDependentStopwatch(aggregator) DbgDependentStopwatch(depStopwatch, (aggregator))
+
+#define DbgDependentStopwatchDef() DbgDependentStopwatch(aggrStopwatch)
+
+#define DbgDependentStopwatchDefVar(var) DbgDependentStopwatchVar(var, aggrStopwatch)
+
+
 
 #else
 
-class DbgStopwatch
-{
-public:
-	explicit DbgStopwatch(const std::string& name){
-	}
+#define DbgStopwatchVar(var, name)
+#define DbgStopwatch(name)
 
-	void restart() {
-	}
+#define DbgAggregatedStopwatchVar(var, name)
+#define DbgAggregatedStopwatch(name)
 
-	void stopPrint() {
-	}
-
-	void discard() {
-	}
-};
-
-template<typename TStopwatch>
-class _DbgAggregatedStopwatch
-{
-	typedef int clock;
-	typedef int duration;
-	typedef int time_point;
-
-public:
-	explicit _DbgAggregatedStopwatch(const std::string& name) {
-	}
-
-	void discard() {
-	}
-
-	void stopPrint() {
-	}
-
-	void add(duration amount) {
-	}
-};
-
-class DbgDependentStopwatch
-{
-public:
-	typedef int clock;
-
-private:
-	typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> Aggregator;
-public:
-	DbgDependentStopwatch(Aggregator& aggregator){
-	}
-
-	void restart() {
-	}
-
-	void stopAdd() {
-	}
-
-	void discard() {
-	}
-};
-
-typedef _DbgAggregatedStopwatch<DbgDependentStopwatch> DbgAggregatedStopwatch;
+#define DbgDependentStopwatchVar(var, aggregator)
+#define DbgDependentStopwatch(aggregator)
+#define DbgDependentStopwatchDef()
+#define DbgDependentStopwatchDefVar(var)
 
 #endif

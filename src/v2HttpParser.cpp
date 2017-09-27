@@ -26,7 +26,7 @@ V2HttpFsm::V2HttpFsm() : FsmV2(20, 0), parser(nullptr) {
 }
 
 void V2HttpFsm::init() {
-	DbgStopwatch stopwatch("V2HttpFsm::init");
+	DbgStopwatch("V2HttpFsm::init");
 
 	typedef SimpleFsmTransition Simple;
 	typedef PushFsmTransition Push;

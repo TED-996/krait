@@ -18,7 +18,7 @@
 #include "config.h"
 
 //#define DBG_DISABLE
-#include"dbg.h"
+#include "dbg.h"
 #include "dbgStopwatch.h"
 
 
@@ -164,8 +164,7 @@ void Server::serveClientStart() {
 				break;
 			}
 
-			DbgStopwatch stopwatch(formatString("Serving request %1% %2%", httpVerbToString(requestPtr->getVerb()), requestPtr->getUrl()));
-			(void)stopwatch;
+			DbgStopwatch(formatString("Serving request %1% %2%", httpVerbToString(requestPtr->getVerb()), requestPtr->getUrl()));
 			
 			Request& request = *requestPtr;
 			Loggers::logInfo(formatString("REQUEST: %1% %2%", httpVerbToString(request.getVerb()), request.getUrl()));

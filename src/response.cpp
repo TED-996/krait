@@ -212,8 +212,7 @@ std::string Response::getResponseHeaders() const {
 }
 
 const std::string* Response::getBodyNext() {
-	DbgStopwatch stopwatch("Response::getBodyNext");
-	(void)stopwatch;
+	DbgStopwatch("Response::getBodyNext");
 
 	static const size_t strCapacity = 65536;
 	static std::string concatStr(strCapacity, '\0');

@@ -9,7 +9,7 @@ PymlFile::PymlFile(std::string::iterator sourceStart,
                    std::string::iterator sourceEnd,
                    std::unique_ptr<IPymlParser>& parser)
 	: parser(std::move(parser)) {
-	DbgStopwatch stopwatch("PymlFile parsing");
+	DbgStopwatch("PymlFile parsing");
 
 	this->parser->consume(sourceStart, sourceEnd);
 	rootItem = this->parser->getParsed();

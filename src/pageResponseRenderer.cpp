@@ -8,8 +8,7 @@
 #include "dbgStopwatch.h"
 
 std::unique_ptr<Response> PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request) {
-	DbgStopwatch stopwatch("Rendering response");
-	(void)stopwatch;
+	DbgStopwatch("Rendering response");
 
 	IteratorResult iterResult(PymlIterator(pymlSource.getRootItem()));
 	
