@@ -3,7 +3,7 @@
 #define DBG_DISABLE
 #include"dbg.h"
 
-IteratorResult::IteratorResult(PymlIterator&& iterator) {
+IteratorResult::IteratorResult(IResponseIterator&& iterator) {
 	exhaustIterator(std::move(iterator));
 }
 
@@ -14,30 +14,17 @@ IteratorResult::IteratorResult(std::string fullString) {
 	totalLength = fullString.length();
 }
 
-
-IteratorResult::IteratorResult(IteratorResult&& other) noexcept
-	: strIterated(std::move(other.strIterated)), totalLength(other.totalLength), currentIdx(other.currentIdx){
-}
-
-IteratorResult& IteratorResult::operator=(IteratorResult&& other) noexcept {
-	if (this == &other)
-		return *this;
-	strIterated = std::move(other.strIterated);
-	totalLength = other.totalLength;
-	currentIdx = other.currentIdx;
-	return *this;
-}
-
-void IteratorResult::exhaustIterator(PymlIterator&& iterator) {
+void IteratorResult::exhaustIterator(IResponseIterator&& iterator) {
 	totalLength = 0;
-	while (*iterator != nullptr) {
-		if (iterator.isTmpStr(*iterator)) {
-			strIterated.push_back(ValueOrPtr<std::string>(**iterator));
+	while ((*iterator).data() != nullptr) {
+		if (iterator.isTmpRef(*iterator)) {
+			ownedStrings.emplace_back((*iterator).data(), (*iterator).length());
+			strIterated.push_back(boost::string_ref(ownedStrings.back()));
 		}
 		else {
-			strIterated.push_back(ValueOrPtr<std::string>(*iterator));
+			strIterated.push_back(*iterator);
 		}
-		totalLength += (*iterator)->length();
+		totalLength += (*iterator).length();
 
 		++iterator;
 	}
@@ -51,9 +38,9 @@ const IteratorResult& IteratorResult::operator++() {
 	return *this;
 }
 
-const std::string* IteratorResult::operator*() {
+boost::string_ref IteratorResult::operator*() {
 	if (currentIdx >= strIterated.size()) {
-		return nullptr;
+		return boost::string_ref();
 	}
-	return strIterated[currentIdx].get();
+	return strIterated[currentIdx];
 }

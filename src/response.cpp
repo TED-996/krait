@@ -211,7 +211,7 @@ std::string Response::getResponseHeaders() const {
 	return statusLine + "\r\n" + headersAll + "\r\n";
 }
 
-const std::string* Response::getBodyNext() {
+boost::string_ref Response::getBodyNext() {
 	DbgStopwatch("Response::getBodyNext");
 
 	static const size_t strCapacity = 65536;
@@ -220,13 +220,13 @@ const std::string* Response::getBodyNext() {
 
 	if (concatStr.capacity() < strCapacity) {
 		DBG("std::string implementation doesn't keep the capacity over a clear(), disabling optimization.");
-		const std::string* result = *bodyIterator;
+		boost::string_ref result = *bodyIterator;
 		++bodyIterator;
 		return result;
 	}
 
 	bool isConcat = false;
-	const std::string* firstString = nullptr;
+	boost::string_ref firstString;
 
 	/* Loop invariant:
 	 * Either:
@@ -238,25 +238,25 @@ const std::string* Response::getBodyNext() {
 	 */
 
 	while (true) {
-		const std::string* thisString = *bodyIterator;
-		if (thisString == nullptr) {
+		boost::string_ref thisString = *bodyIterator;
+		if (thisString.data() == nullptr) {
 			// Case 3:
 			if (isConcat) {
-				return &concatStr;
+				return boost::string_ref(concatStr);
 			}
 			// Case 2:
-			if (firstString != nullptr) {
+			if (firstString.data() != nullptr) {
 				return firstString;
 			}
 			// Case 1:
-			if (firstString == nullptr) {
+			if (firstString.data() == nullptr) {
 				return nullptr;
 			}
 			// Yeah, there's some redunancy, but Clang will definitely pick up on that, right?
 		}
 
 		// Case 1: If it's the first and already doesn't fit, send it.
-		if (firstString == nullptr && thisString->size() > strCapacity) {
+		if (firstString.data() == nullptr && thisString.size() > strCapacity) {
 			++bodyIterator;
 			return thisString;
 		}
@@ -264,8 +264,8 @@ const std::string* Response::getBodyNext() {
 		// Case 3:
 		if (isConcat) {
 			// If we've already concatted and it does fit, keep it
-			if (thisString->size() <= concatStr.capacity() - concatStr.size()) {
-				concatStr.append(*thisString);
+			if (thisString.size() <= concatStr.capacity() - concatStr.size()) {
+				concatStr.append(thisString.data(), thisString.size());
 
 				//Increment since we're keeping it.
 				++bodyIterator;
@@ -273,11 +273,11 @@ const std::string* Response::getBodyNext() {
 			// If we've already concatted, but it doesn't fit, scrap it
 			else {
 				//Don't increment since we're scrapping it.
-				return &concatStr;
+				return boost::string_ref(concatStr);
 			}
 		}
 		//Case 1: It's the first AND it fits (see first if)
-		else if (firstString == nullptr) {
+		else if (firstString.data() == nullptr) {
 			firstString = thisString;
 			// Increment since we're keeping it.
 			++bodyIterator;
@@ -285,9 +285,9 @@ const std::string* Response::getBodyNext() {
 		// Case 2: It's the second string, after the first one fit.
 		else {
 			// If both strings fit, concat them.
-			if (firstString->size() + thisString->size() <= strCapacity) {
-				concatStr.append(*firstString);
-				concatStr.append(*thisString);
+			if (firstString.size() + thisString.size() <= strCapacity) {
+				concatStr.append(firstString.data(), firstString.size());
+				concatStr.append(thisString.data(), thisString.size());
 				isConcat = true;
 
 				// Increment since we're keeping the second one.

@@ -15,4 +15,6 @@ bool fdClosed(int fd);
 std::string readFromFile(const std::string& filename);
 std::string unixTimeToString(std::time_t timeVal);
 std::string generateTagFromStat(const std::string& filename);
+
 std::string randomAlpha(size_t size);
+std::string htmlEscape(std::string htmlCode);

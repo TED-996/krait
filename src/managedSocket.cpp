@@ -246,9 +246,9 @@ void ManagedSocket::respondWithObject(Response&& response) {
 	{
 		DbgStopwatchVar(inner, "Sending body");
 
-		const std::string* bodyNext = response.getBodyNext();
-		while (bodyNext != nullptr) {
-			respondWithBuffer(bodyNext->c_str(), bodyNext->length());
+		boost::string_ref bodyNext = response.getBodyNext();
+		while (bodyNext.data() != nullptr) {
+			respondWithBuffer(bodyNext.data(), bodyNext.size());
 			bodyNext = response.getBodyNext();
 		}
 	}

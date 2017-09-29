@@ -156,3 +156,38 @@ std::string randomAlpha(size_t size) {
 
 	return result;
 }
+
+std::string htmlEscape(std::string htmlCode) {
+	std::string result;
+	bool resultEmpty = true;
+
+	const char* replacements[256];
+	memzero(replacements);
+	replacements[(int)'&'] = "&amp;";
+	replacements[(int)'<'] = "&lt;";
+	replacements[(int)'>'] = "&gt;";
+	replacements[(int)'"'] = "&quot;";
+	replacements[(int)'\''] = "&apos;";
+
+	unsigned int oldIdx = 0;
+	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
+		if (replacements[(int)htmlCode[idx]] != nullptr) {
+			if (resultEmpty) {
+				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
+				resultEmpty = false;
+			}
+
+			result.append(htmlCode, oldIdx, idx - oldIdx);
+			result.append(replacements[(int)htmlCode[idx]]);
+			oldIdx = idx + 1;
+		}
+	}
+
+	if (resultEmpty) {
+		return htmlCode;
+	}
+	else {
+		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
+		return result;
+	}
+}

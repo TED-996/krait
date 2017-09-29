@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <memory>
 #include "request.h"
 #include "response.h"
 

@@ -166,15 +166,15 @@ typedef __DbgAggregatedStopwatch<_DbgDependentStopwatch> _DbgAggregatedStopwatch
 
 #else
 
-#define DbgStopwatchVar(var, name)
-#define DbgStopwatch(name)
+#define DbgStopwatchVar(var, name) (void)0
+#define DbgStopwatch(name) (void)0
 
-#define DbgAggregatedStopwatchVar(var, name)
-#define DbgAggregatedStopwatch(name)
+#define DbgAggregatedStopwatchVar(var, name) (void)0
+#define DbgAggregatedStopwatch(name) (void)0
 
-#define DbgDependentStopwatchVar(var, aggregator)
-#define DbgDependentStopwatch(aggregator)
-#define DbgDependentStopwatchDef()
-#define DbgDependentStopwatchDefVar(var)
+#define DbgDependentStopwatchVar(var, aggregator) (void)0
+#define DbgDependentStopwatch(aggregator) (void)0
+#define DbgDependentStopwatchDef() (void)0
+#define DbgDependentStopwatchDefVar(var) (void)0
 
 #endif

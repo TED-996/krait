@@ -59,5 +59,5 @@ public:
 	bool headerExists(std::string name) const;
 
 	std::string getResponseHeaders() const;
-	const std::string* getBodyNext();
+	boost::string_ref getBodyNext();
 };

@@ -2,10 +2,12 @@
 #include "server.h"
 #include "pythonModule.h"
 #include "mvcPymlFile.h"
+#include "pymlIterator.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
 #include "dbgStopwatch.h"
+
 
 std::unique_ptr<Response> PageResponseRenderer::render(const IPymlFile& pymlSource, const Request& request) {
 	DbgStopwatch("Rendering response");
