@@ -157,17 +157,32 @@ std::string randomAlpha(size_t size) {
 	return result;
 }
 
-std::string htmlEscape(std::string htmlCode) {
-	std::string result;
-	bool resultEmpty = true;
-
-	const char* replacements[256];
-	memzero(replacements);
+std::vector<const char*> getHtmlReplacements() {
+	std::vector<const char*> replacements(256);
 	replacements[(int)'&'] = "&amp;";
 	replacements[(int)'<'] = "&lt;";
 	replacements[(int)'>'] = "&gt;";
 	replacements[(int)'"'] = "&quot;";
 	replacements[(int)'\''] = "&apos;";
+	return replacements;
+}
+
+
+std::string htmlEscape(const std::string& htmlCode) {
+	boost::optional<std::string> result = htmlEscapeRef(boost::string_ref(htmlCode));
+	if (result != boost::none) {
+		return result.get();
+	}
+	else {
+		return htmlCode;
+	}
+}
+
+boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode) {
+	std::string result;
+	bool resultEmpty = true;
+
+	static std::vector<const char*> replacements = getHtmlReplacements();
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
@@ -177,17 +192,17 @@ std::string htmlEscape(std::string htmlCode) {
 				resultEmpty = false;
 			}
 
-			result.append(htmlCode, oldIdx, idx - oldIdx);
+			result.append(htmlCode.data() + oldIdx, idx - oldIdx);
 			result.append(replacements[(int)htmlCode[idx]]);
 			oldIdx = idx + 1;
 		}
 	}
 
 	if (resultEmpty) {
-		return htmlCode;
+		return boost::none;
 	}
 	else {
-		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
+		result.append(htmlCode.data() + oldIdx, htmlCode.length() - oldIdx);
 		return result;
 	}
 }

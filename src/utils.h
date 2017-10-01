@@ -1,6 +1,8 @@
 #pragma once
-#include<string>
-#include<ctime>
+#include <string>
+#include <ctime>
+#include <boost/optional.hpp>
+#include <boost/utility/string_ref.hpp>
 
 
 #define memzero(buffer) memset(&buffer, 0, sizeof(buffer))
@@ -17,4 +19,9 @@ std::string unixTimeToString(std::time_t timeVal);
 std::string generateTagFromStat(const std::string& filename);
 
 std::string randomAlpha(size_t size);
-std::string htmlEscape(std::string htmlCode);
+std::string htmlEscape(const std::string& htmlCode);
+boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode);
+
+inline boost::optional<std::string> htmlEscapeRef(const std::string& htmlCode) {
+	return htmlEscapeRef(boost::string_ref(htmlCode));
+}
