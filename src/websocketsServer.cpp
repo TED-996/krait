@@ -6,7 +6,7 @@
 #include "logger.h"
 #include "formatHelper.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 WebsocketsServer::WebsocketsServer(IManagedSocket& clientSocket)
@@ -19,7 +19,6 @@ boost::optional<WebsocketsMessage> WebsocketsServer::read(int timeoutMs) {
 	if (!frameOptional) {
 		return boost::none;
 	}
-	//DBG("frame got");
 
 	WebsocketsFrame frame = frameOptional.get();
 
@@ -148,25 +147,22 @@ bool WebsocketsServer::start(Request& upgradeRequest) {
 			msgInOpt = this->read(8);
 		Py_END_ALLOW_THREADS
 		if (msgInOpt != boost::none) {
-			//("in msg with success");
-			//DBG_FMT("MSG: %1%", msgInOpt.get().message);
 			WebsocketsMessage& msgIn = msgInOpt.get();
 			if (msgIn.opcode == WebsocketsOpcode::Text || msgIn.opcode == WebsocketsOpcode::Binary) {
-				//DBG("calling inMsgEvent");
 				PythonModule::websockets().callObject(inMsgEvent, boost::python::str(msgIn.message));
 			}
 		}
 
 		boost::python::object outMsg = PythonModule::websockets().callObject(outMsgGetter);
 		if (!outMsg.is_none()) {
-			std::string msgString = boost::python::extract<std::string>(outMsg);
-			//DBG_FMT("sending %1%", msgString);
+			std::string msgString = PythonModule::toStdString(outMsg);
 
 			Py_BEGIN_ALLOW_THREADS
 				WebsocketsMessage msg = {WebsocketsOpcode::Text, msgString};
 				this->write(msg);
 			Py_END_ALLOW_THREADS
 		}
+
 	}
 
 	PythonModule::websockets().callObject(ctrlStopMethod);

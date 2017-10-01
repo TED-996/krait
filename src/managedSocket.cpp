@@ -247,6 +247,7 @@ void ManagedSocket::respondWithObject(Response&& response) {
 		DbgStopwatchVar(inner, "Sending body");
 
 		boost::string_ref bodyNext = response.getBodyNext();
+
 		while (bodyNext.data() != nullptr) {
 			respondWithBuffer(bodyNext.data(), bodyNext.size());
 			bodyNext = response.getBodyNext();

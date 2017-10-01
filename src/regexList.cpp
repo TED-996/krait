@@ -6,6 +6,7 @@
 
 #define DBG_DISABLE
 #include"dbg.h"
+#include "pythonModule.h"
 
 namespace bp = boost::python;
 
@@ -38,7 +39,7 @@ RegexList RegexList::fromPythonObject(boost::python::object source) {
 	
 	std::vector<boost::regex> regexes;
 	for (int i = 0; i < len; i++) {
-		regexes.push_back(boost::regex(static_cast<std::string>(bp::extract<std::string>(bp::str(source[i])))));
+		regexes.push_back(boost::regex(PythonModule::toStdString(source[i])));
 	}
 	return RegexList(regexes);
 }

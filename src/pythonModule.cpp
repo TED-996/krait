@@ -10,6 +10,7 @@
 
 #define DBG_DISABLE
 #include "dbg.h"
+#include "pyEmitModule.h"
 
 namespace b = boost;
 namespace bp = boost::python;
@@ -26,6 +27,10 @@ void PythonModule::initPython() {
 		return;
 	}
 	try {
+		//First initialize the Emit module.
+		PyEmitModule::initialize();
+
+		//Afterwards initialize Python.
 		Py_Initialize();
 		DBG("PyInitialize done");
 		bp::to_python_converter<Request, requestToPythonObjectConverter>();
@@ -173,9 +178,7 @@ void PythonModule::execfile(const std::string& filename) {
 std::string PythonModule::eval(const std::string& code) {
 	DBG("in pythonEval()");
 	try {
-		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
-		bp::str resultStr(result);
-		return bp::extract<std::string>(resultStr);
+		return toStdString(bp::eval(bp::str(code), moduleGlobals, moduleGlobals));
 	}
 	catch (const bp::error_already_set&) {
 		DBG("Python error in pythonEval().");
@@ -295,9 +298,7 @@ void PythonModule::setGlobalEmptyList(const std::string& name) {
 std::string PythonModule::getGlobalStr(const std::string& name) {
 	DBG("in pythonGetGlobalStr()");
 	try {
-		bp::object globalObj = moduleObject.attr(name.c_str());
-		bp::str globalStr(globalObj);
-		return bp::extract<std::string>(globalStr);
+		return toStdString(moduleObject.attr(name.c_str()));
 	}
 	catch (const bp::error_already_set&) {
 		DBG("Python error in getGlobalStr().");
@@ -317,7 +318,7 @@ std::map<std::string, std::string> PythonModule::getGlobalMap(const std::string&
 		std::map<std::string, std::string> result;
 		for (int i = 0; i < nrKeys; i++) {
 			bp::object key = dictKeys[i];
-			result[bp::extract<std::string>(bp::str(key))] = bp::extract<std::string>(bp::str(globalDict[key]));
+			result[toStdString(key)] = toStdString(globalDict[key]);
 		}
 		return result;
 	}
@@ -349,8 +350,8 @@ std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(const s
 
 		std::multimap<std::string, std::string> result;
 		for (int i = 0; i < listLen; i++) {
-			std::string key = bp::extract<std::string>(bp::str(globalObj[i][0]));
-			std::string value = bp::extract<std::string>(bp::str(globalObj[i][1]));
+			std::string key = toStdString(globalObj[i][0]);
+			std::string value = toStdString(globalObj[i][1]);
 			result.insert(make_pair(std::move(key), std::move(value)));
 		}
 		return result;
@@ -548,7 +549,7 @@ void PythonModule::PythonObjectToRouteConverter::construct(PyObject* objPtr, bp:
 
 		// ReSharper disable once CppNonReclaimedResourceAcquisition
 		new(storage) Route(
-			toRouteVerb(static_cast<std::string>(bp::extract<std::string>(obj.attr("verb")))),
+			toRouteVerb(toStdString(obj.attr("verb"))),
 			regex,
 			extractOptional<std::string>(obj.attr("url")),
 			extractOptional<std::string>(obj.attr("target")),
@@ -586,7 +587,7 @@ void PythonModule::PythonObjectToResponsePtrConverter::construct(PyObject* objPt
 		std::unordered_multimap<std::string, std::string> headers;
 		std::string body;
 		try {
-			std::string httpVersion = bp::extract<std::string>(obj.attr("http_version"));
+			std::string httpVersion = toStdString(obj.attr("http_version"));
 			if (httpVersion != "HTTP/1.1") {
 				BOOST_THROW_EXCEPTION(siteError() << stringInfo("HTTP version not HTTP/1.1."));
 			}
@@ -597,12 +598,12 @@ void PythonModule::PythonObjectToResponsePtrConverter::construct(PyObject* objPt
 			int listLen = bp::len(headersObj);
 
 			for (int i = 0; i < listLen; i++) {
-				std::string key = bp::extract<std::string>(bp::str(headersObj[i][0]));
-				std::string value = bp::extract<std::string>(bp::str(headersObj[i][1]));
+				std::string key = toStdString(headersObj[i][0]);
+				std::string value = toStdString(headersObj[i][1]);
 				headers.insert(make_pair(std::move(key), std::move(value)));
 			}
 
-			body = bp::extract<std::string>(obj.attr("body"));
+			body = toStdString(obj.attr("body"));
 		}
 		catch(const bp::error_already_set&) {
 			BOOST_THROW_EXCEPTION(pythonError() << stringInfo("krait.response malformed (most likely incorrect types)")

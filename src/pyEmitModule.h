@@ -25,10 +25,10 @@ class PyEmitModule
 		bool isTmpRef(const boost::string_ref& ref) const override;
 	};
 
-	void addPythonObj(boost::python::object&& strings);
+	void addPythonObj(boost::python::str&& strings);
 	void addStdString(std::string&& string);
 
-	static bool throwIfNoInstance();
+	static PyEmitModule* getInstance();
 public:
 	PyEmitModule();
 

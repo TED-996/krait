@@ -43,6 +43,19 @@ public:
 		return mod;
 	}
 
+	static boost::python::str toPythonStr(const boost::python::object& obj) {
+		if (PyString_Check(obj.ptr())) {
+			return boost::python::extract<boost::python::str>(obj);
+		}
+		else {
+			return boost::python::str(obj);
+		}
+	}
+	static std::string toStdString(const boost::python::object& obj) {
+		//TODO: check if toPythonStr is needed.
+		return boost::python::extract<std::string>(toPythonStr(obj));
+	}
+
 private:
 	static bool pythonInitialized;
 	static bool modulesInitialized;

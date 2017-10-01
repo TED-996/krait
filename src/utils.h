@@ -19,7 +19,7 @@ std::string unixTimeToString(std::time_t timeVal);
 std::string generateTagFromStat(const std::string& filename);
 
 std::string randomAlpha(size_t size);
-std::string htmlEscape(const std::string& htmlCode);
+
 boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode);
 
 inline boost::optional<std::string> htmlEscapeRef(const std::string& htmlCode) {

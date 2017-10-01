@@ -94,7 +94,7 @@ std::string pyErrAsString() {
 			formatted_list = format_exception(handleException, handleValue, handleTraceback);
 		}
 
-		bp::object formatted = bp::str("\n").join(formatted_list);
+		bp::str formatted = bp::str("\n").join(formatted_list);
 
 		PyErr_Clear();
 
@@ -165,17 +165,6 @@ std::vector<const char*> getHtmlReplacements() {
 	replacements[(int)'"'] = "&quot;";
 	replacements[(int)'\''] = "&apos;";
 	return replacements;
-}
-
-
-std::string htmlEscape(const std::string& htmlCode) {
-	boost::optional<std::string> result = htmlEscapeRef(boost::string_ref(htmlCode));
-	if (result != boost::none) {
-		return result.get();
-	}
-	else {
-		return htmlCode;
-	}
 }
 
 boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode) {

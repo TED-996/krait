@@ -8,7 +8,10 @@ IteratorResult::IteratorResult(IResponseIterator&& iterator) {
 }
 
 IteratorResult::IteratorResult(std::string fullString) {
-	strIterated.emplace_back(fullString);
+	if (fullString.size() != 0) {
+		ownedStrings.emplace_back(std::move(fullString));
+		strIterated.emplace_back(ownedStrings.back());
+	}
 
 	currentIdx = 0;
 	totalLength = fullString.length();

@@ -74,3 +74,6 @@ def exit_function():
 
 atexit.register(exit_function)
 print "atexit registered"
+
+krait._emit("test");
+

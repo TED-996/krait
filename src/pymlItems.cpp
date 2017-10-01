@@ -39,10 +39,17 @@ const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 	return nullptr;
 }
 
-std::string htmlEscape(std::string htmlCode);
-
 std::string PymlItemPyEval::runPyml() const {
-	return htmlEscape(PythonModule::main().eval(code));
+	std::string result = PythonModule::main().eval(code);
+	boost::optional<std::string> escaped = htmlEscapeRef(result);
+	
+	//Doing this instead of something more straight-forward to allow for copy elision.
+	if (escaped != boost::none) {
+		result = std::move(escaped.get());
+	}
+
+	return result;
+
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {

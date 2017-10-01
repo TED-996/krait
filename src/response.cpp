@@ -250,7 +250,7 @@ boost::string_ref Response::getBodyNext() {
 			}
 			// Case 1:
 			if (firstString.data() == nullptr) {
-				return nullptr;
+				return boost::string_ref();
 			}
 			// Yeah, there's some redunancy, but Clang will definitely pick up on that, right?
 		}
