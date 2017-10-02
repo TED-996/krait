@@ -69,13 +69,8 @@ db.sqlite_db = os.path.join(krait.site_root, ".private", "db")
 
 # Choose a function to be run when a process shuts down (either the server, or a worker) and register it.
 def exit_function():
-    print "atexit test: Demoserver process shutting down."
+    print "init.py, atexit test: Demoserver process shutting down."
     sys.stdout.flush()
 
 atexit.register(exit_function)
-print "atexit registered"
-
-krait._emit("test");
-krait._emit_raw("test raw");
-
-print "wtf"
+print "init.py: atexit registered"

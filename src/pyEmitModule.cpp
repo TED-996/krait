@@ -69,9 +69,6 @@ void PyEmitModule::emit(boost::python::object value) {
 	boost::optional<std::string> escapedStr = htmlEscapeRef(
 		boost::string_ref(boost::python::extract<const char*>(strValue)(), boost::python::len(strValue)));
 
-	DBG("emitting!");
-	exit(-1);
-
 	if (escapedStr == boost::none) {
 		instanceLocal->addPythonObj(std::move(strValue));
 	}
@@ -84,8 +81,6 @@ void PyEmitModule::emitRaw(boost::python::object value) {
 	PyEmitModule* instanceLocal = getInstanceOrThrow();
 
 	boost::python::str strValue = PythonModule::toPythonStr(value);
-
-	DBG("emitting raw!");
 
 	instanceLocal->addPythonObj(std::move(strValue));
 }
