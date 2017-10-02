@@ -79,6 +79,7 @@ public:
 	bool test(const std::string& condition);
 	bool checkIsNone(const std::string& name);
 
+	boost::python::object callGlobal(const std::string& name);
 	boost::python::object callObject(const boost::python::object& obj, const boost::python::object& arg);
 	boost::python::object callObject(const boost::python::object& obj);
 

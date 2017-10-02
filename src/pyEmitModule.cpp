@@ -88,7 +88,7 @@ void PyEmitModule::emitRaw(boost::python::object value) {
 PyEmitModule* PyEmitModule::getInstanceOrThrow() {
 	PyEmitModule* instanceLocal = instance;
 	if (instanceLocal == nullptr) {
-		PyErr_SetString(PyExc_ValueError, "Krait Emit not available, not processing a response.");
+		PyErr_SetString(PyExc_ValueError, "Krait Emit not available, not processing a (suitable) response.");
 		boost::python::throw_error_already_set();
 	}
 	return instanceLocal;

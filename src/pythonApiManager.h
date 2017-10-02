@@ -7,7 +7,6 @@
 
 class PythonApiManager
 {
-	PyEmitModule emitModule;
 public:
 	void set(const Request& request, bool isWebsockets) const;
 	std::unique_ptr<Response> getCustomResponse() const;

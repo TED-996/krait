@@ -67,7 +67,7 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 				apiManager.set(request, isWebsockets);
 			}
 
-			response = renderer.render(*pymlFile, request);
+			response = renderer.renderFromPyml(*pymlFile, request);
 
 			if (isDynamic) {
 				if (apiManager.isCustomResponse()) {
