@@ -53,7 +53,7 @@ public:
 	}
 	static std::string toStdString(const boost::python::object& obj) {
 		//TODO: check if toPythonStr is needed.
-		return boost::python::extract<std::string>(toPythonStr(obj));
+		return boost::python::extract<std::string>(obj);
 	}
 
 private:

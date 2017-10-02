@@ -28,7 +28,7 @@ class PyEmitModule
 	void addPythonObj(boost::python::str&& strings);
 	void addStdString(std::string&& string);
 
-	static PyEmitModule* getInstance();
+	static PyEmitModule* getInstanceOrThrow();
 public:
 	PyEmitModule();
 

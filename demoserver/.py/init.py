@@ -76,4 +76,6 @@ atexit.register(exit_function)
 print "atexit registered"
 
 krait._emit("test");
+krait._emit_raw("test raw");
 
+print "wtf"
