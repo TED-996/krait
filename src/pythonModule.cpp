@@ -142,6 +142,21 @@ PythonModule::PythonModule(const std::string& name) {
 	}
 }
 
+PythonModule::PythonModule(boost::python::object moduleObject) {
+	DBG("PythonModule(moduleObject)");
+	// No initPython() necessary, everything is already loaded, since we have an object.
+
+	try {
+		this->moduleObject = moduleObject;
+		moduleGlobals = bp::extract<bp::dict>(moduleObject.attr("__dict__"));
+		name = bp::extract<std::string>(moduleObject.attr("__name__"));
+	}
+	catch (const bp::error_already_set&) {
+		DBG("Python error in PythonModule(moduleObject).");
+
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("PythonModule(moduleObject)"));
+	}
+}
 
 void PythonModule::clear() {
 	moduleGlobals.clear();
@@ -210,7 +225,7 @@ bool PythonModule::test(const std::string& condition) {
 	catch (const bp::error_already_set&) {
 		DBG("Python error in test().");
 
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("test()") << pyCodeInfo(condition));
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("test(condition)") << pyCodeInfo(condition));
 	}
 }
 
@@ -238,6 +253,17 @@ bp::object PythonModule::callObject(const bp::object& obj, const bp::object& arg
 	}
 }
 
+boost::python::object PythonModule::callGlobal(const std::string& name) {
+	DBG("in callGlobal()");
+	try {
+		return moduleObject.attr(name.c_str())();
+	}
+	catch (const bp::error_already_set&) {
+		DBG("Python error in callGlobal(name).");
+
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("callGlobal(name)") << pyCodeInfo(name));
+	}
+}
 
 bool PythonModule::checkIsNone(const std::string& name) {
 	DBG("in pythonVarIsNone(name)");
@@ -247,7 +273,7 @@ bool PythonModule::checkIsNone(const std::string& name) {
 	catch (const bp::error_already_set&) {
 		DBG("Python error in checkIsNone(name).");
 
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("name()") << pyCodeInfo(name));
+		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("checkIsNone(name)") << pyCodeInfo(name));
 	}
 }
 
@@ -612,7 +638,7 @@ void PythonModule::PythonObjectToResponsePtrConverter::construct(PyObject* objPt
 
 		// ReSharper disable once CppNonReclaimedResourceAcquisition
 		Response* result = new Response(
-			1, 1, statusCode, headers, body, false
+			1, 1, statusCode, headers, std::move(body), false
 		);
 		// ReSharper disable once CppNonReclaimedResourceAcquisition
 		new(storage) PtrWrapper<Response>(result);

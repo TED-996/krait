@@ -18,7 +18,7 @@ private:
 
 public:
 	IteratorResult(IResponseIterator&& iterator);
-	IteratorResult(std::string fullString);
+	IteratorResult(std::string&& fullString);
 	IteratorResult(IteratorResult&& other) noexcept = default;
 	IteratorResult& operator=(IteratorResult&& other) noexcept = default;
 

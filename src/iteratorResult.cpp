@@ -7,7 +7,7 @@ IteratorResult::IteratorResult(IResponseIterator&& iterator) {
 	exhaustIterator(std::move(iterator));
 }
 
-IteratorResult::IteratorResult(std::string fullString) {
+IteratorResult::IteratorResult(std::string&& fullString) {
 	if (fullString.size() != 0) {
 		ownedStrings.emplace_back(std::move(fullString));
 		strIterated.emplace_back(ownedStrings.back());

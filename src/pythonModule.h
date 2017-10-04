@@ -52,7 +52,6 @@ public:
 		}
 	}
 	static std::string toStdString(const boost::python::object& obj) {
-		//TODO: check if toPythonStr is needed.
 		return boost::python::extract<std::string>(obj);
 	}
 
@@ -135,6 +134,10 @@ public:
 	static void initPython();
 	static void initModules(const std::string& projectDir);
 	static void finishPython();
+
+protected:
+	explicit PythonModule(boost::python::object moduleObject);
+
 private:
 	static void resetModules(const std::string& projectDir);
 

@@ -129,8 +129,11 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\argvConfig.cpp" />
+    <ClCompile Include="src\codeAstItem.cpp" />
+    <ClCompile Include="src\compiledModule.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
+    <ClCompile Include="src\moduleCompiler.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
@@ -176,12 +179,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\argvConfig.h" />
+    <ClInclude Include="src\codeAstItem.h" />
+    <ClInclude Include="src\compiledModule.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
     <ClInclude Include="src\IResponseIterator.h" />
     <ClInclude Include="src\IServerSocket.h" />
     <ClInclude Include="src\managedSocket.h" />
+    <ClInclude Include="src\moduleCompiler.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />

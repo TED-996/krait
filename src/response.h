@@ -25,11 +25,11 @@ class Response
 
 public:
 	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
-	         const std::string& body, bool connClose);
+	         std::string&& body, bool connClose);
 	explicit Response(const std::string& fullResponse);
 	Response(int httpMajor, int httpMinor, int statusCode, const std::unordered_multimap<std::string, std::string>& headers,
 	         IteratorResult&& bodyIterator, bool connClose);
-	Response(int statusCode, const std::string& body, bool connClose);
+	Response(int statusCode, std::string&& body, bool connClose);
 	Response(int statusCode, IteratorResult&& bodyIterator, bool connClose);
 
 	Response(const Response& other) = delete;
@@ -48,7 +48,7 @@ public:
 		return statusCode;
 	}
 
-	void setBody(const std::string& body, bool updateLength);
+	void setBody(std::string&& body, bool updateLength);
 
 	void addHeader(std::string name, const std::string& value);
 	void setHeader(std::string name, const std::string& value);
