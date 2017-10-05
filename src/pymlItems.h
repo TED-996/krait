@@ -4,6 +4,7 @@
 #include <boost/python/object.hpp>
 #include <boost/variant.hpp>
 #include "IPymlCache.h"
+#include "except.h"
 
 
 class PymlItem : public IPymlItem
@@ -22,6 +23,18 @@ public:
 	}
 
 	virtual const std::string* getEmbeddedString(std::string* storage) const override {
+		return nullptr;
+	}
+
+	bool canConvertToCode() const override {
+		return true;
+	}
+
+	CodeAstItem getCodeAst() const override {
+		return CodeAstItem("pass"); //TODO: shouldn't. Maybe raise exception?
+	}
+
+	std::unique_ptr<CodeAstItem> getHeaderAst() const override {
 		return nullptr;
 	}
 };
@@ -47,6 +60,8 @@ public:
 	const std::string* getEmbeddedString(std::string* storage) const override {
 		return &str;
 	}
+
+	CodeAstItem getCodeAst() const override;
 };
 
 
@@ -61,6 +76,10 @@ public:
 	std::string runPyml() const override;
 	bool isDynamic() const override;
 	const IPymlItem* getNext(const IPymlItem* last) const override;
+
+	CodeAstItem getCodeAst() const override;
+	bool canConvertToCode() const override;
+	std::unique_ptr<CodeAstItem> getHeaderAst() const override;
 };
 
 
@@ -82,6 +101,8 @@ public:
 		storage->assign(runPyml());
 		return storage;
 	}
+
+	CodeAstItem getCodeAst() const override;
 };
 
 
@@ -103,6 +124,8 @@ public:
 		storage->assign(runPyml());
 		return storage;
 	}
+
+	CodeAstItem getCodeAst() const override;
 };
 
 
@@ -126,6 +149,8 @@ public:
 		}
 		return nullptr;
 	}
+
+	CodeAstItem getCodeAst() const override;
 };
 
 
@@ -147,6 +172,9 @@ public:
 	}
 
 	const IPymlItem* getNext(const IPymlItem* last) const override;
+	CodeAstItem getCodeAst() const override;
+	bool canConvertToCode() const override;
+	std::unique_ptr<CodeAstItem> getHeaderAst() const override;
 };
 
 
@@ -173,6 +201,9 @@ public:
 	}
 
 	const IPymlItem* getNext(const IPymlItem* last) const override;
+	CodeAstItem getCodeAst() const override;
+	bool canConvertToCode() const override;
+	std::unique_ptr<CodeAstItem> getHeaderAst() const override;
 };
 
 
@@ -192,6 +223,8 @@ public:
 	const IPymlItem* getNext(const IPymlItem* last) const override;
 
 	bool isDynamic() const override;
+	CodeAstItem getCodeAst() const override;
+	std::unique_ptr<CodeAstItem> getHeaderAst() const override;
 };
 
 class PymlItemSetCallable : public PymlItem
@@ -218,6 +251,12 @@ public:
 			runPyml();
 		}
 		return nullptr;
+	}
+	CodeAstItem getCodeAst() const override {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("PymlItemSetCallable::getCodeAst() called without canConvertToCode being called."));
+	}
+	bool canConvertToCode() const override {
+		return false;
 	}
 };
 

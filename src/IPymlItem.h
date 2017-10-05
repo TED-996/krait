@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "codeAstItem.h"
 
 class IPymlItem
@@ -12,7 +13,9 @@ public:
 
 	virtual const std::string* getEmbeddedString(std::string* storage) const = 0;
 
-	virtual CodeAstItem getCodeAst() const = 0;
+	virtual bool canConvertToCode() const = 0;
+	virtual CodeAstItem getCodeAst() const = 0; 
+	virtual std::unique_ptr<CodeAstItem> getHeaderAst() const = 0;
 
 	virtual ~IPymlItem() = default;
 };

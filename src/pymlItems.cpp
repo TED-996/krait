@@ -8,6 +8,10 @@
 #include "dbg.h"
 
 
+CodeAstItem PymlItemStr::getCodeAst() const {
+	return CodeAstItem(std::string("krait._emit_raw(") + reprPythonString(str) + ")"); //TODO: to multiple lines!
+}
+
 std::string PymlItemSeq::runPyml() const {
 	std::string result;
 	for (const auto& it : items) {
@@ -39,6 +43,39 @@ const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
 	return nullptr;
 }
 
+CodeAstItem PymlItemSeq::getCodeAst() const {
+	CodeAstItem result("");
+	for (const auto& it : items) {
+		result.addChild(it->getCodeAst());
+	}
+	return result;
+}
+
+bool PymlItemSeq::canConvertToCode() const {
+	for (const auto& it : items) {
+		if(!it->canConvertToCode()) {
+			return false;
+		}
+	}
+	return true;
+}
+
+std::unique_ptr<CodeAstItem> PymlItemSeq::getHeaderAst() const {
+	std::unique_ptr<CodeAstItem> headers = std::make_unique<CodeAstItem>();
+	for (const auto& it : items) {
+		std::unique_ptr<CodeAstItem> childHeader = it->getHeaderAst();
+		if (childHeader != nullptr) {
+			headers->addChild(std::move(*childHeader));
+		}
+	}
+	if (headers->isEmpty()) {
+		headers = nullptr;
+	}
+
+	//Doing this to allow for copy elision.
+	return headers;
+}
+
 std::string PymlItemPyEval::runPyml() const {
 	std::string result = PythonModule::main().eval(code);
 	boost::optional<std::string> escaped = htmlEscapeRef(result);
@@ -52,16 +89,27 @@ std::string PymlItemPyEval::runPyml() const {
 
 }
 
+
+CodeAstItem PymlItemPyEval::getCodeAst() const {
+	return CodeAstItem(std::string("krait._emit(") + code + ")");
+}
+
 std::string PymlItemPyEvalRaw::runPyml() const {
 	return PythonModule::main().eval(code);
 }
 
+CodeAstItem PymlItemPyEvalRaw::getCodeAst() const {
+	return CodeAstItem(std::string("krait._emit_raw(") + code + ")");
+}
 
 std::string PymlItemPyExec::runPyml() const {
 	PythonModule::main().run(code);
 	return "";
 }
 
+CodeAstItem PymlItemPyExec::getCodeAst() const {
+	return pyCodeToCodeAst(code);
+}
 
 std::string PymlItemIf::runPyml() const {
 	if (PythonModule::main().test(conditionCode)) {
@@ -93,6 +141,64 @@ const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
 }
 
 
+CodeAstItem PymlItemIf::getCodeAst() const {
+	CodeAstItem rootItem;
+	CodeAstItem ifItem("if " + conditionCode + ":", true);
+	if (itemIfTrue != nullptr) {
+		ifItem.addChild(itemIfTrue->getCodeAst());
+	}
+	else {
+		ifItem.addChild(CodeAstItem("pass"));
+	}
+	if (itemIfFalse == nullptr) {
+		rootItem = std::move(ifItem);
+	}
+	else {
+		rootItem.addChild(std::move(ifItem));
+		
+		CodeAstItem elseItem("else", true);
+		elseItem.addChild(itemIfFalse->getCodeAst());
+		
+		rootItem.addChild(std::move(elseItem));
+	}
+
+	return rootItem;
+}
+
+bool PymlItemIf::canConvertToCode() const {
+	if (itemIfTrue != nullptr && !itemIfTrue->canConvertToCode()) {
+		return false;
+	}
+	if (itemIfFalse != nullptr && !itemIfFalse->canConvertToCode()) {
+		return false;
+	}
+	return true;
+}
+
+std::unique_ptr<CodeAstItem> PymlItemIf::getHeaderAst() const {
+	std::unique_ptr<CodeAstItem> headers = std::make_unique<CodeAstItem>();
+
+	if (itemIfTrue != nullptr) {
+		std::unique_ptr<CodeAstItem> childHeader = itemIfTrue->getHeaderAst();
+		if (childHeader != nullptr) {
+			headers->addChild(std::move(*childHeader));
+		}
+	}
+	if (itemIfFalse != nullptr) {
+		std::unique_ptr<CodeAstItem> childHeader = itemIfFalse->getHeaderAst();
+		if (childHeader != nullptr) {
+			headers->addChild(std::move(*childHeader));
+		}
+	}
+
+	if (headers->isEmpty()) {
+		headers = nullptr;
+	}
+
+	//Doing this to allow for copy elision.
+	return headers;
+}
+
 std::string PymlItemFor::runPyml() const {
 	PythonModule::main().run(initCode);
 	std::string result;
@@ -120,6 +226,24 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 	}
 }
 
+
+CodeAstItem PymlItemFor::getCodeAst() const {
+	//TODO: remake internal structure of PymlItemFor, use collection & item internally
+}
+
+bool PymlItemFor::canConvertToCode() const {
+	return loopItem == nullptr || loopItem->canConvertToCode();
+}
+
+std::unique_ptr<CodeAstItem> PymlItemFor::getHeaderAst() const {
+	if (loopItem == nullptr) {
+		return nullptr;
+	}
+	else {
+		return loopItem->getHeaderAst();
+	}
+}
+
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
 	if (last == nullptr) {
 		return cache.get(PythonModule::main().eval(filename)).getRootItem();
@@ -135,6 +259,15 @@ std::string PymlItemEmbed::runPyml() const {
 
 bool PymlItemEmbed::isDynamic() const {
 	return cache.get(PythonModule::main().eval(filename)).isDynamic();
+}
+
+
+CodeAstItem PymlItemEmbed::getCodeAst() const {
+	//TODO: use __import__? Use Compiler? Idk...
+}
+
+std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
+	//TODO: idk, what to import? Since the import is dynamic... Check if it actually is static though?
 }
 
 std::string PymlItemSetCallable::runPyml() const {
