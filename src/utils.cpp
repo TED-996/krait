@@ -157,8 +157,8 @@ std::string randomAlpha(size_t size) {
 	return result;
 }
 
-std::vector<const char*> getHtmlReplacements() {
-	std::vector<const char*> replacements(256);
+std::vector<std::string> getHtmlReplacements() {
+	std::vector<std::string> replacements(256);
 	replacements[(int)'&'] = "&amp;";
 	replacements[(int)'<'] = "&lt;";
 	replacements[(int)'>'] = "&gt;";
@@ -171,11 +171,11 @@ boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode) {
 	std::string result;
 	bool resultEmpty = true;
 
-	static std::vector<const char*> replacements = getHtmlReplacements();
+	static std::vector<std::string> replacements = getHtmlReplacements();
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
-		if (replacements[(int)htmlCode[idx]] != nullptr) {
+		if (replacements[(int)htmlCode[idx]].size() != 0) {
 			if (resultEmpty) {
 				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
 				resultEmpty = false;
@@ -194,4 +194,44 @@ boost::optional<std::string> htmlEscapeRef(boost::string_ref htmlCode) {
 		result.append(htmlCode.data() + oldIdx, htmlCode.length() - oldIdx);
 		return result;
 	}
+}
+
+std::vector<std::string> getReprReplacements() {
+	std::vector<std::string> replacements(256);
+
+	for (int i = 0; i <= 0x1f; i++) {
+		replacements[i] = formatString("\\x%02X", i);
+	}
+	for (int i = 0x7f; i < 0x100; i++) {
+		replacements[i] = formatString("\\x%02X", i);
+	}
+
+	replacements[(int)'\r'] = "\\r";
+	replacements[(int)'\n'] = "\\n";
+	replacements[(int)'\t'] = "\\t";
+	replacements[(int)'\\'] = "\\\\";
+	replacements[(int)'\''] = "\\'";
+
+	return replacements;
+}
+
+std::string reprPythonString(const std::string& str) {
+	std::string result;
+	result.reserve(str.length() + 2); //The bare minimum.
+	result.append(1, '\'');
+
+	static std::vector<std::string> replacements = getReprReplacements();
+
+	unsigned int oldIdx = 0;
+	for (unsigned int idx = 0; idx < str.length(); idx++) {
+		if (replacements[(int)str[idx]].size() != 0) {
+			result.append(str.data() + oldIdx, idx - oldIdx);
+			result.append(replacements[(int)str[idx]]);
+			oldIdx = idx + 1;
+		}
+	}
+
+	result.append(str.data() + oldIdx, str.length() - oldIdx);
+	result.append(1, '\'');
+	return result;
 }

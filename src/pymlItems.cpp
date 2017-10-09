@@ -8,8 +8,16 @@
 #include "dbg.h"
 
 
+// Implemented in utils.cpp
+std::string reprPythonString(const std::string& str);
+
+
 CodeAstItem PymlItemStr::getCodeAst() const {
-	return CodeAstItem(std::string("krait._emit_raw(") + reprPythonString(str) + ")"); //TODO: to multiple lines!
+	std::string strRepr = reprPythonString(str);
+	return CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref>{
+		"krait._emit_raw(",
+		strRepr,
+		")"});
 }
 
 std::string PymlItemSeq::runPyml() const {
@@ -108,7 +116,7 @@ std::string PymlItemPyExec::runPyml() const {
 }
 
 CodeAstItem PymlItemPyExec::getCodeAst() const {
-	return pyCodeToCodeAst(code);
+	return CodeAstItem::fromPythonCode(code);
 }
 
 std::string PymlItemIf::runPyml() const {
@@ -201,11 +209,15 @@ std::unique_ptr<CodeAstItem> PymlItemIf::getHeaderAst() const {
 
 std::string PymlItemFor::runPyml() const {
 	PythonModule::main().run(initCode);
+
 	std::string result;
-	while (PythonModule::main().test(conditionCode)) {
+
+	while (PythonModule::main().test(condCode)) {
 		result += loopItem->runPyml();
 		PythonModule::main().run(updateCode);
 	}
+	PythonModule::main().run(cleanupCode);
+
 	return result;
 }
 
@@ -218,17 +230,21 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 		PythonModule::main().run(updateCode);
 	}
 
-	if (PythonModule::main().test(conditionCode)) {
+	if (PythonModule::main().test(condCode)) {
 		return loopItem.get();
 	}
 	else {
+		PythonModule::main().run(cleanupCode);
 		return nullptr;
 	}
 }
 
 
 CodeAstItem PymlItemFor::getCodeAst() const {
-	//TODO: remake internal structure of PymlItemFor, use collection & item internally
+	return CodeAstItem(
+		formatString("for %1% in %2%:", entryName, collection),
+		std::vector<CodeAstItem>{loopItem->getCodeAst()},
+		true);
 }
 
 bool PymlItemFor::canConvertToCode() const {
@@ -262,12 +278,26 @@ bool PymlItemEmbed::isDynamic() const {
 }
 
 
+boost::optional<std::string> getStaticPython(std::string code);
+
 CodeAstItem PymlItemEmbed::getCodeAst() const {
 	//TODO: use __import__? Use Compiler? Idk...
 }
 
 std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
 	//TODO: idk, what to import? Since the import is dynamic... Check if it actually is static though?
+	//TODO FOR REALZ IMPORTANT: signal dependencies! OOOR use import hooks...
+	boost::optional<std::string> staticModule = getStaticPython(filename);
+	if (staticModule == boost::none) {
+		// The import is not statically resolvable.
+		return nullptr;
+	}
+}
+
+bool PymlItemEmbed::canConvertToCode() const {
+	//TODO: idk, check from Compiler cache if it's okay...
+	return false;
+	// Make all code with imports uncompilable.
 }
 
 std::string PymlItemSetCallable::runPyml() const {
@@ -372,10 +402,9 @@ public:
 		std::unique_ptr<const IPymlItem> loopItem = forData.loopItem->getItem();
 		 
 		return std::make_unique<const PymlItemFor>(
-			 PythonModule::prepareStr(forData.initCode),
-			 PythonModule::prepareStr(forData.conditionCode),
-			 PythonModule::prepareStr(forData.updateCode),
-			 std::move(loopItem));
+			forData.entryName,
+			forData.collection,
+			std::move(loopItem));
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::EmbedData embedData) {

@@ -1,7 +1,6 @@
 #include <boost/algorithm/string.hpp>
 #include "except.h"
 #include"utils.h"
-#include"path.h"
 #include "v2PymlParser.h"
 
 #define DBG_DISABLE
@@ -215,13 +214,10 @@ void V2PymlParser::addCodeToPymlWorkingFor(int where, std::string&& code) {
 	PymlWorkingItem::ForData& data = getStackTop<PymlWorkingItem::ForData>();
 
 	if (where == 0) {
-		data.initCode = code;
+		data.entryName = code;
 	}
 	else if (where == 1) {
-		data.conditionCode = code;
-	}
-	else if (where == 2) {
-		data.updateCode = code;
+		data.collection = code;
 	}
 }
 
@@ -248,21 +244,12 @@ void V2PymlParser::pushPymlWorkingForIn(std::string&& entry, std::string&& colle
 		BOOST_THROW_EXCEPTION(pymlError() << stringInfo("For collection/entry code empty."));
 	}
 
-	std::string krIterator = (boost::format("_krIt%d") % (krItIndex++)).str();
 	std::string entryTrimmed = boost::trim_copy(entry);
 	std::string collectionTrimmed = boost::trim_copy(collection);
 
-	//1: krIterator; 2: collection;;; 3: entry
-	std::string initCode = (boost::format("%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value")
-		% krIterator % collectionTrimmed % entryTrimmed).str();
-	std::string condCode = (boost::format("not %1%.over") % krIterator).str();
-	std::string updateCode = (boost::format("%1%.next()\nif not %1%.over: %2% = %1%.value")
-		% krIterator % entryTrimmed).str();
-
 	pushPymlWorkingFor();
-	addCodeToPymlWorkingFor(0, std::move(initCode));
-	addCodeToPymlWorkingFor(1, std::move(condCode));
-	addCodeToPymlWorkingFor(2, std::move(updateCode));
+	addCodeToPymlWorkingFor(0, std::move(entryTrimmed));
+	addCodeToPymlWorkingFor(1, std::move(collectionTrimmed));
 }
 
 

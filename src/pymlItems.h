@@ -180,18 +180,31 @@ public:
 
 class PymlItemFor : public PymlItem
 {
-	std::string initCode;
-	std::string conditionCode;
-	std::string updateCode;
+	std::string entryName;
+	std::string collection;
 
 	std::unique_ptr<const IPymlItem> loopItem;
 
+	std::string initCode;
+	std::string condCode;
+	std::string updateCode;
+	std::string cleanupCode;
+
+
 public:
-	PymlItemFor(std::string initCode, std::string conditionCode, std::string updateCode, std::unique_ptr<const IPymlItem>&& loopItem)
-		: initCode(initCode),
-		  conditionCode(conditionCode),
-		  updateCode(updateCode),
+	PymlItemFor(const std::string& entryName, const std::string& collection, std::unique_ptr<const IPymlItem>&& loopItem)
+		: entryName(entryName),
+		  collection(collection),
 		  loopItem(std::move(loopItem)) {
+		static unsigned int krItIndex = 0;
+		std::string iterName = (formatString("_krIt%d", krItIndex++));
+
+		initCode = formatString(
+			"%1% = IteratorWrapper(%2%)\nif not %1%.over: %3% = %1%.value",
+			iterName, collection, entryName);
+		condCode = formatString("not %1%.over", iterName);
+		updateCode = formatString("%1%.next()\nif not %1%.over: %2% = %1%.value", iterName, entryName);
+		cleanupCode = formatString("del %1%", iterName);
 	}
 
 	std::string runPyml() const override;
@@ -225,6 +238,7 @@ public:
 	bool isDynamic() const override;
 	CodeAstItem getCodeAst() const override;
 	std::unique_ptr<CodeAstItem> getHeaderAst() const override;
+	bool canConvertToCode() const override;
 };
 
 class PymlItemSetCallable : public PymlItem
@@ -304,9 +318,8 @@ struct PymlWorkingItem
 
 	struct ForData
 	{
-		std::string initCode;
-		std::string conditionCode;
-		std::string updateCode;
+		std::string entryName;
+		std::string collection;
 		PymlWorkingItem* loopItem;
 	};
 

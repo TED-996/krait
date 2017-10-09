@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <ostream>
+#include <boost/utility/string_ref.hpp>
 
 class CodeAstItem
 {
@@ -23,10 +24,9 @@ public:
 	
 	void addChild(CodeAstItem&& child);
 
-	// Not strictly necessary. Maybe don't call.
+	// Not strictly necessary, but EXPENSIVE. Maybe don't call.
+	// Make sure not to call it before it's definitely a valid AST. 
 	CodeAstItem optimize();
-	// #brutal: Optimizes the AST by taking the children of a simple sequence of AST items.
-	bool takeChildren(CodeAstItem&& source);
 
 	bool isValid() const;
 	bool isEmpty() const;
@@ -35,4 +35,12 @@ public:
 	size_t getCodeSize(size_t indentLevel) const;
 	void getCodeToString(size_t indentLevel, std::string& destination) const;
 	void getCodeToStream(size_t indentLevel, std::ostream& destination) const;
+
+	// Important: Each part MUST be a separate thing. For example, a string, or something like that.
+	// No newlines, except in multiline strings. No raw strings yet.
+	// No guarantees if any of the requirements are not met.
+	// As of now, only wraps strings.
+	static CodeAstItem fromMultilineStatement(std::vector<boost::string_ref> parts);
+	// Doesn't wrap stuff on its own. Only follows newlines and stuff.
+	static CodeAstItem fromPythonCode(const std::string& code);
 };

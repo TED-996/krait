@@ -401,14 +401,15 @@ Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
 	}
 }
 
-//Dedent std::string
+// Dedent std::string
+// WARNING: INCOMPATIBLE with triple-quote strings!
+// TODO WARNING
 std::string PythonModule::prepareStr(const std::string& pyCode) {
 	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
 	if (pyCode.length() == 0 || !isspace(pyCode[0])) {
 		return pyCode;
 	}
 
-	//First remove first line if whitespace.
 
 	const size_t commonIndentSentinel = pyCode.length() + 1;
 	size_t commonIndent = commonIndentSentinel;
@@ -418,6 +419,8 @@ std::string PythonModule::prepareStr(const std::string& pyCode) {
 	char indentChr = '\0';
 	bool lineWs = true;
 	bool inIndent = true;
+
+	//First remove first line if whitespace.
 
 	for (size_t i = 0; i < pyCode.length(); i++) {
 		char chr = pyCode[i];
@@ -432,6 +435,8 @@ std::string PythonModule::prepareStr(const std::string& pyCode) {
 			break;
 		}
 	}
+
+	// If it's an empty string
 	if (indentChr == '\0') {
 		return pyCode;
 	}
