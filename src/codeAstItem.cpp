@@ -4,7 +4,7 @@
 
 struct Indent
 {
-	const const char* data;
+	const char* const data;
 	const size_t size;
 	const char chr;
 
@@ -44,6 +44,14 @@ CodeAstItem::CodeAstItem(std::string&& code, std::vector<CodeAstItem>&& codeAstI
 	}
 }
 
+CodeAstItem& CodeAstItem::operator=(CodeAstItem&& other) noexcept {
+	code = std::move(other.code);
+	children = std::move(other.children); //This doesn't throw, right? Anyway, it shouldn't.
+	indentAfter = other.indentAfter;
+
+	return *this;
+}
+
 void CodeAstItem::addChild(CodeAstItem&& child) {
 	if (!child.isEmpty()) {
 		children.emplace_back(std::move(child));
@@ -58,7 +66,7 @@ CodeAstItem CodeAstItem::optimize() {
 
 	// Flatten all children.
 	for (auto it = children.begin(); it != children.end(); ++it) {
-		*it = std::move(it->optimize());
+		*it = it->optimize();
 	}
 
 	std::vector<CodeAstItem> newChildren;

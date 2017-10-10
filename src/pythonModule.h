@@ -52,7 +52,7 @@ public:
 		}
 	}
 	static std::string toStdString(const boost::python::object& obj) {
-		return boost::python::extract<std::string>(obj);
+		return boost::python::extract<std::string>(toPythonStr(obj));
 	}
 
 private:
@@ -104,7 +104,7 @@ public:
 
 	//Statics
 public:
-	static std::string prepareStr(const std::string& pyCode);
+	static std::string prepareStr(std::string&& pyCode);
 
 	template<typename T>
 	static boost::optional<T> extractOptional(boost::python::object value){

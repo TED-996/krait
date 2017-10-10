@@ -20,7 +20,7 @@ public:
 
 	CodeAstItem(std::string&& code, std::vector<CodeAstItem>&& codeAstItems, bool indentAfter = false);
 	CodeAstItem(CodeAstItem&&) noexcept = default;
-	CodeAstItem& operator=(CodeAstItem&&) = default;
+	CodeAstItem& operator=(CodeAstItem&&) noexcept;
 	
 	void addChild(CodeAstItem&& child);
 

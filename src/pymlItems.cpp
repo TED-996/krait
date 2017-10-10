@@ -241,10 +241,11 @@ const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
 
 
 CodeAstItem PymlItemFor::getCodeAst() const {
-	return CodeAstItem(
+	CodeAstItem result = CodeAstItem(
 		formatString("for %1% in %2%:", entryName, collection),
-		std::vector<CodeAstItem>{loopItem->getCodeAst()},
 		true);
+	result.addChild(loopItem->getCodeAst());
+	return result;
 }
 
 bool PymlItemFor::canConvertToCode() const {
@@ -278,10 +279,13 @@ bool PymlItemEmbed::isDynamic() const {
 }
 
 
-boost::optional<std::string> getStaticPython(std::string code);
+boost::optional<std::string> getStaticPython(std::string code) {
+	return boost::none;
+}
 
 CodeAstItem PymlItemEmbed::getCodeAst() const {
 	//TODO: use __import__? Use Compiler? Idk...
+	BOOST_THROW_EXCEPTION(notImplementedError());
 }
 
 std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
@@ -292,6 +296,7 @@ std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
 		// The import is not statically resolvable.
 		return nullptr;
 	}
+	BOOST_THROW_EXCEPTION(notImplementedError());
 }
 
 bool PymlItemEmbed::canConvertToCode() const {
@@ -375,13 +380,13 @@ public:
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::PyCodeData pyCodeData) {
 		if (pyCodeData.type == PymlWorkingItem::Type::PyExec) {
-			return std::make_unique<const PymlItemPyExec>(PythonModule::prepareStr(pyCodeData.code));
+			return std::make_unique<const PymlItemPyExec>(PythonModule::prepareStr(std::move(pyCodeData.code)));
 		}
 		if (pyCodeData.type == PymlWorkingItem::Type::PyEval) {
-			return std::make_unique<const PymlItemPyEval>(PythonModule::prepareStr(pyCodeData.code));
+			return std::make_unique<const PymlItemPyEval>(PythonModule::prepareStr(std::move(pyCodeData.code)));
 		}
 		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw) {
-			return std::make_unique<const PymlItemPyEvalRaw>(PythonModule::prepareStr(pyCodeData.code));
+			return std::make_unique<const PymlItemPyEvalRaw>(PythonModule::prepareStr(std::move(pyCodeData.code)));
 		}
 		BOOST_THROW_EXCEPTION(
 			serverError()
@@ -395,7 +400,8 @@ public:
 			itemIfFalse = ifData.itemIfFalse->getItem();
 		}
 
-		return std::make_unique<PymlItemIf>(PythonModule::prepareStr(ifData.condition), std::move(itemIfTrue), std::move(itemIfFalse));
+		return std::make_unique<PymlItemIf>(PythonModule::prepareStr(std::move(ifData.condition)),
+			std::move(itemIfTrue), std::move(itemIfFalse));
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::ForData forData) {
@@ -408,7 +414,7 @@ public:
 	}
 
 	std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::EmbedData embedData) {
-		return std::make_unique<PymlItemEmbed>(PythonModule::prepareStr(embedData.filename), *embedData.cache);
+		return std::make_unique<PymlItemEmbed>(PythonModule::prepareStr(std::move(embedData.filename)), *embedData.cache);
 	}
 };
 

@@ -401,123 +401,94 @@ Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
 	}
 }
 
-// Dedent std::string
-// WARNING: INCOMPATIBLE with triple-quote strings!
-// TODO WARNING
-std::string PythonModule::prepareStr(const std::string& pyCode) {
-	//DBG_FMT("pythonPrepareStr(%1%)", pyCode);
-	if (pyCode.length() == 0 || !isspace(pyCode[0])) {
-		return pyCode;
+
+// TODO: provide some useful error messages (since this can absolutely fail)
+std::string dedentSimple(std::string&& str, char dedentCharacter) {
+	if (str.length() == 0 || !std::isspace(str[0])) {
+		return std::move(str);
 	}
 
+	size_t indentSize = str.size();
 
-	const size_t commonIndentSentinel = pyCode.length() + 1;
-	size_t commonIndent = commonIndentSentinel;
-	size_t outSize = pyCode.length();
-	size_t lineIndent = 0;
-	int codeLines = 0;
-	char indentChr = '\0';
-	bool lineWs = true;
-	bool inIndent = true;
-
-	//First remove first line if whitespace.
-
-	for (size_t i = 0; i < pyCode.length(); i++) {
-		char chr = pyCode[i];
-		if (chr == ' ' || chr == '\t') {
-			indentChr = chr;
-			break;
+	// First, calculate indent size.
+	size_t indentStart = 0;
+	for (size_t i = 0; i < str.size(); i++) {
+		const char ch = str[i];
+		if (ch == '\r' || ch == '\n') {
+			// Reset indent
+			indentStart = i + 1;
 		}
-		else if (chr == '\r' || chr == '\n') {
+		else if (ch == dedentCharacter) {
+			// Continue indent
 			continue;
 		}
 		else {
+			// Indent is over
+			indentSize = i - indentStart;
 			break;
 		}
 	}
-
-	// If it's an empty string
-	if (indentChr == '\0') {
-		return pyCode;
+	
+	// Trivial cases
+	if (indentSize == 0) {
+		return std::move(str);
+	}
+	if (indentSize == str.size()) {
+		str.clear();
+		return std::move(str);
 	}
 
-	for (size_t i = 0; i < pyCode.length(); i++) {
-		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n') {
-			if (!lineWs) {
-				codeLines++;
+	size_t copyOffset = 0;
 
-				if (commonIndent == commonIndentSentinel) {
-					commonIndent = lineIndent;
-				}
-				else if (lineIndent < commonIndent) {
-					size_t indentDiff = commonIndent - lineIndent;
-					outSize += (codeLines - 1) * indentDiff;
-					commonIndent = lineIndent;
-				}
-			}
-			outSize -= (lineIndent < commonIndent ? lineIndent : commonIndent);
-			lineIndent = 0;
-			lineWs = true;
-			inIndent = true;
+	//Then, actually dedent.
+	size_t indentLeft = indentSize;
+	for (size_t i = 0; i < str.size(); i++) {
+		const unsigned char ch = static_cast<const unsigned char>(str[i]);
+		if (ch == '\r' || ch == '\n') {
+			// Keep the newlines, reset the indent.
+			str[i - copyOffset] = str[i];
+			indentLeft = indentSize;
 		}
-		else if (chr == indentChr && inIndent) {
-			lineIndent++;
-			//DBG("inIndentUp");
-		}
-		else {
-			inIndent = false;
-			if (chr != ' ' && chr != '\t') {
-				lineWs = false;
-			}
-		}
-	}
-
-	if (!lineWs) {
-		codeLines++;
-
-		if (commonIndent == commonIndentSentinel) {
-			commonIndent = lineIndent;
-		}
-		else if (lineIndent < commonIndent) {
-			size_t indentDiff = commonIndent - lineIndent;
-			outSize += (codeLines - 1) * indentDiff;
-			commonIndent = lineIndent;
-		}
-	}
-
-	//DBG_FMT("common indent for %1%: %2% of '%3%'", pyCode, commonIndent, indentChr);
-	std::string result;
-	result.resize(outSize); //outSize may be a bit larger, this is fine.
-
-	size_t offset = 0;
-	lineIndent = 0;
-	for (size_t i = 0; i < pyCode.length(); i++) {
-		char chr = pyCode[i];
-		if (chr == '\r' || chr == '\n') {
-			lineIndent = 0;
-			result[i - offset] = pyCode[i];
-		}
-		else {
-			if (lineIndent < commonIndent) {
-				lineIndent++;
-				offset++;
+		else if (indentLeft > 0) {
+			if (ch == dedentCharacter) {
+				// All good. Skip it.
+				copyOffset++;
 			}
 			else {
-				if (offset != 0) {
-					result[i - offset] = pyCode[i];
+				// Bad, something else inside indent!
+				// TODO: Provide line info for error.
+
+				// Handle non-printable characters.
+				if (ch < 0x20 || ch >= 0x80) {
+					BOOST_THROW_EXCEPTION(siteError() << stringInfoFromFormat(
+						"Unexpected control character with code %d inside indent of '%c' (code %d)",
+						(unsigned int)ch, dedentCharacter, (unsigned int)dedentCharacter));
+				}
+				// Can print regular characters.
+				else {
+					BOOST_THROW_EXCEPTION(siteError() << stringInfoFromFormat(
+						"Unexpected character '%c' (code %d) inside indent of '%c' (code %d)",
+						ch, (unsigned int)ch, dedentCharacter, (unsigned int)dedentCharacter));
 				}
 			}
+			indentLeft--;
+		}
+		else {
+			// Outside indent. Just keep everything
+			str[i - copyOffset] = str[i];
 		}
 	}
 
-	result.resize(pyCode.length() - offset);
-
-	//DBG_FMT("result: %1%", result);
-
-	return result;
+	str.erase(str.size() - copyOffset);
+	return std::move(str);	
 }
 
+// Dedent std::string
+// WARNING: INCOMPATIBLE with triple-quote strings!
+// TODO WARNING
+std::string PythonModule::prepareStr(std::string&& pyCode) {
+	return dedentSimple(dedentSimple(std::move(pyCode), '\t'), ' ');
+}
 
 PyObject* PythonModule::StringMapToPythonObjectConverter::convert(std::map<std::string, std::string> const& map) {
 	DBG("in map<std::string, std::string>->PyObject()");
