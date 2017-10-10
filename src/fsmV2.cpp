@@ -25,11 +25,12 @@ bool ErrorFsmTransition::isMatch(char chr, FsmV2& fsm) {
 }
 
 
-FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates)
+FsmV2::FsmV2(size_t nrStates, size_t nrBulkStates, bool defaultSkip)
 	:
 	maxState(nrStates),
 	maxBulkState(nrStates + nrBulkStates),
-	currBulkState(nrStates) {
+	currBulkState(nrStates),
+	defaultSkip(defaultSkip) {
 	transitions.resize(nrStates + nrBulkStates);
 	stateActions.resize(nrStates + nrBulkStates);
 	finalActions.resize(nrStates);
@@ -267,7 +268,7 @@ void FsmV2::consumeOne(char chr) {
 	}
 
 	bool consumed = false;
-	skipThis = false;
+	skipThis = !defaultSkip;
 	while (!consumed) {
 		consumed = true;
 		size_t idx;

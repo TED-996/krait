@@ -401,7 +401,6 @@ Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
 	}
 }
 
-
 // TODO: provide some useful error messages (since this can absolutely fail)
 std::string dedentSimple(std::string&& str, char dedentCharacter) {
 	if (str.length() == 0 || !std::isspace(str[0])) {

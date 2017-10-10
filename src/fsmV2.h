@@ -44,6 +44,7 @@ private:
 	bool isFinalPass;
 
 	bool hasStateActions;
+	bool defaultSkip;
 
 	static const size_t workingBufferSize = 1024;
 	size_t workingIdx;
@@ -59,7 +60,7 @@ private:
 	void execStateAction();
 
 public:
-	FsmV2(size_t nrStates, size_t nrBulkStates);
+	FsmV2(size_t nrStates, size_t nrBulkStates, bool defaultSkip = false);
 	virtual ~FsmV2() = default;
 
 	void reset();
