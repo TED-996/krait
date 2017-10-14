@@ -1,5 +1,6 @@
 ﻿#include "codeAstItem.h"
 #include "except.h"
+#include "pythonCodeEscapingFsm.h"
 
 
 struct Indent
@@ -354,23 +355,69 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 }
 
 CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
+	static PythonCodeEscapingFsm escapingFsm;
+	escapingFsm.reset();
+	
 	// Split on newlines.
 	CodeAstItem result;
 
 	size_t lastIdx = 0;
+	char tripleQuoteAtLineStart = '\0';
 	while (lastIdx < code.size()) {
 		size_t newlineIdx = code.find(lastIdx, '\n');
 		size_t lineEnd = newlineIdx;
+		size_t nextIdx = newlineIdx + 1;
+		size_t newlineStart = newlineIdx;
+
 
 		if (newlineIdx == std::string::npos) {
 			lineEnd = code.size();
+			nextIdx = code.size();
+			newlineStart = code.size();
 		}
-		
+
 		// If the newline style is CRLF, don't copy the CR to the code.
 		if (lineEnd != code.size() && lineEnd != 0 && code[lineEnd - 1] == '\r') {
 			lineEnd--;
+			newlineStart--;
 		}
-		result.addChild(CodeAstItem(code.substr(lastIdx, lineEnd - lastIdx)));
+
+		for (auto it = code.cbegin() + lastIdx; it != code.cbegin() + nextIdx; ++it) {
+			escapingFsm.consumeOne(*it);
+		}
+
+		std::string line = code.substr(lastIdx, lineEnd - lastIdx);
+		if (tripleQuoteAtLineStart != '\0') {
+			line = std::string(tripleQuoteAtLineStart, 3) + line;
+			tripleQuoteAtLineStart = '\0';
+		}
+		if (escapingFsm.isMultilineString()) {
+			tripleQuoteAtLineStart = escapingFsm.getMultilineQuoteChar();
+
+			// Append newlines.
+			std::string newlines = "";
+			if (newlineStart != nextIdx) {
+				newlines = "\"";
+				newlines.reserve(6);
+				for (auto it = code.cbegin() + newlineStart; it != code.cbegin() + nextIdx; ++it) {
+					if (*it == '\r') {
+						newlines.append("\\r");
+					}
+					else if (*it == '\n') {
+						newlines.append("\\n");
+					}
+					else {
+						BOOST_THROW_EXCEPTION(serverError() <<
+							stringInfoFromFormat("Unexpected character 0x%02X in newline string.", (uint8_t)*it));
+					}
+				}
+			}
+
+			line += std::string(tripleQuoteAtLineStart, 3);
+			line += newlines;
+		}
+
+		result.addChild(CodeAstItem(std::move(line)));
 		lastIdx = newlineIdx + 1;
 	}
 

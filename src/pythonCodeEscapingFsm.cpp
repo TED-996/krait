@@ -1,4 +1,4 @@
-﻿#include "pythonCodeFsm.h"
+﻿#include "pythonCodeEscapingFsm.h"
 
 
 // MUST be kept in sync with the states enum in PythonCodeEscapingFsm::init.
@@ -39,6 +39,45 @@ static PythonCodeEscapingFsm::PythonCodeEscapingState escapingStateByFsmState[] 
 	PythonCodeEscapingFsm::PythonCodeEscapingState::MultilineString,
 	//inLineComment
 	PythonCodeEscapingFsm::PythonCodeEscapingState::Comment
+};
+
+static char quoteChar[] = {
+	//inStatement = 0,
+	'\0',
+	//inSqString,
+	'\'',
+	//inSqStringEscaping,
+	'\'',
+	//inDqString,
+	'\"',
+	//inDqStringEscaping,
+	'\"',
+	//inNullSqString,
+	'\'',
+	//inNullDqString,
+	'\"',
+	//afterNullSqString,
+	'\0',
+	//afterNullDqString,
+	'\0',
+	//inTripleSqString,
+	'\'',
+	//inTripleDqString,
+	'\"',
+	//inTripleSqStringEscaping,
+	'\'',
+	//inTripleDqStringEscaping,
+	'\"',
+	//inTripleSqStringOneSq,
+	'\'',
+	//inTripleSqStringTwoSq,
+	'\'',
+	//inTripleDqStringOneDq,
+	'\"',
+	//inTripleDqStringTwoDq,
+	'\"',
+	//inLineComment
+	'#',
 };
 
 
@@ -146,4 +185,11 @@ void PythonCodeEscapingFsm::init() {
 
 PythonCodeEscapingFsm::PythonCodeEscapingState PythonCodeEscapingFsm::getCodeState() {
 	return escapingStateByFsmState[getState()];
+}
+
+char PythonCodeEscapingFsm::getMultilineQuoteChar() {
+	if (!isMultilineString()) {
+		return '\0';
+	}
+	return quoteChar[getState()];
 }

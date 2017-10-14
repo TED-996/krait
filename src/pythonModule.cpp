@@ -7,10 +7,11 @@
 #include "except.h"
 #include "routes.h"
 #include "response.h"
+#include "pyEmitModule.h"
+#include "pythonCodeEscapingFsm.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
-#include "pyEmitModule.h"
 
 namespace b = boost;
 namespace bp = boost::python;
@@ -403,6 +404,8 @@ Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
 
 // TODO: provide some useful error messages (since this can absolutely fail)
 std::string dedentSimple(std::string&& str, char dedentCharacter) {
+	static PythonCodeEscapingFsm escapingFsm;
+
 	if (str.length() == 0 || !std::isspace(str[0])) {
 		return std::move(str);
 	}
@@ -413,13 +416,13 @@ std::string dedentSimple(std::string&& str, char dedentCharacter) {
 	size_t indentStart = 0;
 	for (size_t i = 0; i < str.size(); i++) {
 		const char ch = str[i];
+
 		if (ch == '\r' || ch == '\n') {
 			// Reset indent
 			indentStart = i + 1;
 		}
 		else if (ch == dedentCharacter) {
 			// Continue indent
-			continue;
 		}
 		else {
 			// Indent is over
@@ -439,10 +442,19 @@ std::string dedentSimple(std::string&& str, char dedentCharacter) {
 
 	size_t copyOffset = 0;
 
+	escapingFsm.reset();
+
 	//Then, actually dedent.
 	size_t indentLeft = indentSize;
 	for (size_t i = 0; i < str.size(); i++) {
 		const unsigned char ch = static_cast<const unsigned char>(str[i]);
+
+		if (escapingFsm.isEscaped()) {
+			// Just keep. Remove any expected indentation.
+			indentLeft = 0;
+		}
+		escapingFsm.consumeOne(ch);
+
 		if (ch == '\r' || ch == '\n') {
 			// Keep the newlines, reset the indent.
 			str[i - copyOffset] = str[i];
@@ -483,8 +495,6 @@ std::string dedentSimple(std::string&& str, char dedentCharacter) {
 }
 
 // Dedent std::string
-// WARNING: INCOMPATIBLE with triple-quote strings!
-// TODO WARNING
 std::string PythonModule::prepareStr(std::string&& pyCode) {
 	return dedentSimple(dedentSimple(std::move(pyCode), '\t'), ' ');
 }

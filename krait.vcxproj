@@ -138,7 +138,7 @@
     <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
     <ClCompile Include="src\pyEmitModule.cpp" />
-    <ClCompile Include="src\pythonCodeFsm.cpp" />
+    <ClCompile Include="src\pythonCodeEscapingFsm.cpp" />
     <ClCompile Include="src\raiiAlarm.cpp" />
     <ClCompile Include="src\serverSocket.cpp" />
     <ClCompile Include="src\openSslServerSocket.cpp" />
@@ -193,7 +193,7 @@
     <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />
     <ClInclude Include="src\pyEmitModule.h" />
-    <ClInclude Include="src\pythonCodeFsm.h" />
+    <ClInclude Include="src\pythonCodeEscapingFsm.h" />
     <ClInclude Include="src\raiiAlarm.h" />
     <ClInclude Include="src\sslServerSocket.h" />
     <ClInclude Include="src\sslUtils.h" />
