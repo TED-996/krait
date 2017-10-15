@@ -15,7 +15,7 @@ std::string reprPythonString(const std::string& str);
 CodeAstItem PymlItemStr::getCodeAst() const {
 	std::string strRepr = reprPythonString(str);
 	return CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref>{
-		"krait._emit_raw(",
+		"__emit_raw__(",
 		strRepr,
 		")"});
 }
@@ -99,7 +99,7 @@ std::string PymlItemPyEval::runPyml() const {
 
 
 CodeAstItem PymlItemPyEval::getCodeAst() const {
-	return CodeAstItem(std::string("krait._emit(") + code + ")");
+	return CodeAstItem(std::string("__emit__(") + code + ")");
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {
@@ -107,7 +107,7 @@ std::string PymlItemPyEvalRaw::runPyml() const {
 }
 
 CodeAstItem PymlItemPyEvalRaw::getCodeAst() const {
-	return CodeAstItem(std::string("krait._emit_raw(") + code + ")");
+	return CodeAstItem(std::string("__emit_raw__(") + code + ")");
 }
 
 std::string PymlItemPyExec::runPyml() const {

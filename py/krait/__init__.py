@@ -20,17 +20,6 @@ import krait.config
 from krait._http_request import Request
 from krait._http_response import Response, ResponseNotFound, ResponseBadRequest, ResponseRedirect
 
-try:
-    import _krait_emit
-
-    _emit = _krait_emit.emit
-    _emit_raw = _krait_emit.emit_raw
-except ImportError:
-    def _emit(s):
-        raise RuntimeError("Not running under Krait, cannot emit.")
-    def _emit_raw(s):
-        raise RuntimeError("Not running under Krait, cannot emit.")
-
 
 import os
 
