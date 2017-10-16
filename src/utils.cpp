@@ -159,11 +159,11 @@ std::string randomAlpha(size_t size) {
 
 std::vector<std::string> getHtmlReplacements() {
 	std::vector<std::string> replacements(256);
-	replacements[(int)'&'] = "&amp;";
-	replacements[(int)'<'] = "&lt;";
-	replacements[(int)'>'] = "&gt;";
-	replacements[(int)'"'] = "&quot;";
-	replacements[(int)'\''] = "&apos;";
+	replacements[(size_t)'&'] = "&amp;";
+	replacements[(size_t)'<'] = "&lt;";
+	replacements[(size_t)'>'] = "&gt;";
+	replacements[(size_t)'"'] = "&quot;";
+	replacements[(size_t)'\''] = "&apos;";
 	return replacements;
 }
 
@@ -206,11 +206,11 @@ std::vector<std::string> getReprReplacements() {
 		replacements[i] = formatString("\\x%02X", i);
 	}
 
-	replacements[(int)'\r'] = "\\r";
-	replacements[(int)'\n'] = "\\n";
-	replacements[(int)'\t'] = "\\t";
-	replacements[(int)'\\'] = "\\\\";
-	replacements[(int)'\''] = "\\'";
+	replacements[(size_t)'\r'] = "\\r";
+	replacements[(size_t)'\n'] = "\\n";
+	replacements[(size_t)'\t'] = "\\t";
+	replacements[(size_t)'\\'] = "\\\\";
+	replacements[(size_t)'\''] = "\\'";
 
 	return replacements;
 }

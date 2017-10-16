@@ -131,12 +131,14 @@
     <ClCompile Include="src\argvConfig.cpp" />
     <ClCompile Include="src\codeAstItem.cpp" />
     <ClCompile Include="src\compiledModule.cpp" />
+    <ClCompile Include="src\compilerDispatcher.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
     <ClCompile Include="src\moduleCompiler.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
+    <ClCompile Include="src\pyCompileModule.cpp" />
     <ClCompile Include="src\pyEmitModule.cpp" />
     <ClCompile Include="src\pythonCodeEscapingFsm.cpp" />
     <ClCompile Include="src\raiiAlarm.cpp" />
@@ -182,6 +184,7 @@
     <ClInclude Include="src\argvConfig.h" />
     <ClInclude Include="src\codeAstItem.h" />
     <ClInclude Include="src\compiledModule.h" />
+    <ClInclude Include="src\compilerDispatcher.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
@@ -192,6 +195,7 @@
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />
+    <ClInclude Include="src\pyCompileModule.h" />
     <ClInclude Include="src\pyEmitModule.h" />
     <ClInclude Include="src\pythonCodeEscapingFsm.h" />
     <ClInclude Include="src\raiiAlarm.h" />

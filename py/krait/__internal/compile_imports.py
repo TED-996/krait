@@ -1,13 +1,19 @@
 import sys
 import os
 import imp
+import json
+
 import krait
-from krait import __internal
+from krait import __internal as krait_internal
 
 
-class CompiledFinder(object):
+class CompiledImportHook(object):
+    tag_marker = "# [TAGS]: "
+
     def __init__(self):
-        self.compiled_dir = os.path.normpath(krait.get_full_path(".compiled"))
+        self.compiled_dir = os.path.normpath(krait.get_full_path(".compiled/_krait_compiled"))
+        self.init_version = None
+        self.compiler_version = 1
 
     def find_module(self, fullname, path=None):
         """
@@ -24,48 +30,120 @@ class CompiledFinder(object):
         Returns:
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
-        if fullname == "_krait_compiled_dir":
-            self.ensure_compiled_init()
+        if fullname == "_krait_compiled":
             # Use a simple loader.
-            CompiledFinder.Loader(fullname, path, os.path.join(self.compiled_dir, "__init__.py"))
+            filename = os.path.join(self.compiled_dir, "__init__")
+            self.ensure_compiled_init(fullname, filename + ".py")
+
+            return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
         elif path is not None\
                 and len(path) == 1\
                 and os.path.normpath(path[0]) == self.compiled_dir:
-            return CompiledFinder.Loader(fullname, path, self.get_compile(fullname))
+
+            filename = self.get_compile(fullname)
+            return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
             return None
 
+    @staticmethod
+    def find_module_from_package(init_filename):
+        # init_filename MUST be 1) absolute 2) in form {dir}/__init__
+        return [None, os.path.dirname(init_filename), ('', '', imp.PKG_DIRECTORY)]
+
+    @staticmethod
+    def find_module_from_filename(mod_filename):
+        # mod_filename MUST be absolute! And NOT contain .py
+        mod_path, mod_name = os.path.split(mod_filename)
+        return imp.find_module(mod_name, [mod_path])
+
+    def ensure_compiled_init(self, fullname, filename):
+        # If the file exists, and the version checks
+        # (either from an earlier check, or check now)
+        if os.path.exists(filename) and\
+                (self.init_version == self.compiler_version or
+                 self.get_compiler_version(filename) == self.compiler_version):
+            # Save the checked version
+            self.init_version = self.compiler_version
+            # Everything good
+            return
+
+        # Create the file.
+        # First check if the directory exists
+        dir_name = os.path.dirname(filename)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name, 0o775)
+
+        with open(fullname, "w") as f:
+            f.write(self.tag_marker + json.dumps({
+                "c_version": self.compiler_version
+            }))
+            f.write('\n')
+
+            # Add more things to write here.
+
+    def get_compiler_version(self, filename):
+        tag = self.get_compiled_tag(filename)
+        # Tag may be None, short-circuit this situation
+        return tag and tag.get("c_version")
+
+    def get_compiled_etag(self, filename):
+        tag = self.get_compiled_tag(filename)
+        # Tag may be None, short-circuit this situation
+        return tag and tag.get("etag")
+
+    def get_compiled_tag(self, filename):
+        if not os.path.exists(filename):
+            return None
+
+        with open(filename, "r") as f:
+            line = f.readline()
+
+        if not line.startswith(self.tag_marker):
+            raise ValueError("Missing tag on compiled filename.")
+
+        return json.loads(line[len(self.tag_marker):])
+
+    def get_compile(self, fullname):
+        pk_name, _, mod_name = fullname.partition('.')
+        if pk_name != "_krait_compiled" or '.' in mod_name:
+            raise ValueError("Non-compile fullname in CompiledImportHook.get_compile")
+
+        mod_filename = os.path.join(self.compiled_dir, mod_name)
+        py_filename = mod_filename + ".py"
+
+        if os.path.exists(py_filename) and\
+                krait_internal._compiled_check_tag(mod_name, self.get_compiled_etag(py_filename)):
+            # Everything up to date
+            return mod_filename
+
+        # Create the file, but don't return the extension
+        return os.path.splitext(krait_internal._compiled_get_compiled_file(mod_filename))[0]
+
     class Loader(object):
-        def __init__(self, fullname, path, filename):
+        def __init__(self, hooker_object, fullname, find_module_result):
+            self.hooker_object = hooker_object
             self.fullname = fullname
-            self.path = path
-            self.filename = filename
+            self.file, self.pathname, self.description = find_module_result
 
         def load_module(self, fullname):
             if fullname != self.fullname:
-                raise ValueError("CompiledLoader reused for other modules.")
+                raise ValueError("CompiledImportHook.Loader reused.")
 
-            if fullname in sys.modules:
-                return sys.modules[fullname]
-
-            code = self.get_code()
-
-            mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
-            mod.__file__ = self.filename
+            try:
+                mod = imp.load_module(fullname, self.file, self.pathname, self.description)
+            finally:
+                if self.file is not None:
+                    self.file.close()
+                    self.file = None
             mod.__loader__ = self
 
-            is_package = (os.path.basename(self.filename).splitext()[0] == "__init__")
-            if is_package:
-                mod.__path__ = [os.path.dirname(self.filename)]
-                mod.__package__ = fullname
-            else:
-                mod.__package__ = fullname.rpartition('.')[0]
+        def check_tag_or_reload(self):
+            krait_internal._compiled_check_tag_or_reload(
+                self.fullname.rpartition('.')[2],
+                self.hooker_object.get_compiled_etag(self.pathname))
 
-            exec(code, mod.__dict__);
-            return mod
+            # This raises an exception if the module was reloaded, or continues otherwise
 
-        def get_code(self):
-            # TODO: load code from pyc! Both here and in loader.
-            with open(self.filename, "rb") as f:
-                return f.read()
 
+def register():
+    sys.meta_path.append(CompiledImportHook())

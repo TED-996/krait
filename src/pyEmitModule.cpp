@@ -57,7 +57,7 @@ BOOST_PYTHON_MODULE(_krait_emit) {
 }
 
 
-void PyEmitModule::initialize() {
+void PyEmitModule::initializeModule() {
 	PyImport_AppendInittab("_krait_emit", &init_krait_emit);
 }
 
