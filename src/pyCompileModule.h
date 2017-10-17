@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "moduleCompiler.h"
 #include "compilerDispatcher.h"
+#include "compiledPythonRunner.h"
 
 class PyCompileModule
 {
@@ -15,6 +16,7 @@ class PyCompileModule
 	std::string getCompiledFileInternal(boost::string_ref moduleName);
 	void reload(boost::string_ref moduleName);
 public:
+
 
 	static std::string convertFilename(boost::string_ref filename);
 	static std::string getCompiledFile(boost::string_ref moduleName);

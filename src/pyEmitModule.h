@@ -31,6 +31,7 @@ class PyEmitModule
 	static PyEmitModule* getInstanceOrThrow();
 public:
 	PyEmitModule();
+	~PyEmitModule();
 
 	void hideInstance() {
 		instance = nullptr;

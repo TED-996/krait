@@ -20,6 +20,7 @@ namespace bp = boost::python;
 bool PythonModule::pythonInitialized = false;
 bool PythonModule::modulesInitialized = false;
 bp::object PythonModule::requestType;
+std::unordered_multimap<std::string, PythonModule&> PythonModule::moduleCache;
 
 
 void PythonModule::initPython() {
@@ -125,6 +126,66 @@ void PythonModule::resetModules(const std::string& projectDir) {
 	}
 
 	modulesInitialized = true;
+}
+
+void PythonModule::reload(const std::string& moduleName) {
+	// It's OK if this is a multimap, we only care IF there's an object.
+	auto it = moduleCache.find(moduleName);
+	if (it == moduleCache.end()) {
+		// Import the module (get it from sys.modules), then reload it.
+		PyObject* existingModuleObject = PyImport_AddModule(moduleName.c_str());
+		if (existingModuleObject != nullptr) {
+			bp::object existingModule = bp::object(bp::borrowed(existingModuleObject));
+			PyObject* newModuleObject = PyImport_ReloadModule(existingModule.ptr());
+			if (newModuleObject == nullptr) {
+				bp::throw_error_already_set();
+			}
+			//Manage the new object.
+			(void)bp::object(bp::detail::new_reference(newModuleObject));
+			return;
+		}
+		else {
+			(void)bp::import(bp::str(moduleName));
+			return;
+		}
+	}
+	else {
+		reload(it->second);
+	}
+}
+
+void PythonModule::reload(PythonModule& module) {
+	PyObject* newModuleObject = PyImport_ReloadModule(module.moduleObject.ptr());
+	if (newModuleObject == nullptr) {
+		bp::throw_error_already_set();
+	}
+	bp::object newModule = bp::object(bp::detail::new_reference(newModuleObject));
+	module.moduleObject = newModule;
+	module.moduleGlobals = bp::extract<bp::dict>(newModule.attr("__dict__"));
+
+	auto itPair = moduleCache.equal_range(module.name);
+	for (auto it = itPair.first; it != itPair.second; ++it) {
+		if (&it->second != &module) {
+			// Also reload the cached object
+			it->second.moduleObject = module.moduleObject;
+			it->second.moduleGlobals = module.moduleGlobals;
+		}
+	}
+}
+
+PythonModule* PythonModule::getCached(const std::string& moduleName) {
+	auto it = moduleCache.find(moduleName);
+	if (it == moduleCache.end()) {
+		return &it->second;
+	}
+	else {
+		return nullptr;
+	}
+}
+
+void PythonModule::addToCache() {
+	moduleCache.erase(name);
+	moduleCache.insert(std::pair<std::string, PythonModule&>(name, *this));
 }
 
 PythonModule::PythonModule(const std::string& name) {

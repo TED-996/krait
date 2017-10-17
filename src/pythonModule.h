@@ -18,6 +18,7 @@ private:
 
 	//Statics
 public:
+
 	static PythonModule& main() {
 		static PythonModule mod("__main__");
 		return mod;
@@ -43,6 +44,12 @@ public:
 		return mod;
 	}
 
+	// TODO: maybe add uncached variants 
+	static void reload(const std::string& moduleName);
+	static void reload(PythonModule& module);
+
+	static PythonModule* getCached(const std::string& moduleName);
+
 	static boost::python::str toPythonStr(const boost::python::object& obj) {
 		if (PyString_Check(obj.ptr())) {
 			return boost::python::extract<boost::python::str>(obj);
@@ -60,10 +67,18 @@ private:
 	static bool modulesInitialized;
 	static boost::python::object requestType;
 
+	// Every module that is kept MUST live in the module cache.
+	static std::unordered_multimap<std::string, PythonModule&> moduleCache;
+
 	//Methods
 public:
 	explicit PythonModule(const std::string& name);
 	void clear();
+	void addToCache();
+
+	const std::string& getName() const {
+		return name;
+	}
 
 	void run(const std::string& command);
 	void execfile(const std::string& filename);

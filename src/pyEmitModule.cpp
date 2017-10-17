@@ -42,6 +42,10 @@ PyEmitModule::PyEmitModule() {
 	reset();
 }
 
+PyEmitModule::~PyEmitModule() {
+	instance = nullptr;
+}
+
 void PyEmitModule::reset() {
 	pyStrings.clear();
 }

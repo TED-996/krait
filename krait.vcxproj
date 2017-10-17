@@ -131,6 +131,7 @@
     <ClCompile Include="src\argvConfig.cpp" />
     <ClCompile Include="src\codeAstItem.cpp" />
     <ClCompile Include="src\compiledModule.cpp" />
+    <ClCompile Include="src\compiledPythonRunner.cpp" />
     <ClCompile Include="src\compilerDispatcher.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="src\argvConfig.h" />
     <ClInclude Include="src\codeAstItem.h" />
     <ClInclude Include="src\compiledModule.h" />
+    <ClInclude Include="src\compiledPythonRunner.h" />
     <ClInclude Include="src\compilerDispatcher.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
