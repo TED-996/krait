@@ -79,6 +79,10 @@ struct siteError : public rootException
 {
 };
 
+struct compileError : public rootException
+{
+};
+
 template<typename... TArgs>
 stringInfo stringInfoFromFormat(const char* fmt, TArgs&& ... args) {
 	return stringInfo(formatString(fmt, std::forward<TArgs>(args)...));

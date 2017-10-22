@@ -5,7 +5,17 @@
 
 
 PyCompileModule* PyCompileModule::instance = nullptr;
+boost::python::object PyCompileModule::exceptionType;
 
+
+PyCompileModule::PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner)
+	: dispatcher(dispatcher),
+	  runner(runner) {
+	if (instance != nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Multiple PyCompileModule instances"));
+	}
+	instance = this;
+}
 
 BOOST_PYTHON_MODULE(_krait_compile) {
 	boost::python::def("convert_filename", &PyCompileModule::convertFilename);
@@ -18,12 +28,15 @@ BOOST_PYTHON_MODULE(_krait_compile) {
 
 
 void PyCompileModule::initializeModule() {
-	PyImport_AppendInittab("_krait_compile", &init_krait_compile);	
+	PyImport_AppendInittab("_krait_compile", &init_krait_compile);
 }
 
 void PyCompileModule::postInitializeModule() {
+	char exceptionName[] = "_krait_compile.ModuleReloadedException";
 	exceptionType = boost::python::object(
-		boost::python::detail::new_reference(PyErr_NewException("_krait_compile.ModuleReloadedException", nullptr, nullptr)));
+		boost::python::detail::new_reference(PyErr_NewException(
+			exceptionName,
+			nullptr, nullptr)));
 }
 
 
@@ -50,23 +63,23 @@ std::string PyCompileModule::getCompiledFileInternal(boost::string_ref moduleNam
 }
 
 bool PyCompileModule::checkTag(boost::string_ref moduleName, boost::string_ref tag) {
-	return getInstanceOrThrow().dispatcher.getPymlCache().checkCacheTag(moduleName.to_string(), tag.to_string());
+	return getInstanceOrThrow().dispatcher.checkCacheTag(moduleName.to_string(), tag.to_string());
 }
 
 void PyCompileModule::checkTagOrReload(boost::string_ref moduleName, boost::string_ref tag) {
 	PyCompileModule& instance = getInstanceOrThrow();
-	if (!instance.dispatcher.getPymlCache().checkCacheTag(moduleName.to_string(), tag.to_string())) {
+	if (!instance.dispatcher.checkCacheTag(moduleName.to_string(), tag.to_string())) {
 		instance.reload(moduleName);
 	}
 }
 
 void PyCompileModule::reload(boost::string_ref moduleName) {
-	PythonModule::reload(moduleName);
+	PythonModule::reload(moduleName.to_string());
 
 	PyErr_SetString(exceptionType.ptr(), "Module reloaded, please return from everything. Do not catch this.");
 	boost::python::throw_error_already_set();
 }
 
 void PyCompileModule::run(boost::string_ref moduleName) {
-	runner.run(moduleName);
+	getInstanceOrThrow().runner.run(moduleName);
 }

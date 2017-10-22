@@ -16,7 +16,7 @@ class PyCompileModule
 	std::string getCompiledFileInternal(boost::string_ref moduleName);
 	void reload(boost::string_ref moduleName);
 public:
-
+	PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner);
 
 	static std::string convertFilename(boost::string_ref filename);
 	static std::string getCompiledFile(boost::string_ref moduleName);
@@ -24,7 +24,7 @@ public:
 	static void checkTagOrReload(boost::string_ref moduleName, boost::string_ref tag);
 	static void run(boost::string_ref moduleName);
 
-	static boost::python::object& getExceptionType() {
+	static boost::python::object getExceptionType() {
 		return exceptionType;
 	}
 

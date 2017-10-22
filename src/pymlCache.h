@@ -14,14 +14,16 @@ public:
 		char data[32];
 
 		CacheTag();
-		explicit CacheTag(std::string data);
+		explicit CacheTag(const std::string& data);
 		CacheTag(const CacheTag& source);
 		CacheTag(CacheTag&& source) noexcept;
 
-		void setTag(std::string data);
+		void setTag(const std::string& data);
 
 		bool operator== (const CacheTag& other) const;
+		bool operator== (const std::string& other) const;
 		bool operator!= (const CacheTag& other) const;
+		bool operator!= (const std::string& other) const;
 		explicit operator std::string() const;
 	};
 private:
@@ -52,17 +54,17 @@ private:
 
 	std::unordered_map<std::string, CacheEntry> cacheMap;
 
-	IPymlFile& constructAddNew(std::string filename, std::time_t time);
-	const IPymlFile& replaceWithNewer(std::string filename);
+	IPymlFile& constructAddNew(const std::string& filename, std::time_t time);
+	const IPymlFile& replaceWithNewer(const std::string& filename);
 
 public:
 	PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheMiss);
-	const IPymlFile& get(std::string filename) override;
+	const IPymlFile& get(const std::string& filename) override;
 
-	bool existsNewer(std::string filename, std::time_t time);
-	std::time_t getCacheTime(std::string filename);
-	bool checkCacheTag(std::string filename, std::string tag);
-	std::string getCacheTag(std::string filename);
+	bool existsNewer(const std::string& filename, std::time_t time);
+	std::time_t getCacheTime(const std::string& filename);
+	bool checkCacheTag(const std::string& filename, const std::string& tag);
+	std::string getCacheTag(const std::string& filename);
 
 	void freeze() {
 		frozen = true;

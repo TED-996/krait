@@ -142,9 +142,15 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
 		try {
 			parser.consume(buffer, bytesRead);
 		}
-		catch (httpParseError err) {
-			Loggers::logErr(formatString("Error parsing http request: %s\n", err.what()));
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
+		catch (const httpParseError& err) {
+			if (parser.getErrorMessage().size() != 0) {
+				Loggers::logErr(formatString("Error parsing http request: %1%. Additional info: %2%\n", err.what(), parser.getErrorMessage()));
+				BOOST_THROW_EXCEPTION(networkError() << stringInfoFromFormat("Error parsing HTTP request: %1%", parser.getErrorMessage()));
+			}
+			else {
+				Loggers::logErr(formatString("Error parsing http request: %1%. No additional info.\n", err.what()));
+				BOOST_THROW_EXCEPTION(networkError() << stringInfoFromFormat("Error parsing HTTP request. No additional info."));
+			}
 		}
 	}
 	
@@ -214,8 +220,14 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 			parser.consume(buffer, bytesRead);
 		}
 		catch (httpParseError err) {
-			Loggers::logErr(formatString("Error parsing HTTP request: %s\n", err.what()));
-			BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
+			if (parser.getErrorMessage().size() != 0) {
+				Loggers::logErr(formatString("Error parsing http request: %1%. Additional info: %2%\n", err.what(), parser.getErrorMessage()));
+				BOOST_THROW_EXCEPTION(networkError() << stringInfoFromFormat("Error parsing HTTP request: %1%", parser.getErrorMessage()));
+			}
+			else {
+				Loggers::logErr(formatString("Error parsing http request: %1%. No additional info.\n", err.what()));
+				BOOST_THROW_EXCEPTION(networkError() << stringInfoFromFormat("Error parsing HTTP request. No additional info."));
+			}
 		}
 	}
 

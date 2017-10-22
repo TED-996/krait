@@ -9,6 +9,7 @@
 #include "response.h"
 #include "pyEmitModule.h"
 #include "pythonCodeEscapingFsm.h"
+#include "pyCompileModule.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
@@ -35,6 +36,8 @@ void PythonModule::initPython() {
 		//Afterwards initialize Python.
 		Py_Initialize();
 		DBG("PyInitialize done");
+		PyCompileModule::postInitializeModule();
+
 		bp::to_python_converter<Request, requestToPythonObjectConverter>();
 		bp::to_python_converter<std::map<std::string, std::string>, StringMapToPythonObjectConverter>();
 		bp::to_python_converter<std::multimap<std::string, std::string>, StringMultimapToPythonObjectConverter>();

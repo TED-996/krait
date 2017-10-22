@@ -111,12 +111,14 @@ class CompiledImportHook(object):
         mod_filename = os.path.join(self.compiled_dir, mod_name)
         py_filename = mod_filename + ".py"
 
+        # noinspection PyProtectedMember
         if os.path.exists(py_filename) and\
                 krait_internal._compiled_check_tag(mod_name, self.get_compiled_etag(py_filename)):
             # Everything up to date
             return mod_filename
 
         # Create the file, but don't return the extension
+        # noinspection PyProtectedMember
         return os.path.splitext(krait_internal._compiled_get_compiled_file(mod_filename))[0]
 
     class Loader(object):
@@ -138,6 +140,7 @@ class CompiledImportHook(object):
             mod.__loader__ = self
 
         def check_tag_or_reload(self):
+            # noinspection PyProtectedMember
             krait_internal._compiled_check_tag_or_reload(
                 self.fullname.rpartition('.')[2],
                 self.hooker_object.get_compiled_etag(self.pathname))

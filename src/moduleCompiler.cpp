@@ -2,10 +2,70 @@
 #include <boost/filesystem/operations.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <fstream>
 
 
 static std::vector<std::string> getEscapeFilenameReplacements();
 static std::unordered_set<std::string> getReservedKeywords();
+
+
+ModuleCompiler::ModuleCompiler(boost::filesystem::path siteRoot)
+	: siteRoot(std::move(siteRoot)) {
+}
+
+void ModuleCompiler::compile(const IPymlFile& pymlFile, const std::string& destFilename, std::string&& cacheTag) {
+	const IPymlItem* rootItem = pymlFile.getRootItem();
+	
+	if (!rootItem->canConvertToCode()) {
+		BOOST_THROW_EXCEPTION(compileError() << stringInfo("Tried compiling non-compilable PymlFile"));
+	}
+
+	std::unique_ptr<CodeAstItem> customHeader = rootItem->getHeaderAst();
+	CodeAstItem codeAst = rootItem->getCodeAst();
+	codeAst.addPassChildren("pass");
+	codeAst.optimize();
+
+	std::fstream outFile(destFilename);
+	if (!outFile) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Cannot open file %1% to compile", destFilename));
+	}
+
+	outFile << formatString(R"""(# [TAGS]: {"c_version": 1, "etag": "%1%"}\n)""", cacheTag);
+	
+	static CodeAstItem moduleHeader = getModuleHeader();
+	moduleHeader.getCodeToStream(0, outFile);
+
+	if (customHeader != nullptr) {
+		customHeader->addPassChildren("pass");
+		customHeader->optimize();
+		customHeader->getCodeToStream(0, outFile);
+	}
+	customHeader.reset();
+	
+	outFile << "def run():\n";
+	
+	static CodeAstItem functionHeader = getFunctionHeader();
+	functionHeader.getCodeToStream(1, outFile);
+
+	codeAst.getCodeToStream(1, outFile);
+}
+
+CodeAstItem ModuleCompiler::getFunctionHeader() {
+	CodeAstItem result;
+	result.addChild(CodeAstItem("__emit__ = __internal._emit"));
+	result.addChild(CodeAstItem("__emit_raw__ = __internal._emit_raw"));
+	result.addChild(CodeAstItem("__loader__.check_tag_or_reload()"));
+
+	return result;
+}
+
+CodeAstItem ModuleCompiler::getModuleHeader() {
+	CodeAstItem result;
+	result.addChild(CodeAstItem("import krait"));
+	result.addChild(CodeAstItem("from krait import __internal"));
+
+	return result;
+}
 
 // Convert an absolute/relative filename to its Python module name
 std::string ModuleCompiler::escapeFilename(boost::string_ref filename) const {
@@ -39,6 +99,14 @@ std::string ModuleCompiler::escapeFilename(boost::string_ref filename) const {
 		// This converts from, say, 5_libraries.js to _35_libraries.js
 		// which helps because 0x3X is exactly the digit X in ASCII
 		result.insert(0, "_3", 2);
+	}
+
+	if (reservedKeywords.find(result) != reservedKeywords.end()) {
+		// Is a reseved keyword, change the last character to its hex escape.
+		// No reserved keywords contain any sort of escapes, so we can always do that.
+		char lastCh = result[result.size() - 1];
+		result[result.size() - 1] = '_';
+		result.append(formatString("%02X", lastCh));
 	}
 	
 	result.insert(0, moduleHeader);
@@ -166,3 +234,4 @@ std::vector<char> getUnescapeFilenameReplacements() {
 
 	return result;
 }
+
