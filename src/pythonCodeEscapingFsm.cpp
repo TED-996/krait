@@ -154,32 +154,32 @@ void PythonCodeEscapingFsm::init() {
 
 	// Double quotes
 	add(inNullDqString, new Simple('\\', inDqStringEscaping));
-	add(inNullDqString, new Simple('\'', afterNullDqString));
+	add(inNullDqString, new Simple('\"', afterNullDqString));
 	add(inNullDqString, new Always(inDqString));
 
 	add(inDqStringEscaping, new Always(inDqString));
 
 	add(inDqString, new Simple('\\', inDqStringEscaping));
-	add(inDqString, new Simple('\'', inStatement));
+	add(inDqString, new Simple('\"', inStatement));
 	add(inDqString, new Always(inDqString));
 	add(inDqString, new Always(inDqString));
 
-	add(afterNullDqString, new Simple('\'', inTripleDqString));
+	add(afterNullDqString, new Simple('\"', inTripleDqString));
 	add(afterNullDqString, new Always(inStatement));
 
 	// Triple double quotes
 	add(inTripleDqString, new Simple('\\', inTripleDqStringEscaping));
-	add(inTripleDqString, new Simple('\'', inTripleDqStringOneDq));
+	add(inTripleDqString, new Simple('\"', inTripleDqStringOneDq));
 	add(inTripleDqString, new Always(inTripleDqString));
 
 	add(inTripleDqStringEscaping, new Always(inTripleDqString));
 
 	add(inTripleDqStringOneDq, new Simple('\\', inTripleDqStringEscaping));
-	add(inTripleDqStringOneDq, new Simple('\'', inTripleDqStringTwoDq));
+	add(inTripleDqStringOneDq, new Simple('\"', inTripleDqStringTwoDq));
 	add(inTripleDqStringOneDq, new Always(inTripleDqString));
 
 	add(inTripleDqStringTwoDq, new Simple('\\', inTripleDqStringEscaping));
-	add(inTripleDqStringTwoDq, new Simple('\'', inStatement));
+	add(inTripleDqStringTwoDq, new Simple('\"', inStatement));
 	add(inTripleDqStringTwoDq, new Always(inTripleDqString));
 }
 

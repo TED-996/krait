@@ -3,7 +3,7 @@
 #include <boost/algorithm/string/compare.hpp>
 #include  "except.h"
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include "dbg.h"
 #include "dbgStopwatch.h"
 

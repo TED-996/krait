@@ -268,7 +268,7 @@ void FsmV2::consumeOne(char chr) {
 	}
 
 	bool consumed = false;
-	skipThis = !defaultSkip;
+	skipThis = defaultSkip;
 	while (!consumed) {
 		consumed = true;
 		size_t idx;

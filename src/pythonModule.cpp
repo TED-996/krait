@@ -11,7 +11,7 @@
 #include "pythonCodeEscapingFsm.h"
 #include "pyCompileModule.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 namespace b = boost;
@@ -25,7 +25,7 @@ std::unordered_multimap<std::string, PythonModule&> PythonModule::moduleCache;
 
 
 void PythonModule::initPython() {
-	DBG("initializing python");
+	//DBG("initializing python");
 	if (pythonInitialized) {
 		return;
 	}
@@ -35,7 +35,7 @@ void PythonModule::initPython() {
 
 		//Afterwards initialize Python.
 		Py_Initialize();
-		DBG("PyInitialize done");
+		//DBG("PyInitialize done");
 		PyCompileModule::postInitializeModule();
 
 		bp::to_python_converter<Request, requestToPythonObjectConverter>();
@@ -50,32 +50,32 @@ void PythonModule::initPython() {
 			&PythonObjectToResponsePtrConverter::construct,
 			boost::python::type_id<PtrWrapper<Response>>());
 
-		DBG("converters done");
+		//DBG("converters done");
 
 		bp::object mainModule = bp::import("__main__");
-		DBG("import main done");
+		//DBG("import main done");
 
 		bp::dict mainDict = bp::extract<bp::dict>(mainModule.attr("__dict__"));
-		DBG("imports done");
+		//DBG("imports done");
 
 		mainModule.attr("root_dir") = bp::str(getShareRoot().string());
-		DBG("executing file");
+		//DBG("executing file");
 
-		bp::exec_file(bp::str((getShareRoot() / "py" / "krait" / "_internal" / "python-setup.py").string()), mainDict, mainDict);
+		bp::exec_file(bp::str((getShareRoot() / "py" / "krait" / "__internal" / "python-setup.py").string()), mainDict, mainDict);
 	}
 	catch (const bp::error_already_set&) {
-		DBG("Python error in initPython().");
+		//DBG("Python error in initPython().");
 
 		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("initPython()"));
 	}
 
-	DBG("pre_atexit");
+	//DBG("pre_atexit");
 	if (atexit(PythonModule::finishPython) != 0) {
 		BOOST_THROW_EXCEPTION(syscallError() << stringInfo("atexit: setting finishPython at exit") << errcodeInfoDef());
 	}
 
 	pythonInitialized = true;
-	DBG("python initialized");
+	//DBG("python initialized");
 }
 
 
@@ -94,7 +94,7 @@ void PythonModule::finishPython() {
 }
 
 void PythonModule::initModules(const std::string& projectDir) {
-	DBG("in initModules()");
+	//DBG("in initModules()");
 	initPython();
 
 	try {
@@ -107,7 +107,7 @@ void PythonModule::initModules(const std::string& projectDir) {
 }
 
 void PythonModule::resetModules(const std::string& projectDir) {
-	DBG("in pythonReset()");
+	//DBG("in pythonReset()");
 	try {
 		if (modulesInitialized) {
 			PythonModule::main().clear();
@@ -118,7 +118,7 @@ void PythonModule::resetModules(const std::string& projectDir) {
 		}
 		PythonModule::main().setGlobal("project_dir", projectDir);
 
-		PythonModule::main().execfile((getShareRoot() / "py" / "krait" / "_internal" / "site-setup.py").string());
+		PythonModule::main().execfile((getShareRoot() / "py" / "krait" / "__internal" / "site-setup.py").string());
 
 		requestType = PythonModule::krait().moduleGlobals["Request"];
 	}
@@ -192,7 +192,7 @@ void PythonModule::addToCache() {
 }
 
 PythonModule::PythonModule(const std::string& name) {
-	DBG_FMT("PythonModule(%1%)", name);
+	//DBG_FMT("PythonModule(%1%)", name);
 	initPython();
 
 	try {
@@ -208,7 +208,7 @@ PythonModule::PythonModule(const std::string& name) {
 }
 
 PythonModule::PythonModule(boost::python::object moduleObject) {
-	DBG("PythonModule(moduleObject)");
+	//DBG("PythonModule(moduleObject)");
 	// No initPython() necessary, everything is already loaded, since we have an object.
 
 	try {
@@ -229,7 +229,7 @@ void PythonModule::clear() {
 
 
 void PythonModule::run(const std::string& command) {
-	DBG("in run()");
+	//DBG("in run()");
 	try {
 		bp::exec(bp::str(command), moduleGlobals, moduleGlobals);
 	}
@@ -242,7 +242,7 @@ void PythonModule::run(const std::string& command) {
 
 
 void PythonModule::execfile(const std::string& filename) {
-	DBG("in execfile()");
+	//DBG("in execfile()");
 	try {
 		bp::exec_file(bp::str(filename), moduleGlobals, moduleGlobals);
 	}
@@ -256,7 +256,7 @@ void PythonModule::execfile(const std::string& filename) {
 }
 
 std::string PythonModule::eval(const std::string& code) {
-	DBG("in pythonEval()");
+	//DBG("in pythonEval()");
 	try {
 		return toStdString(bp::eval(bp::str(code), moduleGlobals, moduleGlobals));
 	}
@@ -269,7 +269,7 @@ std::string PythonModule::eval(const std::string& code) {
 
 
 bp::object PythonModule::evalToObject(const std::string& code) {
-	DBG("in pythonEvalToObject()");
+	//DBG("in pythonEvalToObject()");
 	try {
 		bp::object result = bp::eval(bp::str(code), moduleGlobals, moduleGlobals);
 		return result;
@@ -295,7 +295,7 @@ bool PythonModule::test(const std::string& condition) {
 }
 
 bp::object PythonModule::callObject(const bp::object& obj) {
-	DBG("in callObject()");
+	//DBG("in callObject()");
 	try {
 		return obj();
 	}
@@ -307,7 +307,7 @@ bp::object PythonModule::callObject(const bp::object& obj) {
 }
 
 bp::object PythonModule::callObject(const bp::object& obj, const bp::object& arg) {
-	DBG("in callObject(arg)");
+	//DBG("in callObject(arg)");
 	try {
 		return obj(arg);
 	}
@@ -319,7 +319,7 @@ bp::object PythonModule::callObject(const bp::object& obj, const bp::object& arg
 }
 
 boost::python::object PythonModule::callGlobal(const std::string& name) {
-	DBG("in callGlobal()");
+	//DBG("in callGlobal()");
 	try {
 		return moduleObject.attr(name.c_str())();
 	}
@@ -331,7 +331,7 @@ boost::python::object PythonModule::callGlobal(const std::string& name) {
 }
 
 bool PythonModule::checkIsNone(const std::string& name) {
-	DBG("in pythonVarIsNone(name)");
+	//DBG("in pythonVarIsNone(name)");
 	try {
 		return bp::object(moduleObject.attr(name.c_str())).is_none();
 	}
@@ -343,7 +343,7 @@ bool PythonModule::checkIsNone(const std::string& name) {
 }
 
 void PythonModule::setGlobal(const std::string& name, const bp::object& value) {
-	DBG("in setGlobal()");
+	//DBG("in setGlobal()");
 	try {
 		moduleObject.attr(name.c_str()) = value;
 	}
@@ -387,7 +387,7 @@ void PythonModule::setGlobalEmptyList(const std::string& name) {
 }
 
 std::string PythonModule::getGlobalStr(const std::string& name) {
-	DBG("in pythonGetGlobalStr()");
+	//DBG("in pythonGetGlobalStr()");
 	try {
 		return toStdString(moduleObject.attr(name.c_str()));
 	}
@@ -399,7 +399,7 @@ std::string PythonModule::getGlobalStr(const std::string& name) {
 }
 
 std::map<std::string, std::string> PythonModule::getGlobalMap(const std::string& name) {
-	DBG("in getGlobalMap()");
+	//DBG("in getGlobalMap()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
 		bp::dict globalDict = bp::extract<bp::dict>(globalObj);
@@ -421,7 +421,7 @@ std::map<std::string, std::string> PythonModule::getGlobalMap(const std::string&
 }
 
 bp::object PythonModule::getGlobalVariable(const std::string& name) {
-	DBG("in getGlobalVariable()");
+	//DBG("in getGlobalVariable()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
 		return globalObj;
@@ -434,7 +434,7 @@ bp::object PythonModule::getGlobalVariable(const std::string& name) {
 }
 
 std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(const std::string& name) {
-	DBG("in getGlobalTupleList()");
+	//DBG("in getGlobalTupleList()");
 	try {
 		bp::object globalObj = moduleObject.attr(name.c_str());
 		int listLen = bp::len(globalObj);
@@ -455,7 +455,7 @@ std::multimap<std::string, std::string> PythonModule::getGlobalTupleList(const s
 }
 
 Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
-	DBG("in getGlobalTupleList()");
+	//DBG("in getGlobalTupleList()");
 	try {
 		return bp::extract<PtrWrapper<Response>>(moduleObject.attr(name.c_str()))()();
 	}
@@ -470,7 +470,7 @@ Response* PythonModule::getGlobalResponsePtr(const std::string& name) {
 std::string dedentSimple(std::string&& str, char dedentCharacter) {
 	static PythonCodeEscapingFsm escapingFsm;
 
-	if (str.length() == 0 || !std::isspace(str[0])) {
+	if (str.length() == 0 || !(str[0] == dedentCharacter || str[0] == '\r' || str[0] == '\n')) {
 		return std::move(str);
 	}
 
@@ -527,6 +527,7 @@ std::string dedentSimple(std::string&& str, char dedentCharacter) {
 		else if (indentLeft > 0) {
 			if (ch == dedentCharacter) {
 				// All good. Skip it.
+				DBG("Skipping indent character");
 				copyOffset++;
 			}
 			else {
@@ -555,7 +556,7 @@ std::string dedentSimple(std::string&& str, char dedentCharacter) {
 	}
 
 	str.erase(str.size() - copyOffset);
-	return std::move(str);	
+	return std::move(str);
 }
 
 // Dedent std::string
@@ -564,7 +565,7 @@ std::string PythonModule::prepareStr(std::string&& pyCode) {
 }
 
 PyObject* PythonModule::StringMapToPythonObjectConverter::convert(std::map<std::string, std::string> const& map) {
-	DBG("in map<std::string, std::string>->PyObject()");
+	//DBG("in map<std::string, std::string>->PyObject()");
 
 	bp::dict result;
 	for (auto it : map) {
@@ -576,7 +577,7 @@ PyObject* PythonModule::StringMapToPythonObjectConverter::convert(std::map<std::
 PyObject* PythonModule::StringMultimapToPythonObjectConverter::convert(
 	std::multimap<std::string, std::string> const& map) {
 
-	DBG("in multimap<std::string, std::string>->PyObject()");
+	//DBG("in multimap<std::string, std::string>->PyObject()");
 
 	bp::list result;
 	for (const auto& it : map) {
@@ -587,7 +588,7 @@ PyObject* PythonModule::StringMultimapToPythonObjectConverter::convert(
 }
 
 PyObject* PythonModule::requestToPythonObjectConverter::convert(Request const& request) {
-	DBG("in Request->PyObject()");
+	//DBG("in Request->PyObject()");
 
 	bp::object result = PythonModule::requestType(
 		bp::str(httpVerbToString(request.getVerb())),
@@ -640,16 +641,14 @@ void PythonModule::PythonObjectToRouteConverter::construct(PyObject* objPtr, bp:
 }
 
 void* PythonModule::PythonObjectToResponsePtrConverter::convertible(PyObject* objPtr) {
-	DBG("in PythonObjectToResponsePtrConverter:");
+	//DBG("in PythonObjectToResponsePtrConverter:");
 
 	if (PyObject_HasAttrString(objPtr, "http_version") &&
 		PyObject_HasAttrString(objPtr, "status_code") &&
 		PyObject_HasAttrString(objPtr, "headers") &&
 		PyObject_HasAttrString(objPtr, "body")) {
-		DBG("OK");
 		return objPtr;
 	}
-	DBG("NOT OK");
 	return nullptr;
 }
 
