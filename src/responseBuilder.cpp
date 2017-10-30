@@ -204,7 +204,7 @@ std::string ResponseBuilder::getModuleNameFromFilename(boost::string_ref filenam
 }
 
 std::string ResponseBuilder::getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const {
-	return (compiler.getCompiledRoot() / "_mvc_compiled" / (std::string("mvc_compiled_") + std::to_string(routeIdx))).string();
+	return "_krait_compiled._mvc_compiled.mvc_compiled_" + std::to_string(routeIdx);
 }
 
 const IPymlFile& ResponseBuilder::getPymlFromCache(const std::string& filename) const {

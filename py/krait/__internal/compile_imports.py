@@ -77,7 +77,7 @@ class CompiledImportHook(object):
             # Everything good
             return
 
-        if self.get_compiled_tag(filename).get("custom"):
+        if os.path.exists(filename) and self.get_compiled_tag(filename).get("custom"):
             # Is custom.
             return
 
@@ -88,7 +88,7 @@ class CompiledImportHook(object):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name, 0o775)
 
-        with open(fullname, "w") as f:
+        with open(filename, "w") as f:
             f.write(self.tag_marker + json.dumps({
                 "c_version": self.compiler_version
             }))
