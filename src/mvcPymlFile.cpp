@@ -27,14 +27,7 @@ void MvcPymlFile::setRootItem() {
 	rootItem = std::make_unique<PymlItemSeq>(std::move(rootSeq));
 }
 
-bool MvcPymlFile::isDynamic() const {
-	return rootItem->isDynamic();
-}
 
 std::string MvcPymlFile::runPyml() const {
 	return rootItem->runPyml();
-}
-
-const IPymlItem* MvcPymlFile::getRootItem() const {
-	return &*rootItem;
 }

@@ -17,6 +17,20 @@ PyCompileModule::PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonR
 	instance = this;
 }
 
+PyCompileModule::PyCompileModule(PyCompileModule&& other) noexcept
+	: dispatcher(other.dispatcher),
+      runner(other.runner){
+	if (instance == &other) {
+		instance = this;
+	}
+}
+
+PyCompileModule::~PyCompileModule() {
+	if (instance == this) {
+		instance = nullptr;
+	}
+}
+
 BOOST_PYTHON_MODULE(_krait_compile) {
 	boost::python::def("convert_filename", &PyCompileModule::convertFilename);
 	boost::python::def("get_compiled_file", &PyCompileModule::getCompiledFile);

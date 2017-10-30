@@ -17,6 +17,8 @@ class PyCompileModule
 	void reload(boost::string_ref moduleName);
 public:
 	PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner);
+	PyCompileModule(PyCompileModule&& other) noexcept;
+	~PyCompileModule();
 
 	static std::string convertFilename(boost::string_ref filename);
 	static std::string getCompiledFile(boost::string_ref moduleName);

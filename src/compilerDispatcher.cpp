@@ -21,6 +21,10 @@ std::string CompilerDispatcher::getCompiledFilenameFromModuleName(const std::str
 	return (compiledRoot / moduleName).string();
 }
 
+std::string CompilerDispatcher::getCompiledModuleName(boost::string_ref filename) {
+	return compiler.escapeFilename(filename);
+}
+
 bool CompilerDispatcher::checkCacheTag(const std::string& moduleName) const {
 	return checkCacheTag(moduleName, getCacheTag(moduleName));
 }

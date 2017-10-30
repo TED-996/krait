@@ -278,25 +278,12 @@ bool PymlItemEmbed::isDynamic() const {
 	return cache.get(PythonModule::main().eval(filename)).isDynamic();
 }
 
-
-boost::optional<std::string> getStaticPython(std::string code) {
-	return boost::none;
-}
-
 CodeAstItem PymlItemEmbed::getCodeAst() const {
-	//TODO: use __import__? Use Compiler? Idk...
-	BOOST_THROW_EXCEPTION(notImplementedError());
+	return CodeAstItem("__run__(__to_module__(" + filename + "))");
 }
 
 std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
-	//TODO: idk, what to import? Since the import is dynamic... Check if it actually is static though?
-	//TODO FOR REALZ IMPORTANT: signal dependencies! OOOR use import hooks...
-	boost::optional<std::string> staticModule = getStaticPython(filename);
-	if (staticModule == boost::none) {
-		// The import is not statically resolvable.
-		return nullptr;
-	}
-	BOOST_THROW_EXCEPTION(notImplementedError());
+	return nullptr;
 }
 
 bool PymlItemEmbed::canConvertToCode() const {

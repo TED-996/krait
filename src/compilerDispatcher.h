@@ -26,4 +26,6 @@ public:
 
 	bool checkCacheTag(const std::string& moduleName) const;
 	bool checkCacheTag(const std::string& moduleName, const std::string& computedTag) const;
+
+	std::string getCompiledModuleName(boost::string_ref filename);
 };

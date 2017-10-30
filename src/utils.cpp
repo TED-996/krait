@@ -1,15 +1,16 @@
-#include<fstream>
-#include<sstream>
-#include<locale>
-#include<random>
-#include<chrono>
-#include<ctime>
+#include <fstream>
+#include <sstream>
+#include <locale>
+#include <random>
+#include <chrono>
+#include <ctime>
 #include <boost/python.hpp>
-#include<poll.h>
-#include<errno.h>
-#include<sys/stat.h>
-#include"utils.h"
-#include"except.h"
+#include <poll.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include "utils.h"
+#include "except.h"
+#include "pythonModule.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
@@ -109,17 +110,51 @@ pyErrorInfo getPyErrorInfo() {
 	return pyErrorInfo(pyErrAsString());
 }
 
+pythonError getPythonError() {
+	pythonError result;
+	
+	if (PyErr_Occurred() == nullptr) {
+		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tried to call pyErrAsString() when no Python exception occured."));
+	}
+	PyObject *exception = nullptr;
+	PyObject *value = nullptr;
+	PyObject *traceback = nullptr;
+
+	try {
+
+		PyErr_Fetch(&exception, &value, &traceback);
+
+		bp::handle<> handleException(exception);
+		bp::handle<> handleValue(bp::allow_null(value));
+		bp::handle<> handleTraceback(bp::allow_null(traceback));
+
+		result << pyExcTypeInfo(bp::object(handleException));
+
+		bp::object tracebackModule(bp::import("traceback"));
+		bp::object formattedList;
+
+		if (!traceback) {
+			bp::object format_exception_only(tracebackModule.attr("format_exception_only"));
+			formattedList = format_exception_only(handleException, handleValue);
+		}
+		else {
+			bp::object format_exception(tracebackModule.attr("format_exception"));
+			formattedList = format_exception(handleException, handleValue, handleTraceback);
+		}
+
+		bp::str formatted = bp::str("\n").join(formattedList);
+
+		result << pyErrorInfo(bp::extract<std::string>(formatted));
+	}
+	catch (bp::error_already_set const&) {
+		result << pyErrorInfo("<Error trying to get Python error info>");
+	}
+	return result;
+}
+
 std::string unixTimeToString(std::time_t timeVal) {
-	/*b::posix_time::ptime asPtime = b::posix_time::from_time_t(timeVal);
-
-	std::ostringstream result;
-	*/
 	static const char* fmt = "%a, %d %b %Y %H:%M:%S GMT";
-	/*std::locale outLocale(std::locale::classic(), new b::posix_time::time_facet(fmt));
-	result.imbue(outLocale);
 
-	result << asPtime;
-	*/
 	struct tm* asGmt = std::gmtime(&timeVal);
 	char result[40];
 	size_t len = std::strftime(result, 40, fmt, asGmt);

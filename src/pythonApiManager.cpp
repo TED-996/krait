@@ -5,6 +5,10 @@
 #include "dbg.h"
 
 
+PythonApiManager::PythonApiManager(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner)
+	: pyEmitModule(), pyCompileModule(dispatcher, runner){
+}
+
 void PythonApiManager::set(const Request& request, bool isWebsockets) const {
 	PythonModule::krait().setGlobalRequest("request", request);
 	PythonModule::krait().setGlobalNone("response");

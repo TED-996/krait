@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/exception/all.hpp>
-#include<boost/format.hpp>
+#include <boost/format.hpp>
+#include <boost/python/object.hpp>
+#include <boost/io/ios_state.hpp>
 #include <string>
 #include "formatHelper.h"
 
@@ -13,8 +15,43 @@ typedef boost::error_info<struct tag_pyerr_info, const std::string> pyErrorInfo;
 typedef boost::error_info<struct tag_origin_method_info, const std::string> originCallInfo;
 typedef boost::error_info<struct tag_ssl_info, const std::string> sslErrorInfo;
 
-pyErrorInfo getPyErrorInfo();
 errcodeInfo errcodeInfoDef();
+
+template<typename T>
+struct ErrorInfoWrapper
+{
+private:
+	T object;
+
+public:
+	template<typename... TArgs>
+	ErrorInfoWrapper(TArgs&&... ctorArgs) : object(std::forward<TArgs>(ctorArgs)...){}
+
+	// Intentionally implicit.
+	operator T() const {
+		return object;
+	}
+
+	const T& operator()() const {
+		return object;
+	}
+};
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const ErrorInfoWrapper<T> wrapper)
+{
+	boost::io::ios_flags_saver ifs(os);
+	return os << "[ErrorInfoWrapper<T> at " << std::hex << &(wrapper()) << "]";
+}
+
+typedef boost::error_info<struct tag_py_exc_type_info, ErrorInfoWrapper<boost::python::object>> pyExcTypeInfo;
+
+
+template<typename... TArgs>
+stringInfo stringInfoFromFormat(const char* fmt, TArgs&& ... args) {
+	return stringInfo(formatString(fmt, std::forward<TArgs>(args)...));
+}
+
 
 struct rootException : virtual boost::exception, virtual std::exception
 {
@@ -83,7 +120,4 @@ struct compileError : public rootException
 {
 };
 
-template<typename... TArgs>
-stringInfo stringInfoFromFormat(const char* fmt, TArgs&& ... args) {
-	return stringInfo(formatString(fmt, std::forward<TArgs>(args)...));
-}
+pythonError getPythonError();

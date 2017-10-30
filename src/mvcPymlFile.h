@@ -15,7 +15,17 @@ private:
 public:
 	MvcPymlFile(const boost::python::object& ctrlClass, IPymlCache& cache);
 
-	bool isDynamic() const override;
 	std::string runPyml() const override;
-	const IPymlItem* getRootItem() const override;
+	
+	bool isDynamic() const override {
+		return rootItem->isDynamic();
+	}
+	
+	const IPymlItem* getRootItem() const override {
+		return &*rootItem;
+	}
+	
+	bool canConvertToCode() const override {
+		return getRootItem()->canConvertToCode();
+	}
 };

@@ -7,7 +7,8 @@
 #include "dbg.h"
 
 
-PyEmitModule* PyEmitModule::instance = nullptr;;
+PyEmitModule* PyEmitModule::instance = nullptr;
+bool PyEmitModule::hidden = false;
 
 
 PyEmitModule::EmitResponseIterator::EmitResponseIterator(const std::vector<boost::string_ref>& source)
@@ -42,8 +43,17 @@ PyEmitModule::PyEmitModule() {
 	reset();
 }
 
+PyEmitModule::PyEmitModule(PyEmitModule&& other) noexcept
+	: pyStrings(std::move(other.pyStrings)), stdStrings(std::move(other.stdStrings)), refs(std::move(other.refs)){
+	if (instance == &other) {
+		instance = this;
+	}
+}
+
 PyEmitModule::~PyEmitModule() {
-	instance = nullptr;
+	if (instance == this) {
+		instance = nullptr;
+	}
 }
 
 void PyEmitModule::reset() {
@@ -91,15 +101,15 @@ void PyEmitModule::emitRaw(boost::python::object value) {
 
 PyEmitModule* PyEmitModule::getInstanceOrThrow() {
 	PyEmitModule* instanceLocal = instance;
-	if (instanceLocal == nullptr) {
+	if (instanceLocal == nullptr || hidden) {
 		PyErr_SetString(PyExc_ValueError, "Krait Emit not available, not processing a (suitable) response.");
 		boost::python::throw_error_already_set();
 	}
 	return instanceLocal;
 }
 
-void PyEmitModule::addPythonObj(boost::python::str&& strings) {
-	pyStrings.emplace_back(std::move(strings));
+void PyEmitModule::addPythonObj(boost::python::str&& string) {
+	pyStrings.emplace_back(std::move(string));
 	const boost::python::str& inserted = pyStrings.back();
 	refs.emplace_back(boost::string_ref(boost::python::extract<const char*>(inserted), boost::python::len(inserted)));
 }

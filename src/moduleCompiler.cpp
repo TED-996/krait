@@ -20,7 +20,9 @@ void ModuleCompiler::compile(const IPymlFile& pymlFile, const std::string& destF
 		BOOST_THROW_EXCEPTION(compileError() << stringInfo("Tried compiling non-compilable PymlFile"));
 	}
 
-	std::unique_ptr<CodeAstItem> customHeader = rootItem->getHeaderAst();
+	// Temporarily skipping since no item writes to the header.
+	//std::unique_ptr<CodeAstItem> customHeader = rootItem->getHeaderAst();
+	std::unique_ptr<CodeAstItem> customHeader = nullptr;
 	CodeAstItem codeAst = rootItem->getCodeAst();
 	codeAst.addPassChildren("pass");
 	codeAst.optimize();
@@ -54,7 +56,9 @@ CodeAstItem ModuleCompiler::getFunctionHeader() {
 	CodeAstItem result;
 	result.addChild(CodeAstItem("__emit__ = __internal._emit"));
 	result.addChild(CodeAstItem("__emit_raw__ = __internal._emit_raw"));
-	result.addChild(CodeAstItem("__loader__.check_tag_or_reload()"));
+	result.addChild(CodeAstItem("__run__ = __internal._compiled_run"));
+	result.addChild(CodeAstItem("__to_module__ = __internal._compiled_convert_filename"));
+	result.addChild(CodeAstItem("if __loader__.hasattr('check_tag_or_reload'): __loader__.check_tag_or_reload()"));
 
 	return result;
 }
@@ -63,6 +67,7 @@ CodeAstItem ModuleCompiler::getModuleHeader() {
 	CodeAstItem result;
 	result.addChild(CodeAstItem("import krait"));
 	result.addChild(CodeAstItem("from krait import __internal"));
+	result.addChild(CodeAstItem("if __loader__.hasattr('check_tag_or_reload'): __loader__.check_tag_or_reload()"));
 
 	return result;
 }

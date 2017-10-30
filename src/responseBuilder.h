@@ -41,15 +41,18 @@ private:
 		}
 	};
 
-	PythonApiManager apiManager;
-	PageResponseRenderer renderer;
-
+	boost::filesystem::path siteRoot;
 	Config& config;
 	CacheController& cacheController;
 	PymlCache& pymlCache;
-	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
-	boost::filesystem::path siteRoot;
+	CompilerDispatcher compiler;
+	CompiledPythonRunner compiledRunner;
+
+	PythonApiManager apiManager;
+	PageResponseRenderer renderer;
+
+	std::unordered_map<std::string, std::string> contentTypeByExtension;
 
 	PreResponseSource getSourceFromRequest(const Request& request) const;
 	std::string getFilenameFromTarget(const std::string& target) const;
@@ -66,8 +69,8 @@ private:
 	void loadContentTypeList(const std::string& filename);
 
 	std::unique_ptr<Response> buildResponseInternal(const Request& request, bool isWebsockets);
-public:
 
+public:
 	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache);
 
 	std::unique_ptr<Response> buildResponse(Request& request);

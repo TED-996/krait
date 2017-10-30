@@ -70,11 +70,20 @@ private:
 	// Every module that is kept MUST live in the module cache.
 	static std::unordered_multimap<std::string, PythonModule&> moduleCache;
 
-	//Methods
+	// Methods
 public:
-	explicit PythonModule(const std::string& name);
+	explicit PythonModule(boost::string_ref name);
+	PythonModule(PythonModule& other) = default;
+
+	// Late opening
+	PythonModule();
+	void open(boost::string_ref name);
+
+	~PythonModule();
+
 	void clear();
 	void addToCache();
+	void removeFromCache();
 
 	const std::string& getName() const {
 		return name;
@@ -130,7 +139,7 @@ public:
 			return boost::python::extract<T>(value)();
 		}
 		catch(boost::python::error_already_set const&) {
-			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("extractOptional()"));
+			BOOST_THROW_EXCEPTION(getPythonError() << originCallInfo("extractOptional()"));
 		}
 	}
 
@@ -142,7 +151,7 @@ public:
 			return boost::optional<boost::python::object>(value);
 		}
 		catch (boost::python::error_already_set const&) {
-			BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("extractOptional()"));
+			BOOST_THROW_EXCEPTION(getPythonError() << originCallInfo("extractOptional()"));
 		}
 	}
 
@@ -158,6 +167,8 @@ private:
 
 	//Structs
 private:
+	// Converter heplers
+
 	template<typename T>
 	struct PtrWrapper
 	{
@@ -174,6 +185,8 @@ private:
 		T* operator()() const noexcept { return value; }
 	};
 
+
+	// Converters
 	struct StringMapToPythonObjectConverter
 	{
 		static PyObject* convert(std::map<std::string, std::string> const& map);
@@ -189,6 +202,12 @@ private:
 		static PyObject* convert(std::multimap<std::string, std::string> const& map);
 	};
 
+	struct StringRefToPythonObjectConverter
+	{
+		static PyObject* convert(boost::string_ref const& ref);
+	};
+
+
 	struct PythonObjectToRouteConverter
 	{
 		static void* convertible(PyObject* objPtr);
@@ -196,6 +215,12 @@ private:
 	};
 
 	struct PythonObjectToResponsePtrConverter
+	{
+		static void* convertible(PyObject* objPtr);
+		static void construct(PyObject* objPtr, boost::python::converter::rvalue_from_python_stage1_data* data);
+	};
+
+	struct PythonObjectToStringRefConverter
 	{
 		static void* convertible(PyObject* objPtr);
 		static void construct(PyObject* objPtr, boost::python::converter::rvalue_from_python_stage1_data* data);

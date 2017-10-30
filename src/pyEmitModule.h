@@ -7,6 +7,7 @@
 class PyEmitModule
 {
 	static PyEmitModule* instance;
+	static bool hidden;
 
 	std::vector<boost::python::str> pyStrings;
 	std::vector<std::string> stdStrings;
@@ -25,19 +26,20 @@ class PyEmitModule
 		bool isTmpRef(const boost::string_ref& ref) const override;
 	};
 
-	void addPythonObj(boost::python::str&& strings);
+	void addPythonObj(boost::python::str&& string);
 	void addStdString(std::string&& string);
 
 	static PyEmitModule* getInstanceOrThrow();
 public:
 	PyEmitModule();
+	PyEmitModule(PyEmitModule&& other) noexcept;
 	~PyEmitModule();
 
 	void hideInstance() {
-		instance = nullptr;
+		hidden = true;
 	}
 	void showInstance() {
-		instance = this;
+		hidden = false;
 	}
 
 	void reset();

@@ -1,8 +1,6 @@
 #pragma once
 #include <string>
-#include <iterator>
 #include <memory>
-#include "IPymlCache.h"
 #include "IPymlParser.h"
 #include "IPymlFile.h"
 #include "pymlItems.h"
@@ -22,10 +20,14 @@ public:
 	PymlFile(PymlFile&) = delete;
 	PymlFile(PymlFile const&) = delete;
 
-	bool isDynamic() const;
-	std::string runPyml() const;
+	bool isDynamic() const override;
+	std::string runPyml() const override;
 
-	const IPymlItem* getRootItem() const {
+	const IPymlItem* getRootItem() const override {
 		return rootItem.get();
+	}
+
+	bool canConvertToCode() const override {
+		return getRootItem()->canConvertToCode();
 	}
 };

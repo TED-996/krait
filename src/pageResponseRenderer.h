@@ -5,13 +5,16 @@
 #include "response.h"
 #include "pythonModule.h"
 #include "pyEmitModule.h"
+#include "pyCompileModule.h"
 
 class PageResponseRenderer
 {
-	PyEmitModule emitModule;
+	CompiledPythonRunner& runner;
+
+	PyEmitModule& emitModule;
 public:
-	PageResponseRenderer();
+	PageResponseRenderer(CompiledPythonRunner& runner, PyEmitModule& emitModule);
 
 	std::unique_ptr<Response> renderFromPyml(const IPymlFile& pymlSource, const Request& request);
-	std::unique_ptr<Response> renderFromModule(PythonModule& srcModule, const Request& request);
+	std::unique_ptr<Response> renderFromModuleName(boost::string_ref moduleName, const Request& request);
 };

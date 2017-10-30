@@ -28,7 +28,7 @@ void Config::loadRoutes() {
 		}
 	}
 	catch (bp::error_already_set const&) {
-		BOOST_THROW_EXCEPTION(pythonError() << getPyErrorInfo() << originCallInfo("loadRoutes"));
+		BOOST_THROW_EXCEPTION(getPythonError() << originCallInfo("loadRoutes"));
 	}
 }
 

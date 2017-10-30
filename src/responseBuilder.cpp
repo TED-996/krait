@@ -15,11 +15,17 @@ namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
 
-ResponseBuilder::ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache)
-	: config(config),
+ResponseBuilder::ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config,
+		CacheController& cacheController, PymlCache& pymlCache)
+	: siteRoot(siteRoot),
+	  config(config),
 	  cacheController(cacheController),
 	  pymlCache(pymlCache),
-	  siteRoot(siteRoot) {
+	  compiler(siteRoot, pymlCache),
+	  compiledRunner(),
+	  apiManager(compiler, compiledRunner),
+	  renderer(compiledRunner, apiManager.getPyEmitModule())
+	  {
 	loadContentTypeList((getShareRoot() / "globals" / "mime.types").string());
 }
 
@@ -65,15 +71,21 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 		else {
 			if (isDynamic) {
 				apiManager.set(request, isWebsockets);
-			}
 
-			response = renderer.renderFromPyml(*pymlFile, request);
+				if (pymlFile->canConvertToCode()) {
+					response = renderer.renderFromModuleName(compiler.getCompiledModuleName(source.sourceFilename.get()), request);
+				}
+				else {
+					response = renderer.renderFromPyml(*pymlFile, request);
+				}
 
-			if (isDynamic) {
 				if (apiManager.isCustomResponse()) {
 					response = apiManager.getCustomResponse();
 				}
 				apiManager.addHeaders(*response);
+			}
+			else {
+				response = renderer.renderFromPyml(*pymlFile, request);
 			}
 		}
 
