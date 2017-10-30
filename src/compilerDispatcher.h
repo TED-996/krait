@@ -21,11 +21,15 @@ public:
 		return pymlCache;
 	}
 
+	const boost::filesystem::path& getCompiledRoot() const {
+		return compiledRoot;
+	}
+
 	// Returns the filename resulted from compiling the sourcePath file.
 	std::string compile(const std::string& sourcePath);
 
 	bool checkCacheTag(const std::string& moduleName) const;
 	bool checkCacheTag(const std::string& moduleName, const std::string& computedTag) const;
 
-	std::string getCompiledModuleName(boost::string_ref filename);
+	std::string getCompiledModuleName(boost::string_ref filename) const;
 };

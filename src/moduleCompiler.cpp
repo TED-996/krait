@@ -132,7 +132,7 @@ std::vector<std::string> getEscapeFilenameReplacements() {
 	* ' ' => '_r' (spaceR)
 	* '?' => '_q' (Question)
 	* ':' => '_h' (coHlon)
-	* '*' => '_m' (Multiply)
+	* '*' => '_n' (Nmultiply)
 	* '+' => '_l' (pLus)
 	* other => '_xx' where xx is hex for that character's ASCII
 	*/
@@ -149,6 +149,7 @@ std::vector<std::string> getEscapeFilenameReplacements() {
 
 	// Change specifics
 	// These don't all make sense; letters must not collide with the hex digits
+	// Also must not collide with _mvc_compiled
 	replacements[(size_t)'_'] = "__";
 	replacements[(size_t)'/'] = "_s";
 	replacements[(size_t)'\\'] = "_i";
@@ -157,7 +158,7 @@ std::vector<std::string> getEscapeFilenameReplacements() {
 	replacements[(size_t)' '] = "_r";
 	replacements[(size_t)'?'] = "_q";
 	replacements[(size_t)':'] = "_h";
-	replacements[(size_t)'*'] = "_m";
+	replacements[(size_t)'*'] = "_n";
 	replacements[(size_t)'+'] = "_l";
 
 	return replacements;

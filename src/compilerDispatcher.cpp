@@ -21,7 +21,7 @@ std::string CompilerDispatcher::getCompiledFilenameFromModuleName(const std::str
 	return (compiledRoot / moduleName).string();
 }
 
-std::string CompilerDispatcher::getCompiledModuleName(boost::string_ref filename) {
+std::string CompilerDispatcher::getCompiledModuleName(boost::string_ref filename) const {
 	return compiler.escapeFilename(filename);
 }
 

@@ -15,29 +15,34 @@ private:
 		const std::string symFilename;
 		const boost::optional<std::string> sourceFilename;
 		const boost::optional<const boost::python::object&> sourceObject;
+		const boost::optional<std::string> moduleName;
 
-		PreResponseSource(const std::string& symFilename, const std::string& sourceFilename)
+		PreResponseSource(const std::string& symFilename, const std::string& sourceFilename, const std::string& moduleName)
 			: symFilename(symFilename),
 			  sourceFilename(sourceFilename),
-			  sourceObject(boost::none) {
+			  sourceObject(boost::none),
+			  moduleName(moduleName) {
 		}
 
-		PreResponseSource(const std::string& symFilename, const boost::python::object& sourceObject)
+		PreResponseSource(const std::string& symFilename, const boost::python::object& sourceObject, const std::string& moduleName)
 			: symFilename(symFilename),
 			  sourceFilename(boost::none),
-			  sourceObject(std::move(boost::optional<const boost::python::object&>(sourceObject))) {
+			  sourceObject(std::move(boost::optional<const boost::python::object&>(sourceObject))),
+			  moduleName(moduleName) {
 		}
 
 		PreResponseSource(PreResponseSource&& other) noexcept
 			: symFilename(std::move(other.symFilename)),
-			sourceFilename(std::move(other.sourceFilename)),
-			sourceObject(std::move(other.sourceObject)) {
+			  sourceFilename(std::move(other.sourceFilename)),
+			  sourceObject(std::move(other.sourceObject)),
+			  moduleName(std::move(other.moduleName)) {
 		}
 
 		PreResponseSource() 
 			: symFilename(""),
 			  sourceFilename(boost::none),
-			  sourceObject(boost::none) {
+			  sourceObject(boost::none),
+			  moduleName(boost::none) {
 		}
 	};
 
@@ -58,6 +63,8 @@ private:
 	std::string getFilenameFromTarget(const std::string& target) const;
 	static bool pathBlocked(const std::string& path);
 	std::string expandFilename(const std::string& filename) const;
+	std::string getModuleNameFromFilename(boost::string_ref filename) const;
+	std::string getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const;
 
 	const IPymlFile& getPymlFromCache(const std::string& filename) const;
 

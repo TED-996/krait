@@ -31,7 +31,7 @@ class CompiledImportHook(object):
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
         if fullname == "_krait_compiled":
-            # Use a simple loader.
+            # Is the main package.
             filename = os.path.join(self.compiled_dir, "__init__")
             self.ensure_compiled_init(fullname, filename + ".py")
 
@@ -39,9 +39,19 @@ class CompiledImportHook(object):
         elif path is not None\
                 and len(path) == 1\
                 and os.path.normpath(path[0]) == self.compiled_dir:
+            # Is something under the main package
 
-            filename = self.get_compile(fullname)
-            return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
+            _, _, mod_name = fullname.rpartition('.')
+            if os.path.isdir(os.path.join(self.compiled_dir, mod_name)):
+                # Is a package inside _krait_compiled
+                filename = os.path.join(self.compiled_dir, mod_name, "__init__")
+                self.ensure_compiled_init(fullname, filename + ".py")
+
+                return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
+            else:
+                # Is a module that maybe needs to be compiled
+                filename = self.get_compile(fullname)
+                return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
             return None
 
@@ -59,13 +69,18 @@ class CompiledImportHook(object):
     def ensure_compiled_init(self, fullname, filename):
         # If the file exists, and the version checks
         # (either from an earlier check, or check now)
-        if os.path.exists(filename) and\
+        if os.path.exists(filename) and \
                 (self.init_version == self.compiler_version or
                  self.get_compiler_version(filename) == self.compiler_version):
             # Save the checked version
             self.init_version = self.compiler_version
             # Everything good
             return
+
+        if self.get_compiled_tag(filename).get("custom"):
+            # Is custom.
+            return
+
 
         # Create the file.
         # First check if the directory exists

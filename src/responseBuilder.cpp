@@ -72,8 +72,9 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
 			if (isDynamic) {
 				apiManager.set(request, isWebsockets);
 
-				if (pymlFile->canConvertToCode()) {
-					response = renderer.renderFromModuleName(compiler.getCompiledModuleName(source.sourceFilename.get()), request);
+				// Can always convert MVC routes.
+				if ((pymlFile->canConvertToCode() || source.sourceObject) && source.moduleName) {
+					response = renderer.renderFromModuleName(*source.moduleName, request);
 				}
 				else {
 					response = renderer.renderFromPyml(*pymlFile, request);
@@ -118,6 +119,14 @@ std::string replaceParams(const std::string& target, std::map<std::string, std::
 ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(const Request& request) const {
 	std::map<std::string, std::string> params;
 	const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
+	size_t routeIdx = 0;
+	
+	// Find the route
+	for (auto it = config.getRoutes().begin(); it != config.getRoutes().end(); ++it) {
+		if (&route == &*it) {
+			routeIdx = it - config.getRoutes().begin();
+		}
+	}
 	
 	std::string symFilename;
 
@@ -138,10 +147,10 @@ ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(const R
 	}
 
 	if (!route.isMvcRoute()) {
-		return PreResponseSource(symFilename, symFilename);
+		return PreResponseSource(symFilename, symFilename, getModuleNameFromFilename(symFilename));
 	}
 	else {
-		return PreResponseSource(symFilename, route.getCtrlClass());
+		return PreResponseSource(symFilename, route.getCtrlClass(), getModuleNameFromMvcRoute(route.getCtrlClass(), routeIdx));
 	}
 }
 
@@ -188,6 +197,14 @@ std::string ResponseBuilder::expandFilename(const std::string& sourceFilename) c
 		}
 	}
 	return workingFilename;
+}
+
+std::string ResponseBuilder::getModuleNameFromFilename(boost::string_ref filename) const {
+	return compiler.getCompiledModuleName(filename);
+}
+
+std::string ResponseBuilder::getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const {
+	return (compiler.getCompiledRoot() / "_mvc_compiled" / (std::string("mvc_compiled_") + std::to_string(routeIdx))).string();
 }
 
 const IPymlFile& ResponseBuilder::getPymlFromCache(const std::string& filename) const {
