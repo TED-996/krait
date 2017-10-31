@@ -34,9 +34,9 @@ PyCompileModule::~PyCompileModule() {
 BOOST_PYTHON_MODULE(_krait_compile) {
 	boost::python::def("convert_filename", &PyCompileModule::convertFilename);
 	boost::python::def("get_compiled_file", &PyCompileModule::getCompiledFile);
-	boost::python::def("compiled_check_tag", &PyCompileModule::checkTag);
-	boost::python::def("compiled_check_tag_or_reload", &PyCompileModule::checkTagOrReload);
-	boost::python::def("compiled_run", &PyCompileModule::run);
+	boost::python::def("check_tag", &PyCompileModule::checkTag);
+	boost::python::def("check_tag_or_reload", &PyCompileModule::checkTagOrReload);
+	boost::python::def("run", &PyCompileModule::run);
 	boost::python::def("get_module_reloaded_exception_type", &PyCompileModule::getExceptionType);
 }
 

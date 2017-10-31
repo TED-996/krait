@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 import imp
@@ -7,6 +8,11 @@ import krait
 from krait import __internal as krait_internal
 
 
+def print_flush(*args, **kwargs):
+    print(*args, **kwargs)
+    sys.stdout.flush()
+
+
 class CompiledImportHook(object):
     tag_marker = "# [TAGS]: "
 
@@ -14,6 +20,21 @@ class CompiledImportHook(object):
         self.compiled_dir = os.path.normpath(krait.get_full_path(".compiled/_krait_compiled"))
         self.init_version = None
         self.compiler_version = 1
+
+    def prepare(self):
+        init_file = os.path.join(self.compiled_dir, "__init__.py")
+        if os.path.exists(init_file):
+            os.remove(init_file)
+
+        dir_name = os.path.dirname(init_file)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name, 0o775)
+
+        with open(init_file, "w") as f:
+            f.write(self.tag_marker + json.dumps({
+                "c_version": self.compiler_version
+            }))
+            f.write('\n')
 
     def find_module(self, fullname, path=None):
         """
@@ -30,10 +51,16 @@ class CompiledImportHook(object):
         Returns:
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
+
+        print_flush("-------------------in find_module; fullname={}, path={}, self.compiled_dir={}".format(
+            fullname, path, self.compiled_dir
+        ))
+
         if fullname == "_krait_compiled":
+            print_flush("--OK for _krait_compiled package")
             # Is the main package.
-            filename = os.path.join(self.compiled_dir, "__init__")
-            self.ensure_compiled_init(fullname, filename + ".py")
+            filename = os.path.join(self.compiled_dir, "__init__.py")
+            # Should already be package.
 
             return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
         elif path is not None\
@@ -42,22 +69,27 @@ class CompiledImportHook(object):
             # Is something under the main package
 
             _, _, mod_name = fullname.rpartition('.')
-            if os.path.isdir(os.path.join(self.compiled_dir, mod_name)):
+            if CompiledImportHook.is_package(os.path.join(self.compiled_dir, mod_name)):
+                print_flush("--OK for package {} (full {})".format(mod_name, fullname))
+
                 # Is a package inside _krait_compiled
-                filename = os.path.join(self.compiled_dir, mod_name, "__init__")
-                self.ensure_compiled_init(fullname, filename + ".py")
+                filename = os.path.join(self.compiled_dir, mod_name, "__init__.py")
 
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
             else:
+                print_flush("--OK for module {} (full {})".format(mod_name, fullname))
+
                 # Is a module that maybe needs to be compiled
                 filename = self.get_compile(fullname)
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
+            print_flush("---Not found.")
+
             return None
 
     @staticmethod
     def find_module_from_package(init_filename):
-        # init_filename MUST be 1) absolute 2) in form {dir}/__init__
+        # init_filename MUST be 1) absolute 2) in form {dir}/__init__.py
         return [None, os.path.dirname(init_filename), ('', '', imp.PKG_DIRECTORY)]
 
     @staticmethod
@@ -66,35 +98,10 @@ class CompiledImportHook(object):
         mod_path, mod_name = os.path.split(mod_filename)
         return imp.find_module(mod_name, [mod_path])
 
-    def ensure_compiled_init(self, fullname, filename):
-        # If the file exists, and the version checks
-        # (either from an earlier check, or check now)
-        if os.path.exists(filename) and \
-                (self.init_version == self.compiler_version or
-                 self.get_compiler_version(filename) == self.compiler_version):
-            # Save the checked version
-            self.init_version = self.compiler_version
-            # Everything good
-            return
-
-        if os.path.exists(filename) and self.get_compiled_tag(filename).get("custom"):
-            # Is custom.
-            return
-
-
-        # Create the file.
-        # First check if the directory exists
-        dir_name = os.path.dirname(filename)
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name, 0o775)
-
-        with open(filename, "w") as f:
-            f.write(self.tag_marker + json.dumps({
-                "c_version": self.compiler_version
-            }))
-            f.write('\n')
-
-            # Add more things to write here.
+    @staticmethod
+    def is_package(directory):
+        return os.path.isdir(directory) and \
+               os.path.exists(os.path.join(directory, "__init__.py"))
 
     def get_compiler_version(self, filename):
         tag = self.get_compiled_tag(filename)
@@ -134,7 +141,7 @@ class CompiledImportHook(object):
 
         # Create the file, but don't return the extension
         # noinspection PyProtectedMember
-        return os.path.splitext(krait_internal._compiled_get_compiled_file(mod_filename))[0]
+        return os.path.splitext(krait_internal._compiled_get_compiled_file(mod_name))[0]
 
     class Loader(object):
         def __init__(self, hooker_object, fullname, find_module_result):
@@ -148,11 +155,15 @@ class CompiledImportHook(object):
 
             try:
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
+                mod.__loader__ = self
+                return mod
+            except StandardError as ex:
+                print_flush("---Error!:", ex)
+                raise
             finally:
                 if self.file is not None:
                     self.file.close()
                     self.file = None
-            mod.__loader__ = self
 
         def check_tag_or_reload(self):
             # noinspection PyProtectedMember
@@ -164,4 +175,7 @@ class CompiledImportHook(object):
 
 
 def register():
-    sys.meta_path.append(CompiledImportHook())
+    hook = CompiledImportHook()
+    hook.prepare()
+    sys.meta_path.append(hook)
+

@@ -1,6 +1,10 @@
 ﻿#include "compilerDispatcher.h"
 #include "utils.h"
 
+//#define DBG_DISABLE
+#include "dbg.h"
+
+
 CompilerDispatcher::CompilerDispatcher(boost::filesystem::path siteRoot, PymlCache& pymlCache)
 	: compiledRoot(siteRoot / ".compiled" / "_krait_compiled"),
 	compiler(siteRoot),
@@ -8,6 +12,8 @@ CompilerDispatcher::CompilerDispatcher(boost::filesystem::path siteRoot, PymlCac
 }
 
 std::string CompilerDispatcher::compile(const std::string& sourcePath) {
+	DBG_FMT("----CompilerDispatcher::compile(%1%)", sourcePath);
+
 	const IPymlFile& pymlFile = pymlCache.get(sourcePath);
 	std::string destFilename = getCompiledFilenameFromModuleName(compiler.escapeFilename(sourcePath));
 

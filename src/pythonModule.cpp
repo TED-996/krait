@@ -32,6 +32,7 @@ void PythonModule::initPython() {
 	try {
 		//First initialize the Emit module.
 		PyEmitModule::initializeModule();
+		PyCompileModule::initializeModule();
 
 		//Afterwards initialize Python.
 		Py_Initialize();

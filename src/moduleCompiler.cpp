@@ -5,6 +5,10 @@
 #include <fstream>
 
 
+//#define DBG_DISABLE
+#include "dbg.h"
+
+
 static std::vector<std::string> getEscapeFilenameReplacements();
 static std::unordered_set<std::string> getReservedKeywords();
 
@@ -193,6 +197,10 @@ std::string ModuleCompiler::unescapeFilename(boost::string_ref moduleName) const
 
 	static std::vector<char> replacements = getUnescapeFilenameReplacements();
 
+	if (moduleName.starts_with("_krait_compiled.")) {
+		moduleName.remove_prefix(std::strlen("_krait_compiled."));
+	}
+
 	auto lastIt = moduleName.begin();
 	for (auto it = moduleName.begin(); it != moduleName.end(); ++it) {
 		if (*it == '_') {
@@ -204,12 +212,14 @@ std::string ModuleCompiler::unescapeFilename(boost::string_ref moduleName) const
 				int number = to_hex_digit(*it) << 4;
 				++it;
 				if (!is_hex_digit(*it)) {
+					DBG_FMT("ERROR: Bad hex digit '_%1%' in '%2%'", *it, moduleName);
 					BOOST_THROW_EXCEPTION(serverError() <<
 						stringInfo("Bad compiled module name to unescape: unfinished hex ecape sequence"));
 				}
 				result.append(1, (signed char)(number | to_hex_digit(*it)));
 			}
 			else if (replacements[*it] == '\0') {
+				DBG_FMT("ERROR: Cannot replace '_%1%' in '%2%'", *it, moduleName);
 				BOOST_THROW_EXCEPTION(serverError() <<
 					stringInfo("Bad compiled module name to unescape: unrecognized escape character"));
 			}
