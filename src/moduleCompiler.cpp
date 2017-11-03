@@ -24,19 +24,23 @@ void ModuleCompiler::compile(const IPymlFile& pymlFile, const std::string& destF
 		BOOST_THROW_EXCEPTION(compileError() << stringInfo("Tried compiling non-compilable PymlFile"));
 	}
 
-	// Temporarily skipping since no item writes to the header.
-	//std::unique_ptr<CodeAstItem> customHeader = rootItem->getHeaderAst();
 	std::unique_ptr<CodeAstItem> customHeader = nullptr;
+	DBG("--Getting code AST");
 	CodeAstItem codeAst = rootItem->getCodeAst();
+	DBG("--Code AST got");
 	codeAst.addPassChildren("pass");
-	codeAst.optimize();
+	DBG("--Code pass added");
+	//codeAst.optimize();
+	DBG("--Code optimized");
 
-	std::fstream outFile(destFilename);
+	std::ofstream outFile(destFilename);
 	if (!outFile) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Cannot open file %1% to compile", destFilename));
 	}
 
-	outFile << formatString(R"""(# [TAGS]: {"c_version": 1, "etag": "%1%"}\n)""", cacheTag);
+	// Strip nulls from std::string.
+	outFile << formatString(R"""(# [TAGS]: {"c_version": 1, "etag": "%1%"})""", cacheTag.c_str());
+	outFile << "\n";
 	
 	static CodeAstItem moduleHeader = getModuleHeader();
 	moduleHeader.getCodeToStream(0, outFile);
@@ -48,7 +52,7 @@ void ModuleCompiler::compile(const IPymlFile& pymlFile, const std::string& destF
 	}
 	customHeader.reset();
 	
-	outFile << "def run():\n";
+	outFile << "\n\ndef run():\n";
 	
 	static CodeAstItem functionHeader = getFunctionHeader();
 	functionHeader.getCodeToStream(1, outFile);
@@ -62,16 +66,16 @@ CodeAstItem ModuleCompiler::getFunctionHeader() {
 	result.addChild(CodeAstItem("__emit_raw__ = __internal._emit_raw"));
 	result.addChild(CodeAstItem("__run__ = __internal._compiled_run"));
 	result.addChild(CodeAstItem("__to_module__ = __internal._compiled_convert_filename"));
-	result.addChild(CodeAstItem("if __loader__.hasattr('check_tag_or_reload'): __loader__.check_tag_or_reload()"));
+	result.addChild(CodeAstItem("if hasattr(__loader__, 'check_tag_or_reload'): __loader__.check_tag_or_reload()"));
 
 	return result;
 }
 
 CodeAstItem ModuleCompiler::getModuleHeader() {
 	CodeAstItem result;
+	result.addChild(CodeAstItem("from __future__ import absolute_import"));
 	result.addChild(CodeAstItem("import krait"));
 	result.addChild(CodeAstItem("from krait import __internal"));
-	result.addChild(CodeAstItem("if __loader__.hasattr('check_tag_or_reload'): __loader__.check_tag_or_reload()"));
 
 	return result;
 }

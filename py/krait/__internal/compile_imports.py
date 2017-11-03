@@ -52,9 +52,9 @@ class CompiledImportHook(object):
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
 
-        print_flush("-------------------in find_module; fullname={}, path={}, self.compiled_dir={}".format(
-            fullname, path, self.compiled_dir
-        ))
+        #print_flush("-------------------in find_module; fullname={}, path={}, self.compiled_dir={}".format(
+        #    fullname, path, self.compiled_dir
+        #))
 
         if fullname == "_krait_compiled":
             print_flush("--OK for _krait_compiled package")
@@ -65,7 +65,8 @@ class CompiledImportHook(object):
             return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
         elif path is not None\
                 and len(path) == 1\
-                and os.path.normpath(path[0]) == self.compiled_dir:
+                and os.path.normpath(path[0]) == self.compiled_dir\
+                and fullname.startswith("_krait_compiled"):
             # Is something under the main package
 
             _, _, mod_name = fullname.rpartition('.')
@@ -83,7 +84,7 @@ class CompiledImportHook(object):
                 filename = self.get_compile(fullname)
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
-            print_flush("---Not found.")
+            print_flush("---Not found module {}".format(fullname))
 
             return None
 
@@ -106,12 +107,16 @@ class CompiledImportHook(object):
     def get_compiler_version(self, filename):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
-        return tag and tag.get("c_version")
+        version = tag and tag.get("c_version")
+        # Convert to int if it's not None
+        return version is not None and int(version)
 
     def get_compiled_etag(self, filename):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
-        return tag and tag.get("etag")
+        etag = tag and tag.get("etag")
+        # Convert to str if it's not None
+        return etag is not None and str(etag)
 
     def get_compiled_tag(self, filename):
         if not os.path.exists(filename):
@@ -149,16 +154,30 @@ class CompiledImportHook(object):
             self.fullname = fullname
             self.file, self.pathname, self.description = find_module_result
 
+            print_flush("----In Loader __init__ (fullname {})".format(fullname))
+
         def load_module(self, fullname):
+            print_flush("----In Loader load_module (fullname {})".format(fullname))
+
             if fullname != self.fullname:
                 raise ValueError("CompiledImportHook.Loader reused.")
 
             try:
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
+
+                print_flush("-----Module: {}\n-----Loader: {}".format(
+                    mod,
+                    None if not hasattr(mod, "__loader__") else mod.__loader__))
+
                 mod.__loader__ = self
+
+                print_flush("-----POST set Module: {}\n-----Loader: {}".format
+                    (mod,
+                    None if not hasattr(mod, "__loader__") else mod.__loader__))
+
                 return mod
             except StandardError as ex:
-                print_flush("---Error!:", ex)
+                # print_flush("---Error!:", ex)
                 raise
             finally:
                 if self.file is not None:
@@ -178,4 +197,3 @@ def register():
     hook = CompiledImportHook()
     hook.prepare()
     sys.meta_path.append(hook)
-

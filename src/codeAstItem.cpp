@@ -2,6 +2,8 @@
 #include "except.h"
 #include "pythonCodeEscapingFsm.h"
 
+#include "dbg.h"
+
 
 struct Indent
 {
@@ -178,13 +180,17 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 	2. You need '\' after each line if you wrap.
 	3. You need to watch if you're in a string.
 	*/
+	DBG("CodeAstItem::fromMultilineStatement");
 
 	std::string line;
 	line.reserve(minWrapLength);
 
 	for(auto part : parts) {
+		DBG_FMT("Adding part %1%", part);
+
 		// First, make sure the line isn't already too long.
 		if (line.length() > minWrapLength) {
+			DBG_FMT("Adding line (before adding part) %1%", line);
 			result.addChild(CodeAstItem(std::move(line)));
 			line = "";
 			line.reserve(minWrapLength);
@@ -247,7 +253,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 						line.size();
 
 					// Cap the line.
-					size_t partLeftLength = part.size() - lastIdx;
+					size_t partLeftLength = part.length() - lastIdx;
 					if (partOnLineLength > partLeftLength) {
 						partOnLineLength = partLeftLength;
 					}
@@ -267,12 +273,13 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					line.append(part.data() + lastIdx, partOnLineLength);
 					// Append the terminator if it's not already there.
 					if (partOnLineLength != partLeftLength) {
-						line.append(termChar, 1);
+						line.append(1, termChar);
 						// Also append a backslash to signal a continuation line.
-						line.append('\\', 1);
+						line.append(1, '\\');
 					}
 
 					// Add the line to the AST
+					DBG_FMT("Adding line (in long string) %1%", line);
 					result.addChild(CodeAstItem(std::move(line)));
 					
 					// Update the index
@@ -280,7 +287,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					
 					// Prepare the next line.
 					if (lastIdx < part.length()) {
-						line = std::string(termChar, 1);
+						line = std::string(1, termChar);
 					}
 					else {
 						line = "";
@@ -326,7 +333,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					line.append("\\n", 2);
 				}
 				// Add the line terminator
-				line.append(termChar, 3);
+				line.append(3, termChar);
 
 				size_t nextIdx = newlineIdx + 1;
 				// If the string ends right after the newlines, don't make a new string.
@@ -336,7 +343,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 				}
 
 				if (nextIdx != part.size()) {
-					line.append('\\', 1);
+					line.append(1, '\\');
 				}
 			}
 			if (lastIdx < part.size()) {
@@ -348,9 +355,11 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 	}
 
 	if (line.length() > 0) {
+		DBG_FMT("Adding final line %1%", line);
 		result.addChild(CodeAstItem(std::move(line)));
 	}
 
+	DBG("After CodeAstItem::fromMultilineStatement");
 	return result;
 }
 
@@ -360,6 +369,8 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 	
 	// Split on newlines.
 	CodeAstItem result;
+
+	DBG("In CodeAstItem::fromPythonCode");
 
 	size_t lastIdx = 0;
 	char tripleQuoteAtLineStart = '\0';
@@ -401,10 +412,10 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 				newlines.reserve(6);
 				for (auto it = code.cbegin() + newlineStart; it != code.cbegin() + nextIdx; ++it) {
 					if (*it == '\r') {
-						newlines.append("\\r");
+						newlines.append("\\r", 2);
 					}
 					else if (*it == '\n') {
-						newlines.append("\\n");
+						newlines.append("\\n", 2);
 					}
 					else {
 						BOOST_THROW_EXCEPTION(serverError() <<
@@ -418,8 +429,11 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 		}
 
 		result.addChild(CodeAstItem(std::move(line)));
-		lastIdx = newlineIdx + 1;
+		lastIdx = lineEnd + 1;
 	}
+	
+	DBG("After CodeAstItem::fromPythonCode");
 
 	return result;
+
 }

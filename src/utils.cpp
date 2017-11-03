@@ -12,7 +12,7 @@
 #include "except.h"
 #include "pythonModule.h"
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -259,14 +259,20 @@ std::string reprPythonString(const std::string& str) {
 
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < str.length(); idx++) {
-		if (replacements[(int)str[idx]].size() != 0) {
+		unsigned char ch = (unsigned char)str[idx];
+		//DBG_FMT("Replacing %02X", ch);
+		//DBG_FMT("  With %1%", replacements[ch]);
+		if (replacements[ch].size() != 0) {
 			result.append(str.data() + oldIdx, idx - oldIdx);
-			result.append(replacements[(int)str[idx]]);
+			result.append(replacements[ch]);
 			oldIdx = idx + 1;
 		}
 	}
 
 	result.append(str.data() + oldIdx, str.length() - oldIdx);
 	result.append(1, '\'');
+
+	DBG_FMT("--Converted\n%1%\n--to\n%2%", str, result);
+
 	return result;
 }
