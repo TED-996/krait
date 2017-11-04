@@ -58,6 +58,8 @@ PyEmitModule::~PyEmitModule() {
 
 void PyEmitModule::reset() {
 	pyStrings.clear();
+	stdStrings.clear();
+	refs.clear();
 }
 
 std::unique_ptr<IResponseIterator> PyEmitModule::getIterator() {

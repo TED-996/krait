@@ -67,6 +67,7 @@ CodeAstItem ModuleCompiler::getFunctionHeader() {
 	result.addChild(CodeAstItem("__run__ = __internal._compiled_run"));
 	result.addChild(CodeAstItem("__to_module__ = __internal._compiled_convert_filename"));
 	result.addChild(CodeAstItem("if hasattr(__loader__, 'check_tag_or_reload'): __loader__.check_tag_or_reload()"));
+	result.addChild(CodeAstItem("ctrl = krait.mvc.curr_ctrl"));
 
 	return result;
 }

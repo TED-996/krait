@@ -259,7 +259,9 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					}
 
 					// We can't end on a backslash (or we can, but we need complicated counting.)
-					while (partOnLineLength < partLeftLength && part[lastIdx + partOnLineLength] == '\\') {
+					while (partOnLineLength < partLeftLength
+							&& partOnLineLength != 0
+							&& part[lastIdx + partOnLineLength - 1] == '\\') {
 						partOnLineLength++;
 					}
 
@@ -279,7 +281,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					}
 
 					// Add the line to the AST
-					DBG_FMT("Adding line (in long string) %1%", line);
+					//DBG_FMT("Adding line (in long string) %1%", line);
 					result.addChild(CodeAstItem(std::move(line)));
 					
 					// Update the index
@@ -370,22 +372,27 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 	// Split on newlines.
 	CodeAstItem result;
 
-	DBG("In CodeAstItem::fromPythonCode");
+	DBG_FMT("--In CodeAstItem::fromPythonCode(%1%)", code);
 
 	size_t lastIdx = 0;
 	char tripleQuoteAtLineStart = '\0';
 	while (lastIdx < code.size()) {
-		size_t newlineIdx = code.find(lastIdx, '\n');
+		DBG("----Finding");
+		size_t newlineIdx = code.find('\n', lastIdx);
 		size_t lineEnd = newlineIdx;
 		size_t nextIdx = newlineIdx + 1;
 		size_t newlineStart = newlineIdx;
 
+		DBG("----Found.");
 
 		if (newlineIdx == std::string::npos) {
+			DBG_FMT("----After idx %1%, no newline found, resetting.", lastIdx);
 			lineEnd = code.size();
 			nextIdx = code.size();
 			newlineStart = code.size();
 		}
+
+		DBG("----Newline normalization");
 
 		// If the newline style is CRLF, don't copy the CR to the code.
 		if (lineEnd != code.size() && lineEnd != 0 && code[lineEnd - 1] == '\r') {
@@ -393,16 +400,21 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 			newlineStart--;
 		}
 
+		DBG("----Consuming in FSM");
 		for (auto it = code.cbegin() + lastIdx; it != code.cbegin() + nextIdx; ++it) {
 			escapingFsm.consumeOne(*it);
 		}
+		DBG("----Consumed.");
 
+		DBG_FMT("----Adding from %d to %d", lastIdx, lineEnd);
 		std::string line = code.substr(lastIdx, lineEnd - lastIdx);
 		if (tripleQuoteAtLineStart != '\0') {
-			line = std::string(tripleQuoteAtLineStart, 3) + line;
+			DBG("----newline in multiline string");
+			line = std::string(3, tripleQuoteAtLineStart) + line;
 			tripleQuoteAtLineStart = '\0';
 		}
 		if (escapingFsm.isMultilineString()) {
+			DBG("----in multiline string");
 			tripleQuoteAtLineStart = escapingFsm.getMultilineQuoteChar();
 
 			// Append newlines.
@@ -424,15 +436,17 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 				}
 			}
 
-			line += std::string(tripleQuoteAtLineStart, 3);
+			line += std::string(3, tripleQuoteAtLineStart);
 			line += newlines;
 		}
 
+		DBG("----Adding child");
+
 		result.addChild(CodeAstItem(std::move(line)));
-		lastIdx = lineEnd + 1;
+		lastIdx = nextIdx;
 	}
 	
-	DBG("After CodeAstItem::fromPythonCode");
+	DBG("--After CodeAstItem::fromPythonCode");
 
 	return result;
 

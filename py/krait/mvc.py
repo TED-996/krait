@@ -186,7 +186,7 @@ Do not use directly, use :obj:`push_ctrl` and :obj:`pop_ctrl`.
 
 curr_ctrl = None
 """:class:`CtrlBase`: The current controller, used in controller stacking. Semi-deprecated.
-Do not use directly, use :obj:`push_ctrl` and :obj:`pop_ctrl`.
+Do not change directly, use :obj:`push_ctrl` and :obj:`pop_ctrl`.
 """
 
 
