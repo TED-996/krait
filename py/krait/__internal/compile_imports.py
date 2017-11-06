@@ -8,11 +8,15 @@ import krait
 from krait import __internal as krait_internal
 
 
+_compiled_relative_path = ".compiled/_krait_compiled"
+"""This is not easy to change, it must be modified in multiple parts of the program."""
+
+
 class CompiledImportHook(object):
     tag_marker = "# [TAGS]: "
 
     def __init__(self):
-        self.compiled_dir = os.path.normpath(krait.get_full_path(".compiled/_krait_compiled"))
+        self.compiled_dir = os.path.normpath(krait.get_full_path(_compiled_relative_path))
         self.init_version = None
         self.compiler_version = 1
 
@@ -135,10 +139,10 @@ class CompiledImportHook(object):
             self.hooker_object = hooker_object
             self.fullname = fullname
             self.file, self.pathname, self.description = find_module_result
+            self.module = None
 
 
         def load_module(self, fullname):
-
             if fullname != self.fullname:
                 raise ValueError("CompiledImportHook.Loader reused.")
 
@@ -146,6 +150,7 @@ class CompiledImportHook(object):
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
                 mod.__loader__ = self
 
+                self.module = mod
                 return mod
             except StandardError as ex:
                 raise
@@ -163,7 +168,28 @@ class CompiledImportHook(object):
             # This raises an exception if the module was reloaded, or continues otherwise
 
 
+def _rm_tree(directory):
+    for entry in os.listdir(directory):
+        full_path = os.path.join(directory, entry)
+        if os.path.isdir(full_path):
+            _rm_tree(full_path)
+        else:
+            os.remove(full_path)
+
+    os.rmdir(directory)
+
+
+def pre_clean():
+    """
+    Clean up the compiled directory. This makes sure we have a clean slate every time.
+    """
+    _rm_tree(krait.get_full_path(".compiled"))
+
+
 def register():
+    """
+    Register the hook in the import machinery.
+    """
     hook = CompiledImportHook()
     hook.prepare()
     sys.meta_path.append(hook)

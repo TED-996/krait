@@ -12,6 +12,7 @@ sys.path.append(site_py_dir)
 import krait
 from krait.__internal import compile_imports
 krait.site_root = project_dir
+compile_imports.pre_clean()
 compile_imports.register()
 
 main_script_path = os.path.join(site_py_dir, "init.py")

@@ -30,7 +30,7 @@ def get_controller(tag):
 
 def prepare_directory(directory):
     if os.path.exists(directory):
-        rm_tree(directory)
+        _rm_tree(directory)
 
     os.makedirs(directory, 0o775)
 
@@ -42,11 +42,11 @@ def prepare_directory(directory):
         f.write('\n')
 
 
-def rm_tree(directory):
+def _rm_tree(directory):
     for entry in os.listdir(directory):
         full_path = os.path.join(directory, entry)
         if os.path.isdir(full_path):
-            rm_tree(full_path)
+            _rm_tree(full_path)
         else:
             os.remove(full_path)
 
