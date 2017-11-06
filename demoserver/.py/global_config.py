@@ -14,4 +14,4 @@ header_items = [
 ]
 
 # This is used in .py/ctrl/db.py
-sqlite_db = os.path.join(krait.site_root, ".private", "db")
+sqlite_db = krait.get_full_path(".private/db")

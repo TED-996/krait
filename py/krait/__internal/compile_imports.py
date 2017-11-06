@@ -8,11 +8,6 @@ import krait
 from krait import __internal as krait_internal
 
 
-def print_flush(*args, **kwargs):
-    print(*args, **kwargs)
-    sys.stdout.flush()
-
-
 class CompiledImportHook(object):
     tag_marker = "# [TAGS]: "
 
@@ -52,12 +47,7 @@ class CompiledImportHook(object):
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
 
-        #print_flush("-------------------in find_module; fullname={}, path={}, self.compiled_dir={}".format(
-        #    fullname, path, self.compiled_dir
-        #))
-
         if fullname == "_krait_compiled":
-            print_flush("--OK for _krait_compiled package")
             # Is the main package.
             filename = os.path.join(self.compiled_dir, "__init__.py")
             # Should already be package.
@@ -71,21 +61,15 @@ class CompiledImportHook(object):
 
             _, _, mod_name = fullname.rpartition('.')
             if CompiledImportHook.is_package(os.path.join(self.compiled_dir, mod_name)):
-                print_flush("--OK for package {} (full {})".format(mod_name, fullname))
-
                 # Is a package inside _krait_compiled
                 filename = os.path.join(self.compiled_dir, mod_name, "__init__.py")
 
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
             else:
-                print_flush("--OK for module {} (full {})".format(mod_name, fullname))
-
                 # Is a module that maybe needs to be compiled
                 filename = self.get_compile(fullname)
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
-            print_flush("---Not found module {}".format(fullname))
-
             return None
 
     @staticmethod
@@ -108,15 +92,13 @@ class CompiledImportHook(object):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
         version = tag and tag.get("c_version")
-        # Convert to int if it's not None
-        return version is not None and int(version)
+        return None if version is None else int(version)
 
     def get_compiled_etag(self, filename):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
         etag = tag and tag.get("etag")
-        # Convert to str if it's not None
-        return etag is not None and str(etag)
+        return None if etag is None else str(etag)
 
     def get_compiled_tag(self, filename):
         if not os.path.exists(filename):
@@ -154,30 +136,18 @@ class CompiledImportHook(object):
             self.fullname = fullname
             self.file, self.pathname, self.description = find_module_result
 
-            print_flush("----In Loader __init__ (fullname {})".format(fullname))
 
         def load_module(self, fullname):
-            print_flush("----In Loader load_module (fullname {})".format(fullname))
 
             if fullname != self.fullname:
                 raise ValueError("CompiledImportHook.Loader reused.")
 
             try:
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
-
-                print_flush("-----Module: {}\n-----Loader: {}".format(
-                    mod,
-                    None if not hasattr(mod, "__loader__") else mod.__loader__))
-
                 mod.__loader__ = self
-
-                print_flush("-----POST set Module: {}\n-----Loader: {}".format
-                    (mod,
-                    None if not hasattr(mod, "__loader__") else mod.__loader__))
 
                 return mod
             except StandardError as ex:
-                # print_flush("---Error!:", ex)
                 raise
             finally:
                 if self.file is not None:
@@ -188,7 +158,7 @@ class CompiledImportHook(object):
             # noinspection PyProtectedMember
             krait_internal._compiled_check_tag_or_reload(
                 self.fullname.rpartition('.')[2],
-                self.hooker_object.get_compiled_etag(self.pathname))
+                self.hooker_object.get_compiled_etag(self.pathname) or "")
 
             # This raises an exception if the module was reloaded, or continues otherwise
 

@@ -5,7 +5,7 @@
 #include <fstream>
 
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -25,13 +25,10 @@ void ModuleCompiler::compile(const IPymlFile& pymlFile, const std::string& destF
 	}
 
 	std::unique_ptr<CodeAstItem> customHeader = nullptr;
-	DBG("--Getting code AST");
 	CodeAstItem codeAst = rootItem->getCodeAst();
-	DBG("--Code AST got");
 	codeAst.addPassChildren("pass");
-	DBG("--Code pass added");
+
 	//codeAst.optimize();
-	DBG("--Code optimized");
 
 	std::ofstream outFile(destFilename);
 	if (!outFile) {
@@ -67,7 +64,7 @@ CodeAstItem ModuleCompiler::getFunctionHeader() {
 	result.addChild(CodeAstItem("__run__ = __internal._compiled_run"));
 	result.addChild(CodeAstItem("__to_module__ = __internal._compiled_convert_filename"));
 	result.addChild(CodeAstItem("if hasattr(__loader__, 'check_tag_or_reload'): __loader__.check_tag_or_reload()"));
-	result.addChild(CodeAstItem("ctrl = krait.mvc.curr_ctrl"));
+	result.addChild(CodeAstItem("ctrl = __mvc.curr_ctrl"));
 
 	return result;
 }
@@ -77,6 +74,7 @@ CodeAstItem ModuleCompiler::getModuleHeader() {
 	result.addChild(CodeAstItem("from __future__ import absolute_import"));
 	result.addChild(CodeAstItem("import krait"));
 	result.addChild(CodeAstItem("from krait import __internal"));
+	result.addChild(CodeAstItem("from krait import mvc as __mvc"));
 
 	return result;
 }

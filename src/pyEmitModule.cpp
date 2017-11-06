@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "pythonModule.h"
 
+#define DBG_DISABLE
 #include "dbg.h"
 
 

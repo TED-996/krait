@@ -2,6 +2,7 @@
 #include "except.h"
 #include "pythonCodeEscapingFsm.h"
 
+//#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -19,7 +20,7 @@ private:
 		return idx == size ? last :
 			idx == 0 ? getChr(1, data[0]) :
 			data[idx] == last ? getChr(idx + 1, last) :
-				throw std::exception();
+			throw std::exception();
 	}
 };
 
@@ -32,7 +33,7 @@ CodeAstItem::CodeAstItem(std::string&& code, std::vector<CodeAstItem>&& codeAstI
 	code(std::move(code)),
 	children(std::move(codeAstItems)),
 	indentAfter(indentAfter) {
-	
+
 	if (this->code.empty() && indentAfter) {
 		BOOST_THROW_EXCEPTION(serverError() << stringInfo("CodeAstItem::CodeAstItem: empty code, contents expect indent."));
 	}
@@ -62,32 +63,48 @@ void CodeAstItem::addChild(CodeAstItem&& child) {
 }
 
 CodeAstItem CodeAstItem::optimize() {
+	// Unused code at the moment, also broken.
+	// Also kind of useless, this should generate the same code before and after
+	// and that's the only thing that matters.
+	return std::move(*this);
+
+	DBG("CodeAstItem::optimize");
 	// If there is no code, and only one child, return it.
-	if (code.empty() && children.empty()) {
+	/*if (code.empty() && children.size() == 1) {
+		DBG("Applying one-child optimization");
 		return children[0].optimize();
 	}
+	*/
 
-	// Flatten all children.
-	for (auto it = children.begin(); it != children.end(); ++it) {
-		*it = it->optimize();
-	}
+	if (!children.empty()) {
+		DBG("Has children to transform");
+		// Flatten all children.
+		for (auto it = children.begin(); it != children.end(); ++it) {
+			*it = it->optimize();
+		}
 
-	std::vector<CodeAstItem> newChildren;
-	newChildren.reserve(children.size());
-	for (auto& it : children) {
-		if (it.code.empty() && it.children.empty()) {
-			continue;
-		}
-		if (!it.code.empty()) {
-			newChildren.emplace_back(std::move(it));
-		}
-		else {
-			for (auto& itInner : it.children) {
-				newChildren.emplace_back(std::move(itInner));
+		std::vector<CodeAstItem> newChildren;
+		newChildren.reserve(children.size());
+		for (auto& it : children) {
+			if (it.code.empty() && it.children.empty()) {
+				DBG("continue: Applying null child optimization");
+				continue;
+			}
+			if (!it.code.empty() || it.indentAfter) {
+				DBG("Adding child unchanged to list");
+				newChildren.emplace_back(std::move(it));
+			}
+			else {
+				DBG("Flattening children list");
+				for (auto& itInner : it.children) {
+					newChildren.emplace_back(std::move(itInner));
+				}
 			}
 		}
+		children = std::move(newChildren);
 	}
 
+	DBG("return: Finished optimizing normally");
 	return std::move(*this);
 }
 
@@ -175,22 +192,17 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 	CodeAstItem result;
 	constexpr size_t minWrapLength = 80;
 	constexpr size_t acceptableWrapLength = 90;
-	/* Findings: 
+	/* Findings:
 	1. Wrapping doesn't hurt performance.
 	2. You need '\' after each line if you wrap.
 	3. You need to watch if you're in a string.
 	*/
-	DBG("CodeAstItem::fromMultilineStatement");
-
 	std::string line;
 	line.reserve(minWrapLength);
 
-	for(auto part : parts) {
-		DBG_FMT("Adding part %1%", part);
-
+	for (auto part : parts) {
 		// First, make sure the line isn't already too long.
 		if (line.length() > minWrapLength) {
-			DBG_FMT("Adding line (before adding part) %1%", line);
 			result.addChild(CodeAstItem(std::move(line)));
 			line = "";
 			line.reserve(minWrapLength);
@@ -218,7 +230,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 		else {
 			type = PartType::SingleLineCode;
 			// No checking. Your job.
-			
+
 			// Silence some warnings.
 			termChar = '\0';
 		}
@@ -260,8 +272,8 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 
 					// We can't end on a backslash (or we can, but we need complicated counting.)
 					while (partOnLineLength < partLeftLength
-							&& partOnLineLength != 0
-							&& part[lastIdx + partOnLineLength - 1] == '\\') {
+						&& partOnLineLength != 0
+						&& part[lastIdx + partOnLineLength - 1] == '\\') {
 						partOnLineLength++;
 					}
 
@@ -281,12 +293,11 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 					}
 
 					// Add the line to the AST
-					//DBG_FMT("Adding line (in long string) %1%", line);
 					result.addChild(CodeAstItem(std::move(line)));
-					
+
 					// Update the index
 					lastIdx += partOnLineLength;
-					
+
 					// Prepare the next line.
 					if (lastIdx < part.length()) {
 						line = std::string(1, termChar);
@@ -298,7 +309,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 				}
 			}
 		}
-		else  {
+		else {
 			// PartType::TripleQuoteString
 			// Wrap only, exactly, at newlines.
 			size_t lastIdx = 0;
@@ -307,7 +318,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 			if (newlineIdx == std::string::npos) {
 				line.append(part.data(), part.size());
 			}
-			
+
 			while (newlineIdx != std::string::npos) {
 				enum class NewlineStyle { Lf, CrLf };
 				NewlineStyle style;
@@ -357,42 +368,32 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 	}
 
 	if (line.length() > 0) {
-		DBG_FMT("Adding final line %1%", line);
 		result.addChild(CodeAstItem(std::move(line)));
 	}
 
-	DBG("After CodeAstItem::fromMultilineStatement");
 	return result;
 }
 
 CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 	static PythonCodeEscapingFsm escapingFsm;
 	escapingFsm.reset();
-	
+
 	// Split on newlines.
 	CodeAstItem result;
-
-	DBG_FMT("--In CodeAstItem::fromPythonCode(%1%)", code);
 
 	size_t lastIdx = 0;
 	char tripleQuoteAtLineStart = '\0';
 	while (lastIdx < code.size()) {
-		DBG("----Finding");
 		size_t newlineIdx = code.find('\n', lastIdx);
 		size_t lineEnd = newlineIdx;
 		size_t nextIdx = newlineIdx + 1;
 		size_t newlineStart = newlineIdx;
 
-		DBG("----Found.");
-
 		if (newlineIdx == std::string::npos) {
-			DBG_FMT("----After idx %1%, no newline found, resetting.", lastIdx);
 			lineEnd = code.size();
 			nextIdx = code.size();
 			newlineStart = code.size();
 		}
-
-		DBG("----Newline normalization");
 
 		// If the newline style is CRLF, don't copy the CR to the code.
 		if (lineEnd != code.size() && lineEnd != 0 && code[lineEnd - 1] == '\r') {
@@ -400,21 +401,16 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 			newlineStart--;
 		}
 
-		DBG("----Consuming in FSM");
 		for (auto it = code.cbegin() + lastIdx; it != code.cbegin() + nextIdx; ++it) {
 			escapingFsm.consumeOne(*it);
 		}
-		DBG("----Consumed.");
 
-		DBG_FMT("----Adding from %d to %d", lastIdx, lineEnd);
 		std::string line = code.substr(lastIdx, lineEnd - lastIdx);
 		if (tripleQuoteAtLineStart != '\0') {
-			DBG("----newline in multiline string");
 			line = std::string(3, tripleQuoteAtLineStart) + line;
 			tripleQuoteAtLineStart = '\0';
 		}
 		if (escapingFsm.isMultilineString()) {
-			DBG("----in multiline string");
 			tripleQuoteAtLineStart = escapingFsm.getMultilineQuoteChar();
 
 			// Append newlines.
@@ -440,13 +436,9 @@ CodeAstItem CodeAstItem::fromPythonCode(const std::string& code) {
 			line += newlines;
 		}
 
-		DBG("----Adding child");
-
 		result.addChild(CodeAstItem(std::move(line)));
 		lastIdx = nextIdx;
 	}
-	
-	DBG("--After CodeAstItem::fromPythonCode");
 
 	return result;
 

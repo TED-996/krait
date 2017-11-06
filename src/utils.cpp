@@ -260,8 +260,6 @@ std::string reprPythonString(const std::string& str) {
 	unsigned int oldIdx = 0;
 	for (unsigned int idx = 0; idx < str.length(); idx++) {
 		unsigned char ch = (unsigned char)str[idx];
-		//DBG_FMT("Replacing %02X", ch);
-		//DBG_FMT("  With %1%", replacements[ch]);
 		if (replacements[ch].size() != 0) {
 			result.append(str.data() + oldIdx, idx - oldIdx);
 			result.append(replacements[ch]);
@@ -271,8 +269,6 @@ std::string reprPythonString(const std::string& str) {
 
 	result.append(str.data() + oldIdx, str.length() - oldIdx);
 	result.append(1, '\'');
-
-	DBG_FMT("--Converted\n%1%\n--to\n%2%", str, result);
 
 	return result;
 }
