@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+from __future__ import print_function
 import subprocess
 import os
 import glob
@@ -11,6 +12,8 @@ def main():
     if not files:
         raise RuntimeError("No .cpp/.h files found in src.")
     subprocess.check_call(["clang-format.exe", "-i"] + files, shell=True)
+
+    print("Code formatted.")
 
 
 if __name__ == '__main__':
