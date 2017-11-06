@@ -7,42 +7,41 @@
 #include <openssl/ssl.h>
 
 
-class OpenSslServerSocket : public IServerSocket
-{
-	class OpenSslInitStruct
-	{
-	private:
-		OpenSslInitStruct();
-	public:
-		~OpenSslInitStruct();
+class OpenSslServerSocket : public IServerSocket {
+    class OpenSslInitStruct {
+    private:
+        OpenSslInitStruct();
 
-		static void ensureInit();
-	};
+    public:
+        ~OpenSslInitStruct();
 
-	static const int InvalidSocket = -1;
+        static void ensureInit();
+    };
 
-	int socket;
-	bool listening;
+    static const int InvalidSocket = -1;
 
-	const Config& config;
-	SSL_CTX* ctx;
+    int socket;
+    bool listening;
+
+    const Config& config;
+    SSL_CTX* ctx;
 
 public:
-	OpenSslServerSocket(const Config& config, int socket);
-	OpenSslServerSocket(OpenSslServerSocket&) = delete;
-	OpenSslServerSocket(OpenSslServerSocket&& other) noexcept;
-	~OpenSslServerSocket();
+    OpenSslServerSocket(const Config& config, int socket);
+    OpenSslServerSocket(OpenSslServerSocket&) = delete;
+    OpenSslServerSocket(OpenSslServerSocket&& other) noexcept;
+    ~OpenSslServerSocket();
 
-	OpenSslServerSocket& operator=(const OpenSslServerSocket& other) = delete;
-	OpenSslServerSocket& operator=(OpenSslServerSocket&& other) noexcept;
+    OpenSslServerSocket& operator=(const OpenSslServerSocket& other) = delete;
+    OpenSslServerSocket& operator=(OpenSslServerSocket&& other) noexcept;
 
-	void initialize() override;
-	int getFd() override;
-	bool listen(size_t backlog) override;
-	std::unique_ptr<IManagedSocket> accept() override;
-	std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs) override;
+    void initialize() override;
+    int getFd() override;
+    bool listen(size_t backlog) override;
+    std::unique_ptr<IManagedSocket> accept() override;
+    std::unique_ptr<IManagedSocket> acceptTimeout(int timeoutMs) override;
 
-	static OpenSslServerSocket fromAnyOnPort(uint16_t port, const Config& config);
+    static OpenSslServerSocket fromAnyOnPort(uint16_t port, const Config& config);
 };
 
 typedef OpenSslServerSocket SslServerSocket;

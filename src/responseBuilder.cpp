@@ -1,12 +1,12 @@
 ﻿#include <fstream>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include "responseBuilder.h"
-#include "pythonModule.h"
-#include "utils.h"
-#include "path.h"
 #include "logger.h"
 #include "mvcPymlFile.h"
+#include "path.h"
+#include "pythonModule.h"
+#include "utils.h"
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
 
 
 //#define DBG_DISABLE
@@ -15,324 +15,314 @@ namespace bf = boost::filesystem;
 namespace ba = boost::algorithm;
 
 
-ResponseBuilder::ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config,
-		CacheController& cacheController, PymlCache& pymlCache)
-	: siteRoot(siteRoot),
-	  config(config),
-	  cacheController(cacheController),
-	  pymlCache(pymlCache),
-	  compiler(siteRoot, pymlCache),
-	  compiledRunner(),
-	  apiManager(compiler, compiledRunner),
-	  renderer(compiledRunner, apiManager.getPyEmitModule())
-	  {
-	loadContentTypeList((getShareRoot() / "globals" / "mime.types").string());
+ResponseBuilder::ResponseBuilder(
+    const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache)
+        : siteRoot(siteRoot)
+        , config(config)
+        , cacheController(cacheController)
+        , pymlCache(pymlCache)
+        , compiler(siteRoot, pymlCache)
+        , compiledRunner()
+        , apiManager(compiler, compiledRunner)
+        , renderer(compiledRunner, apiManager.getPyEmitModule()) {
+    loadContentTypeList((getShareRoot() / "globals" / "mime.types").string());
 }
 
 
 std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& request, bool isWebsockets) {
-	bool isHead = (request.getVerb() == HttpVerb::HEAD);
-	std::string symFilename = "<unavailable>";
-	std::unique_ptr<Response> response = nullptr;
+    bool isHead = (request.getVerb() == HttpVerb::HEAD);
+    std::string symFilename = "<unavailable>";
+    std::unique_ptr<Response> response = nullptr;
 
-	try {
-		PreResponseSource source = getSourceFromRequest(request);
-		
-		symFilename = source.symFilename;
-		bool isDynamic;
-		
-		std::string etag;
-		if (request.headerExists("if-none-match")) {
-			etag = request.getHeader("if-none-match").get();
-			etag = etag.substr(1, etag.length() - 2);
-		}
+    try {
+        PreResponseSource source = getSourceFromRequest(request);
 
-		boost::optional<const IPymlFile&> pymlFile;
-		std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
+        symFilename = source.symFilename;
+        bool isDynamic;
 
-		if (source.sourceFilename) {
-			pymlFile = getPymlFromCache(source.sourceFilename.get());
-			isDynamic = pymlFile->isDynamic();
-		}
-		else if(source.sourceObject) {
-			isDynamic = true;
-			mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
-			pymlFile = *mvcFileStorage;
-		}
-		else {
-			BOOST_THROW_EXCEPTION(serverError() << stringInfo("ResponseBuilder::getSourceFromRequest returned empty PreResponseSource."));
-		}
-		
-		CacheController::CachePragma cachePragma = cacheController.getCacheControl(source.symFilename, !isDynamic);
-		
-		if (cachePragma.isStore && pymlCache.checkCacheTag(source.symFilename, etag)) {
-			response = std::make_unique<Response>(304, "", false);
-		}
-		else {
-			if (isDynamic) {
-				apiManager.set(request, isWebsockets);
+        std::string etag;
+        if (request.headerExists("if-none-match")) {
+            etag = request.getHeader("if-none-match").get();
+            etag = etag.substr(1, etag.length() - 2);
+        }
 
-				// Can always convert MVC routes.
-				if ((pymlFile->canConvertToCode() || source.sourceObject) && source.moduleName) {
-					response = renderer.renderFromModuleName(*source.moduleName, request);
-				}
-				else {
-					response = renderer.renderFromPyml(*pymlFile, request);
-				}
+        boost::optional<const IPymlFile&> pymlFile;
+        std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
 
-				if (apiManager.isCustomResponse()) {
-					response = apiManager.getCustomResponse();
-				}
-				apiManager.addHeaders(*response);
-			}
-			else {
-				response = renderer.renderFromPyml(*pymlFile, request);
-			}
-		}
+        if (source.sourceFilename) {
+            pymlFile = getPymlFromCache(source.sourceFilename.get());
+            isDynamic = pymlFile->isDynamic();
+        } else if (source.sourceObject) {
+            isDynamic = true;
+            mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
+            pymlFile = *mvcFileStorage;
+        } else {
+            BOOST_THROW_EXCEPTION(
+                serverError() << stringInfo("ResponseBuilder::getSourceFromRequest returned empty PreResponseSource."));
+        }
 
-		addDefaultHeaders(*response, source.symFilename, request, cachePragma, isDynamic);
-	}
-	catch(notFoundError&) {
-		Loggers::logInfo(formatString("Not found building %1%", symFilename));
-		response = std::make_unique<Response>(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
-	}
+        CacheController::CachePragma cachePragma = cacheController.getCacheControl(source.symFilename, !isDynamic);
 
-	if (isHead) {
-		response->setBody("", false);
-	}
+        if (cachePragma.isStore && pymlCache.checkCacheTag(source.symFilename, etag)) {
+            response = std::make_unique<Response>(304, "", false);
+        } else {
+            if (isDynamic) {
+                apiManager.set(request, isWebsockets);
 
-	return response;
+                // Can always convert MVC routes.
+                if ((pymlFile->canConvertToCode() || source.sourceObject) && source.moduleName) {
+                    response = renderer.renderFromModuleName(*source.moduleName, request);
+                } else {
+                    response = renderer.renderFromPyml(*pymlFile, request);
+                }
+
+                if (apiManager.isCustomResponse()) {
+                    response = apiManager.getCustomResponse();
+                }
+                apiManager.addHeaders(*response);
+            } else {
+                response = renderer.renderFromPyml(*pymlFile, request);
+            }
+        }
+
+        addDefaultHeaders(*response, source.symFilename, request, cachePragma, isDynamic);
+    } catch (notFoundError&) {
+        Loggers::logInfo(formatString("Not found building %1%", symFilename));
+        response = std::make_unique<Response>(404, "<html><body><h1>404 Not Found</h1></body></html>", true);
+    }
+
+    if (isHead) {
+        response->setBody("", false);
+    }
+
+    return response;
 }
 
 std::unique_ptr<Response> ResponseBuilder::buildResponse(Request& request) {
-	return buildResponseInternal(request, false);
+    return buildResponseInternal(request, false);
 }
 
 std::unique_ptr<Response> ResponseBuilder::buildWebsocketsResponse(Request& request) {
-	request.setRouteVerb(RouteVerb::WEBSOCKET);
-	
-	return buildResponseInternal(request, true);
+    request.setRouteVerb(RouteVerb::WEBSOCKET);
+
+    return buildResponseInternal(request, true);
 }
 
 std::string replaceParams(const std::string& target, std::map<std::string, std::string>& params);
 
 ResponseBuilder::PreResponseSource ResponseBuilder::getSourceFromRequest(const Request& request) const {
-	std::map<std::string, std::string> params;
-	const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
-	size_t routeIdx = 0;
-	
-	// Find the route
-	for (auto it = config.getRoutes().begin(); it != config.getRoutes().end(); ++it) {
-		if (&route == &*it) {
-			routeIdx = it - config.getRoutes().begin();
-		}
-	}
-	
-	std::string symFilename;
+    std::map<std::string, std::string> params;
+    const Route& route = Route::getRouteMatch(config.getRoutes(), request.getRouteVerb(), request.getUrl(), params);
+    size_t routeIdx = 0;
 
-	if (!route.isMvcRoute()) {
-		std::string targetSource = route.getTarget(request.getUrl());
-		if (!params.empty()) {
-			targetSource = replaceParams(targetSource, params);
-		}
-		symFilename = expandFilename(getFilenameFromTarget(targetSource));
-	}
-	else {
-		symFilename = getFilenameFromTarget(request.getUrl());
-	}
+    // Find the route
+    for (auto it = config.getRoutes().begin(); it != config.getRoutes().end(); ++it) {
+        if (&route == &*it) {
+            routeIdx = it - config.getRoutes().begin();
+        }
+    }
 
-	if (pathBlocked(symFilename)) {
-		Loggers::logInfo(formatString("Client tried accessing path %1%, BLOCKED (404).", symFilename));
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", symFilename));
-	}
+    std::string symFilename;
 
-	if (!route.isMvcRoute()) {
-		return PreResponseSource(symFilename, symFilename, getModuleNameFromFilename(symFilename));
-	}
-	else {
-		return PreResponseSource(symFilename, route.getCtrlClass(), getModuleNameFromMvcRoute(route.getCtrlClass(), routeIdx));
-	}
+    if (!route.isMvcRoute()) {
+        std::string targetSource = route.getTarget(request.getUrl());
+        if (!params.empty()) {
+            targetSource = replaceParams(targetSource, params);
+        }
+        symFilename = expandFilename(getFilenameFromTarget(targetSource));
+    } else {
+        symFilename = getFilenameFromTarget(request.getUrl());
+    }
+
+    if (pathBlocked(symFilename)) {
+        Loggers::logInfo(formatString("Client tried accessing path %1%, BLOCKED (404).", symFilename));
+        BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Error: File not found: %1%", symFilename));
+    }
+
+    if (!route.isMvcRoute()) {
+        return PreResponseSource(symFilename, symFilename, getModuleNameFromFilename(symFilename));
+    } else {
+        return PreResponseSource(
+            symFilename, route.getCtrlClass(), getModuleNameFromMvcRoute(route.getCtrlClass(), routeIdx));
+    }
 }
 
 
 std::string ResponseBuilder::getFilenameFromTarget(const std::string& target) const {
-	if (target[0] == '/') {
-		return (siteRoot / target.substr(1)).string();
-	}
-	else {
-		return (siteRoot / target).string();
-	}
+    if (target[0] == '/') {
+        return (siteRoot / target.substr(1)).string();
+    } else {
+        return (siteRoot / target).string();
+    }
 }
 
 
 std::string ResponseBuilder::expandFilename(const std::string& sourceFilename) const {
-	std::string workingFilename = sourceFilename;
-	if (bf::is_directory(workingFilename)) {
-		//Converting to directory automatically.
-		//Not index.html; taking care below about it (might be .pyml or .py, for example)
-		workingFilename = (bf::path(workingFilename) / "index").string();
-	}
+    std::string workingFilename = sourceFilename;
+    if (bf::is_directory(workingFilename)) {
+        // Converting to directory automatically.
+        // Not index.html; taking care below about it (might be .pyml or .py, for example)
+        workingFilename = (bf::path(workingFilename) / "index").string();
+    }
 
-	if (!bf::exists(workingFilename)) {
-		if (bf::exists(workingFilename + ".html")) {
-			workingFilename += ".html";
-		}
-		else if (bf::exists(workingFilename + ".htm")) {
-			workingFilename += ".htm";
-		}
-		else if (bf::exists(workingFilename + ".pyml")) {
-			workingFilename += ".pyml";
-		}
-		else if (bf::exists(workingFilename + ".py")) {
-			workingFilename += ".py";
-		}
+    if (!bf::exists(workingFilename)) {
+        if (bf::exists(workingFilename + ".html")) {
+            workingFilename += ".html";
+        } else if (bf::exists(workingFilename + ".htm")) {
+            workingFilename += ".htm";
+        } else if (bf::exists(workingFilename + ".pyml")) {
+            workingFilename += ".pyml";
+        } else if (bf::exists(workingFilename + ".py")) {
+            workingFilename += ".py";
+        }
 
-		else if (bf::path(workingFilename).extension() == ".html" &&
-			bf::exists(bf::change_extension(workingFilename, ".htm"))) {
-			workingFilename = bf::change_extension(workingFilename, "htm").string();
-		}
-		else if (bf::path(workingFilename).extension() == ".htm" &&
-			bf::exists(bf::change_extension(workingFilename, ".html"))) {
-			workingFilename = bf::change_extension(workingFilename, "html").string();
-		}
-	}
-	return workingFilename;
+        else if (bf::path(workingFilename).extension() == ".html"
+            && bf::exists(bf::change_extension(workingFilename, ".htm"))) {
+            workingFilename = bf::change_extension(workingFilename, "htm").string();
+        } else if (bf::path(workingFilename).extension() == ".htm"
+            && bf::exists(bf::change_extension(workingFilename, ".html"))) {
+            workingFilename = bf::change_extension(workingFilename, "html").string();
+        }
+    }
+    return workingFilename;
 }
 
 std::string ResponseBuilder::getModuleNameFromFilename(boost::string_ref filename) const {
-	return compiler.getCompiledModuleName(filename);
+    return compiler.getCompiledModuleName(filename);
 }
 
 std::string ResponseBuilder::getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const {
-	return "_krait_compiled._mvc_compiled.mvc_compiled_" + std::to_string(routeIdx);
+    return "_krait_compiled._mvc_compiled.mvc_compiled_" + std::to_string(routeIdx);
 }
 
 const IPymlFile& ResponseBuilder::getPymlFromCache(const std::string& filename) const {
-	return pymlCache.get(filename);
-}
- 
-void ResponseBuilder::addDefaultHeaders(Response& response, const std::string& filename,
-		const Request& request, CacheController::CachePragma cachePragma, bool isDynamic) {
-
-	addCacheHeaders(response, filename, cachePragma);
-
-	if (!response.headerExists("Content-Type")) {
-		response.setHeader("Content-Type", getContentType(filename, isDynamic));
-	}
-
-	std::time_t timeVal = std::time(nullptr);
-	if (timeVal != -1 && !response.headerExists("Date")) {
-		response.setHeader("Date", unixTimeToString(timeVal));
-	}
+    return pymlCache.get(filename);
 }
 
-void ResponseBuilder::addCacheHeaders(Response& response, const std::string& filename, CacheController::CachePragma pragma) const {
-	response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
+void ResponseBuilder::addDefaultHeaders(Response& response,
+    const std::string& filename,
+    const Request& request,
+    CacheController::CachePragma cachePragma,
+    bool isDynamic) {
+    addCacheHeaders(response, filename, cachePragma);
 
-	if (pragma.isStore) {
-		response.addHeader("etag", "\"" + pymlCache.getCacheTag(filename) + "\"");
-	}
+    if (!response.headerExists("Content-Type")) {
+        response.setHeader("Content-Type", getContentType(filename, isDynamic));
+    }
+
+    std::time_t timeVal = std::time(nullptr);
+    if (timeVal != -1 && !response.headerExists("Date")) {
+        response.setHeader("Date", unixTimeToString(timeVal));
+    }
+}
+
+void ResponseBuilder::addCacheHeaders(
+    Response& response, const std::string& filename, CacheController::CachePragma pragma) const {
+    response.setHeader("cache-control", cacheController.getValueFromPragma(pragma));
+
+    if (pragma.isStore) {
+        response.addHeader("etag", "\"" + pymlCache.getCacheTag(filename) + "\"");
+    }
 }
 
 
 std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
-	std::string extension;
+    std::string extension;
 
-	if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {
-		bf::path filePath(filename);
-		extension = filePath.extension().string();
-		if (extension == ".pyml") {
-			extension = filePath.stem().extension().string();
-		}
-	}
-	else {
-		std::string varContentType = PythonModule::krait().getGlobalStr("_content_type");
-		
-		if (!ba::starts_with(varContentType, "ext/")) {
-			return varContentType;
-		}
-		else {
-			extension = varContentType.substr(3); //strlen("ext")
-			extension[0] = '.'; // /"extension" to ".extension"
-		}
-	}
+    if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {
+        bf::path filePath(filename);
+        extension = filePath.extension().string();
+        if (extension == ".pyml") {
+            extension = filePath.stem().extension().string();
+        }
+    } else {
+        std::string varContentType = PythonModule::krait().getGlobalStr("_content_type");
 
-	const auto& it = contentTypeByExtension.find(extension);
-	if (it == contentTypeByExtension.end()) {
-		return "application/octet-stream";
-	}
-	else {
-		return it->second;
-	}
+        if (!ba::starts_with(varContentType, "ext/")) {
+            return varContentType;
+        } else {
+            extension = varContentType.substr(3); // strlen("ext")
+            extension[0] = '.'; // /"extension" to ".extension"
+        }
+    }
+
+    const auto& it = contentTypeByExtension.find(extension);
+    if (it == contentTypeByExtension.end()) {
+        return "application/octet-stream";
+    } else {
+        return it->second;
+    }
 }
 
 
 void ResponseBuilder::loadContentTypeList(const std::string& filename) {
-	std::ifstream mimeFile(filename);
-	if (!mimeFile) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("MIME types file missing! Filename: %1%", filename));
-	}
+    std::ifstream mimeFile(filename);
+    if (!mimeFile) {
+        BOOST_THROW_EXCEPTION(
+            serverError() << stringInfoFromFormat("MIME types file missing! Filename: %1%", filename));
+    }
 
-	char line[1024];
-	std::string mimeType;
+    char line[1024];
+    std::string mimeType;
 
-	while (mimeFile.getline(line, 1023)) {
-		if (line[0] == '\0' || line[0] == '#') {
-			continue;
-		}
+    while (mimeFile.getline(line, 1023)) {
+        if (line[0] == '\0' || line[0] == '#') {
+            continue;
+        }
 
-		const char* separators = " \t\r\n";
-		char* ptr = strtok(line, separators);
-		if (ptr == nullptr) {
-			continue;
-		}
+        const char* separators = " \t\r\n";
+        char* ptr = strtok(line, separators);
+        if (ptr == nullptr) {
+            continue;
+        }
 
-		mimeType.assign(ptr);
-		ptr = strtok(nullptr, separators);
-		while (ptr != nullptr) {
-			//This SHOULD be fine. This ptr is definitely not the first character in the char[].
-			//Make it an extension (html to .html)
-			*(ptr - 1) = '.';
-			contentTypeByExtension[std::string(ptr - 1)] = mimeType;
+        mimeType.assign(ptr);
+        ptr = strtok(nullptr, separators);
+        while (ptr != nullptr) {
+            // This SHOULD be fine. This ptr is definitely not the first character in the char[].
+            // Make it an extension (html to .html)
+            *(ptr - 1) = '.';
+            contentTypeByExtension[std::string(ptr - 1)] = mimeType;
 
-			ptr = strtok(nullptr, separators);
-		}
-	}
+            ptr = strtok(nullptr, separators);
+        }
+    }
 }
 
 std::string replaceParams(const std::string& target, std::map<std::string, std::string>& params) {
-	auto it = target.begin();
-	auto oldIt = it;
-	std::string result;
+    auto it = target.begin();
+    auto oldIt = it;
+    std::string result;
 
-	while ((it = find(it, target.end(), '{')) != target.end()) {
-		result += std::string(oldIt, it);
-		auto endIt = find(it, target.end(), '}');
-		if (endIt == target.end()) {
-			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: unmatched paranthesis in route target %1%", target));
-		}
+    while ((it = find(it, target.end(), '{')) != target.end()) {
+        result += std::string(oldIt, it);
+        auto endIt = find(it, target.end(), '}');
+        if (endIt == target.end()) {
+            BOOST_THROW_EXCEPTION(
+                routeError() << stringInfoFromFormat("Error: unmatched paranthesis in route target %1%", target));
+        }
 
-		std::string paramName(it + 1, endIt);
-		auto paramFound = params.find(paramName);
-		if (paramFound == params.end()) {
-			BOOST_THROW_EXCEPTION(routeError() << stringInfoFromFormat("Error: parameter name %1% in route target %2% not found",
-				paramName, target));
-		}
-		result += paramFound->second;
-		++it;
-		oldIt = it;
-	}
-	result += std::string(oldIt, it);
+        std::string paramName(it + 1, endIt);
+        auto paramFound = params.find(paramName);
+        if (paramFound == params.end()) {
+            BOOST_THROW_EXCEPTION(routeError()
+                << stringInfoFromFormat("Error: parameter name %1% in route target %2% not found", paramName, target));
+        }
+        result += paramFound->second;
+        ++it;
+        oldIt = it;
+    }
+    result += std::string(oldIt, it);
 
-	return result;
+    return result;
 }
 
 bool ResponseBuilder::pathBlocked(const std::string& path) {
-	bf::path filePath(path);
-	for (auto& part : filePath) {
-		if (part.size() > 1 && part.c_str()[0] == '.') {
-			return true;
-		}
-	}
-	return false;
+    bf::path filePath(path);
+    for (auto& part : filePath) {
+        if (part.size() > 1 && part.c_str()[0] == '.') {
+            return true;
+        }
+    }
+    return false;
 }

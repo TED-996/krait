@@ -1,12 +1,11 @@
 #pragma once
-#include <string>
-#include <memory>
 #include "IPymlItem.h"
+#include <memory>
+#include <string>
 
-class IPymlParser
-{
+class IPymlParser {
 public:
-	virtual ~IPymlParser() = default;
-	virtual void consume(std::string::iterator start, std::string::iterator end) = 0;
-	virtual std::unique_ptr<const IPymlItem> getParsed() = 0;
+    virtual ~IPymlParser() = default;
+    virtual void consume(std::string::iterator start, std::string::iterator end) = 0;
+    virtual std::unique_ptr<const IPymlItem> getParsed() = 0;
 };

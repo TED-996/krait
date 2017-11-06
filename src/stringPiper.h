@@ -1,20 +1,19 @@
 #pragma once
-#include<string>
+#include <string>
 
-class StringPiper
-{
-	int readHead;
-	int writeHead;
+class StringPiper {
+    int readHead;
+    int writeHead;
 
 public:
-	StringPiper();
-	~StringPiper();
+    StringPiper();
+    ~StringPiper();
 
-	void closeRead();
-	void closeWrite();
-	void closePipes();
+    void closeRead();
+    void closeWrite();
+    void closePipes();
 
-	void pipeWrite(std::string data);
-	bool pipeAvailable();
-	std::string pipeRead();
+    void pipeWrite(std::string data);
+    bool pipeAvailable();
+    std::string pipeRead();
 };

@@ -1,311 +1,299 @@
 #pragma once
-#include <stack>
-#include <string>
-#include <boost/pool/object_pool.hpp>
-#include "pymlItems.h"
 #include "IPymlCache.h"
 #include "IPymlParser.h"
 #include "fsmV2.h"
+#include "pymlItems.h"
+#include <boost/pool/object_pool.hpp>
+#include <stack>
+#include <string>
 
-class IV2PymlParser : public IPymlParser
-{
+class IV2PymlParser : public IPymlParser {
 public:
-	virtual void addPymlWorkingStr(std::string&& str) = 0;
-	virtual void addPymlWorkingPyCode(PymlWorkingItem::Type type, std::string&& code) = 0;
-	virtual void addPymlWorkingEmbed(std::string&& filename) = 0;
-	virtual void addPymlWorkingCtrl(std::string&& ctrlCode) = 0;
-	virtual void pushPymlWorkingIf(std::string&& condition) = 0;
-	virtual bool addSeqToPymlWorkingIf() = 0;
-	virtual void pushPymlWorkingFor() = 0;
-	virtual void addCodeToPymlWorkingFor(int where, std::string&& code) = 0;
-	virtual bool addSeqToPymlWorkingFor() = 0;
-	virtual void pushPymlWorkingForIn(std::string&& entry, std::string&& collection) = 0;
-	virtual void pushPymlWorkingSeq() = 0;
-	virtual void addPymlStackTop() = 0;
+    virtual void addPymlWorkingStr(std::string&& str) = 0;
+    virtual void addPymlWorkingPyCode(PymlWorkingItem::Type type, std::string&& code) = 0;
+    virtual void addPymlWorkingEmbed(std::string&& filename) = 0;
+    virtual void addPymlWorkingCtrl(std::string&& ctrlCode) = 0;
+    virtual void pushPymlWorkingIf(std::string&& condition) = 0;
+    virtual bool addSeqToPymlWorkingIf() = 0;
+    virtual void pushPymlWorkingFor() = 0;
+    virtual void addCodeToPymlWorkingFor(int where, std::string&& code) = 0;
+    virtual bool addSeqToPymlWorkingFor() = 0;
+    virtual void pushPymlWorkingForIn(std::string&& entry, std::string&& collection) = 0;
+    virtual void pushPymlWorkingSeq() = 0;
+    virtual void addPymlStackTop() = 0;
 };
 
 
-class V2PymlParserFsm : public FsmV2
-{
+class V2PymlParserFsm : public FsmV2 {
 private:
-	class PymlRootTransition : public DelegatingFsmTransition
-	{
-	protected:
-		IV2PymlParser** parser;
-	public:
-		PymlRootTransition(IV2PymlParser** parser, FsmTransition*&& delegate)
-			: DelegatingFsmTransition(std::move(delegate)), parser(parser) {
-		}
-	};
+    class PymlRootTransition : public DelegatingFsmTransition {
+    protected:
+        IV2PymlParser** parser;
 
-	class PymlAddStrTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddStrTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+    public:
+        PymlRootTransition(IV2PymlParser** parser, FsmTransition*&& delegate)
+                : DelegatingFsmTransition(std::move(delegate)), parser(parser) {
+        }
+    };
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
-			(*parser)->addPymlWorkingStr(fsm.getResetStored());
-		}
+    class PymlAddStrTransition : public PymlRootTransition {
+    public:
+        PymlAddStrTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override{
-			return *this;
-		}
-	};
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
+            (*parser)->addPymlWorkingStr(fsm.getResetStored());
+        }
 
-	class PymlAddPyCodeTransition : public PymlRootTransition
-	{
-	private:
-		PymlWorkingItem::Type type;
-	public:
-		PymlAddPyCodeTransition(IV2PymlParser** parser, FsmTransition*&& base,
-		                        PymlWorkingItem::Type type)
-			: PymlRootTransition(parser, std::move(base)), type(type) {
-		}
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
-			(*parser)->addPymlWorkingPyCode(type, fsm.getResetStored());
-		}
+    class PymlAddPyCodeTransition : public PymlRootTransition {
+    private:
+        PymlWorkingItem::Type type;
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+    public:
+        PymlAddPyCodeTransition(IV2PymlParser** parser, FsmTransition*&& base, PymlWorkingItem::Type type)
+                : PymlRootTransition(parser, std::move(base)), type(type) {
+        }
 
-	class PymlAddEmbedTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddEmbedTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
+            (*parser)->addPymlWorkingPyCode(type, fsm.getResetStored());
+        }
 
-	public:
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->addPymlWorkingEmbed(fsm.getResetStored());
-		}
+    class PymlAddEmbedTransition : public PymlRootTransition {
+    public:
+        PymlAddEmbedTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+    public:
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-	class PymlAddCtrlTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddCtrlTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            (*parser)->addPymlWorkingEmbed(fsm.getResetStored());
+        }
 
-	public:
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->addPymlWorkingCtrl(fsm.getResetStored());
-		}
+    class PymlAddCtrlTransition : public PymlRootTransition {
+    public:
+        PymlAddCtrlTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+    public:
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-	class PymlAddFor3Transition : public PymlRootTransition
-	{
-	public:
-		PymlAddFor3Transition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            (*parser)->addPymlWorkingCtrl(fsm.getResetStored());
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->pushPymlWorkingFor();
-			(*parser)->addCodeToPymlWorkingFor(0, fsm.popStoredString());
-			(*parser)->addCodeToPymlWorkingFor(1, fsm.popStoredString());
-			(*parser)->addCodeToPymlWorkingFor(2, fsm.popStoredString());
-			(*parser)->pushPymlWorkingSeq();
+    class PymlAddFor3Transition : public PymlRootTransition {
+    public:
+        PymlAddFor3Transition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-			fsm.resetStored();
-		}
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+            (*parser)->pushPymlWorkingFor();
+            (*parser)->addCodeToPymlWorkingFor(0, fsm.popStoredString());
+            (*parser)->addCodeToPymlWorkingFor(1, fsm.popStoredString());
+            (*parser)->addCodeToPymlWorkingFor(2, fsm.popStoredString());
+            (*parser)->pushPymlWorkingSeq();
 
-	class PymlAddForInTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddForInTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            fsm.resetStored();
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
-			std::string entry = fsm.popStoredString();
-			std::string collection = fsm.popStoredString();
-			(*parser)->pushPymlWorkingForIn(std::move(entry), std::move(collection));
-			(*parser)->pushPymlWorkingSeq();
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			fsm.resetStored();
-		}
+    class PymlAddForInTransition : public PymlRootTransition {
+    public:
+        PymlAddForInTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
+            std::string entry = fsm.popStoredString();
+            std::string collection = fsm.popStoredString();
+            (*parser)->pushPymlWorkingForIn(std::move(entry), std::move(collection));
+            (*parser)->pushPymlWorkingSeq();
 
-	class PymlAddIfTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddIfTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            fsm.resetStored();
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->pushPymlWorkingIf(fsm.getResetStored());
-			(*parser)->pushPymlWorkingSeq();
+    class PymlAddIfTransition : public PymlRootTransition {
+    public:
+        PymlAddIfTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-			fsm.resetStored();
-		}
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+            (*parser)->pushPymlWorkingIf(fsm.getResetStored());
+            (*parser)->pushPymlWorkingSeq();
 
-	class PymlAddElseTransition : public PymlRootTransition
-	{
-	public:
-		PymlAddElseTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            fsm.resetStored();
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->addSeqToPymlWorkingIf();
-			(*parser)->pushPymlWorkingSeq();
-			fsm.resetStored();
-		}
+    class PymlAddElseTransition : public PymlRootTransition {
+    public:
+        PymlAddElseTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-	class PymlFinishForTransition : public PymlRootTransition
-	{
-	public:
-		PymlFinishForTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            (*parser)->addSeqToPymlWorkingIf();
+            (*parser)->pushPymlWorkingSeq();
+            fsm.resetStored();
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			(*parser)->addSeqToPymlWorkingFor();
-			(*parser)->addPymlStackTop();
-			fsm.resetStored();
-		}
+    class PymlFinishForTransition : public PymlRootTransition {
+    public:
+        PymlFinishForTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
 
-	class PymlFinishIfTransition : public PymlRootTransition
-	{
-	public:
-		PymlFinishIfTransition(IV2PymlParser** parser, FsmTransition*&& base)
-			: PymlRootTransition(parser, std::move(base)) {
-		}
+            (*parser)->addSeqToPymlWorkingFor();
+            (*parser)->addPymlStackTop();
+            fsm.resetStored();
+        }
 
-		void execute(FsmV2& fsm) override {
-			PymlRootTransition::execute(fsm);
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
-			if (!(*parser)->addSeqToPymlWorkingIf()) {
-				BOOST_THROW_EXCEPTION(
-					pymlError() << stringInfo("Could not finish if instruction; are there 2 else branches?"));
-			}
-			(*parser)->addPymlStackTop();
-			fsm.resetStored();
-		}
+    class PymlFinishIfTransition : public PymlRootTransition {
+    public:
+        PymlFinishIfTransition(IV2PymlParser** parser, FsmTransition*&& base)
+                : PymlRootTransition(parser, std::move(base)) {
+        }
 
-		FsmTransition& getDelegateExecute() override {
-			return *this;
-		}
-	};
+        void execute(FsmV2& fsm) override {
+            PymlRootTransition::execute(fsm);
+
+            if (!(*parser)->addSeqToPymlWorkingIf()) {
+                BOOST_THROW_EXCEPTION(
+                    pymlError() << stringInfo("Could not finish if instruction; are there 2 else branches?"));
+            }
+            (*parser)->addPymlStackTop();
+            fsm.resetStored();
+        }
+
+        FsmTransition& getDelegateExecute() override {
+            return *this;
+        }
+    };
 
 
-	IV2PymlParser* parser;
+    IV2PymlParser* parser;
 
-	void init();
+    void init();
 
-	void finalAddPymlStr();
-	void finalThrowError(const pymlError& err);
+    void finalAddPymlStr();
+    void finalThrowError(const pymlError& err);
+
 public:
-	V2PymlParserFsm();
+    V2PymlParserFsm();
 
-	void setParser(IV2PymlParser* parser) {
-		this->parser = parser;
-	}
+    void setParser(IV2PymlParser* parser) {
+        this->parser = parser;
+    }
 };
 
 
-class V2PymlParser : public IV2PymlParser
-{
+class V2PymlParser : public IV2PymlParser {
 private:
-	std::unique_ptr<const IPymlItem> rootItem;
+    std::unique_ptr<const IPymlItem> rootItem;
 
-	std::stack<PymlWorkingItem> itemStack;
-	boost::object_pool<PymlWorkingItem> workingItemPool;
+    std::stack<PymlWorkingItem> itemStack;
+    boost::object_pool<PymlWorkingItem> workingItemPool;
 
-	IPymlCache& cache;
+    IPymlCache& cache;
 
-	int krItIndex;
+    int krItIndex;
 
-	template<typename T>
-	bool stackTopIsType() {
-		return !itemStack.empty() && boost::get<T>(&itemStack.top().data) != nullptr;
-	}
+    template<typename T>
+    bool stackTopIsType() {
+        return !itemStack.empty() && boost::get<T>(&itemStack.top().data) != nullptr;
+    }
 
-	template<typename T>
-	T& getStackTop() {
-		return boost::get<T>(itemStack.top().data);
-	}
+    template<typename T>
+    T& getStackTop() {
+        return boost::get<T>(itemStack.top().data);
+    }
 
-	template<typename T>
-	T& popStackTop() {
-		T& result = boost::get<T>(itemStack.top().data);
-		itemStack.pop();
-		return result;
-	}
+    template<typename T>
+    T& popStackTop() {
+        T& result = boost::get<T>(itemStack.top().data);
+        itemStack.pop();
+        return result;
+    }
 
-	static V2PymlParserFsm parserFsm;
+    static V2PymlParserFsm parserFsm;
 
 public:
-	void addPymlWorkingStr(std::string&& str) override;
-	void addPymlWorkingPyCode(PymlWorkingItem::Type type, std::string&& code) override;
-	void addPymlWorkingEmbed(std::string&& filename) override;
-	void addPymlWorkingCtrl(std::string&& ctrlCode) override;
-	void pushPymlWorkingIf(std::string&& condition) override;
-	bool addSeqToPymlWorkingIf() override;
-	void pushPymlWorkingFor() override;
-	void addCodeToPymlWorkingFor(int where, std::string&& code) override;
-	bool addSeqToPymlWorkingFor() override;
-	void pushPymlWorkingForIn(std::string&& entry, std::string&& collection) override;
-	void pushPymlWorkingSeq() override;
-	void addPymlStackTop() override;
+    void addPymlWorkingStr(std::string&& str) override;
+    void addPymlWorkingPyCode(PymlWorkingItem::Type type, std::string&& code) override;
+    void addPymlWorkingEmbed(std::string&& filename) override;
+    void addPymlWorkingCtrl(std::string&& ctrlCode) override;
+    void pushPymlWorkingIf(std::string&& condition) override;
+    bool addSeqToPymlWorkingIf() override;
+    void pushPymlWorkingFor() override;
+    void addCodeToPymlWorkingFor(int where, std::string&& code) override;
+    bool addSeqToPymlWorkingFor() override;
+    void pushPymlWorkingForIn(std::string&& entry, std::string&& collection) override;
+    void pushPymlWorkingSeq() override;
+    void addPymlStackTop() override;
 
-	V2PymlParser(IPymlCache& cache);
+    V2PymlParser(IPymlCache& cache);
 
-	void consume(std::string::iterator start, std::string::iterator end) override;
-	std::unique_ptr<const IPymlItem> getParsed() override;
+    void consume(std::string::iterator start, std::string::iterator end) override;
+    std::unique_ptr<const IPymlItem> getParsed() override;
 };

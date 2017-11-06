@@ -2,5 +2,5 @@
 
 
 void CompiledModule::reload() {
-	BOOST_THROW_EXCEPTION(notImplementedError() << stringInfo("CompiledModule::reload"));
+    BOOST_THROW_EXCEPTION(notImplementedError() << stringInfo("CompiledModule::reload"));
 }

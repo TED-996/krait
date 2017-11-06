@@ -1,0 +1,6 @@
+#!/usr/bin/python2
+import os
+
+file_abs = os.path.abspath(__file__)
+git_root = file_abs[:file_abs.index(".git") - 1]
+execfile(os.path.join(git_root, "auto-format.py"), {}, {})

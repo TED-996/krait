@@ -1,9 +1,8 @@
 ﻿#pragma once
 #include <string>
 
-class PythonInitializer
-{
+class PythonInitializer {
 public:
-	PythonInitializer(const std::string& projectRoot);
-	~PythonInitializer();
+    PythonInitializer(const std::string& projectRoot);
+    ~PythonInitializer();
 };
