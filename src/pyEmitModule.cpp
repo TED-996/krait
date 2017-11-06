@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "pythonModule.h"
 
+#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -58,6 +59,8 @@ PyEmitModule::~PyEmitModule() {
 
 void PyEmitModule::reset() {
 	pyStrings.clear();
+	stdStrings.clear();
+	refs.clear();
 }
 
 std::unique_ptr<IResponseIterator> PyEmitModule::getIterator() {

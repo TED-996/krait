@@ -164,7 +164,7 @@ CodeAstItem PymlItemIf::getCodeAst() const {
 	else {
 		rootItem.addChild(std::move(ifItem));
 		
-		CodeAstItem elseItem("else", true);
+		CodeAstItem elseItem("else:", true);
 		elseItem.addChild(itemIfFalse->getCodeAst());
 		
 		rootItem.addChild(std::move(elseItem));
@@ -287,9 +287,7 @@ std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
 }
 
 bool PymlItemEmbed::canConvertToCode() const {
-	//TODO: idk, check from Compiler cache if it's okay...
-	return false;
-	// Make all code with imports uncompilable.
+	return true;
 }
 
 std::string PymlItemSetCallable::runPyml() const {

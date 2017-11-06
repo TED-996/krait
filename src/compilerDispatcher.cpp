@@ -17,14 +17,21 @@ std::string CompilerDispatcher::compile(const std::string& sourcePath) {
 	const IPymlFile& pymlFile = pymlCache.get(sourcePath);
 	std::string destFilename = getCompiledFilenameFromModuleName(compiler.escapeFilename(sourcePath));
 
-	compiler.compile(pymlFile, destFilename, getCacheTag(sourcePath));
+	compiler.compile(pymlFile, destFilename, pymlCache.getCacheTag(sourcePath));
 
 	return destFilename;
 }
 
 
 std::string CompilerDispatcher::getCompiledFilenameFromModuleName(const std::string& moduleName) const {
-	return (compiledRoot / moduleName).string();
+	boost::string_ref moduleNameRef(moduleName);
+
+	static boost::string_ref marker("_krait_compiled.");
+	if (moduleNameRef.starts_with(marker)) {
+		moduleNameRef.remove_prefix(marker.size());
+	}
+	
+	return (compiledRoot / boost::filesystem::path(moduleNameRef.begin(), moduleNameRef.end())).string() + ".py";
 }
 
 std::string CompilerDispatcher::getCompiledModuleName(boost::string_ref filename) const {

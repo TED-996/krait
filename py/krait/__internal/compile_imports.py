@@ -8,16 +8,15 @@ import krait
 from krait import __internal as krait_internal
 
 
-def print_flush(*args, **kwargs):
-    print(*args, **kwargs)
-    sys.stdout.flush()
+_compiled_relative_path = ".compiled/_krait_compiled"
+"""This is not easy to change, it must be modified in multiple parts of the program."""
 
 
 class CompiledImportHook(object):
     tag_marker = "# [TAGS]: "
 
     def __init__(self):
-        self.compiled_dir = os.path.normpath(krait.get_full_path(".compiled/_krait_compiled"))
+        self.compiled_dir = os.path.normpath(krait.get_full_path(_compiled_relative_path))
         self.init_version = None
         self.compiler_version = 1
 
@@ -52,12 +51,7 @@ class CompiledImportHook(object):
             :class:`CompiledLoader`, optional: The loader for the module, or None.
         """
 
-        print_flush("-------------------in find_module; fullname={}, path={}, self.compiled_dir={}".format(
-            fullname, path, self.compiled_dir
-        ))
-
         if fullname == "_krait_compiled":
-            print_flush("--OK for _krait_compiled package")
             # Is the main package.
             filename = os.path.join(self.compiled_dir, "__init__.py")
             # Should already be package.
@@ -65,26 +59,21 @@ class CompiledImportHook(object):
             return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
         elif path is not None\
                 and len(path) == 1\
-                and os.path.normpath(path[0]) == self.compiled_dir:
+                and os.path.normpath(path[0]) == self.compiled_dir\
+                and fullname.startswith("_krait_compiled"):
             # Is something under the main package
 
             _, _, mod_name = fullname.rpartition('.')
             if CompiledImportHook.is_package(os.path.join(self.compiled_dir, mod_name)):
-                print_flush("--OK for package {} (full {})".format(mod_name, fullname))
-
                 # Is a package inside _krait_compiled
                 filename = os.path.join(self.compiled_dir, mod_name, "__init__.py")
 
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_package(filename))
             else:
-                print_flush("--OK for module {} (full {})".format(mod_name, fullname))
-
                 # Is a module that maybe needs to be compiled
                 filename = self.get_compile(fullname)
                 return CompiledImportHook.Loader(self, fullname, self.find_module_from_filename(filename))
         else:
-            print_flush("---Not found.")
-
             return None
 
     @staticmethod
@@ -106,12 +95,14 @@ class CompiledImportHook(object):
     def get_compiler_version(self, filename):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
-        return tag and tag.get("c_version")
+        version = tag and tag.get("c_version")
+        return None if version is None else int(version)
 
     def get_compiled_etag(self, filename):
         tag = self.get_compiled_tag(filename)
         # Tag may be None, short-circuit this situation
-        return tag and tag.get("etag")
+        etag = tag and tag.get("etag")
+        return None if etag is None else str(etag)
 
     def get_compiled_tag(self, filename):
         if not os.path.exists(filename):
@@ -148,6 +139,8 @@ class CompiledImportHook(object):
             self.hooker_object = hooker_object
             self.fullname = fullname
             self.file, self.pathname, self.description = find_module_result
+            self.module = None
+
 
         def load_module(self, fullname):
             if fullname != self.fullname:
@@ -156,9 +149,10 @@ class CompiledImportHook(object):
             try:
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
                 mod.__loader__ = self
+
+                self.module = mod
                 return mod
             except StandardError as ex:
-                print_flush("---Error!:", ex)
                 raise
             finally:
                 if self.file is not None:
@@ -169,13 +163,33 @@ class CompiledImportHook(object):
             # noinspection PyProtectedMember
             krait_internal._compiled_check_tag_or_reload(
                 self.fullname.rpartition('.')[2],
-                self.hooker_object.get_compiled_etag(self.pathname))
+                self.hooker_object.get_compiled_etag(self.pathname) or "")
 
             # This raises an exception if the module was reloaded, or continues otherwise
 
 
+def _rm_tree(directory):
+    for entry in os.listdir(directory):
+        full_path = os.path.join(directory, entry)
+        if os.path.isdir(full_path):
+            _rm_tree(full_path)
+        else:
+            os.remove(full_path)
+
+    os.rmdir(directory)
+
+
+def pre_clean():
+    """
+    Clean up the compiled directory. This makes sure we have a clean slate every time.
+    """
+    _rm_tree(krait.get_full_path(".compiled"))
+
+
 def register():
+    """
+    Register the hook in the import machinery.
+    """
     hook = CompiledImportHook()
     hook.prepare()
     sys.meta_path.append(hook)
-
