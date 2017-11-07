@@ -8,4 +8,4 @@ file_abs = os.path.abspath(__file__)
 git_root = file_abs[:file_abs.index(".git") - 1]
 auto_format_path = os.path.join(git_root, "auto-format.py")
 
-subprocess.check_call([sys.executable, auto_format_path])
+subprocess.check_call([sys.executable, auto_format_path, "--from-git"])
