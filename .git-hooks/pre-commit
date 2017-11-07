@@ -1,6 +1,11 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 import os
+import subprocess
+import sys
+
 
 file_abs = os.path.abspath(__file__)
 git_root = file_abs[:file_abs.index(".git") - 1]
-execfile(os.path.join(git_root, "auto-format.py"), {}, {})
+auto_format_path = os.path.join(git_root, "auto-format.py")
+
+subprocess.check_call([sys.executable, auto_format_path])
