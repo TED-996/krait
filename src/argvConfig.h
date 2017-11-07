@@ -6,10 +6,17 @@ class ArgvConfig {
     std::string siteRoot;
     boost::optional<u_int16_t> httpPort;
     boost::optional<u_int16_t> httpsPort;
+    bool isSingleProcess;
 
 public:
-    ArgvConfig(std::string siteRoot, boost::optional<u_int16_t> httpPort, boost::optional<u_int16_t> httpsPort)
-            : siteRoot(std::move(siteRoot)), httpPort(httpPort), httpsPort(httpsPort) {
+    ArgvConfig(std::string siteRoot,
+        boost::optional<u_int16_t> httpPort,
+        boost::optional<u_int16_t> httpsPort,
+        bool isSingleProcess)
+            : siteRoot(std::move(siteRoot))
+            , httpPort(httpPort)
+            , httpsPort(httpsPort)
+            , isSingleProcess(isSingleProcess) {
     }
 
     const std::string& getSiteRoot() const {
@@ -22,5 +29,9 @@ public:
 
     const boost::optional<u_int16_t>& getHttpsPort() const {
         return httpsPort;
+    }
+
+    bool getIsSingleProcess() const {
+        return isSingleProcess;
     }
 };

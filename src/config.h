@@ -40,6 +40,10 @@ public:
         return argvConfig.getHttpsPort();
     }
 
+    bool getIsSingleProcess() const {
+        return argvConfig.getIsSingleProcess();
+    }
+
     const std::vector<Route>& getRoutes() const {
         return routes;
     }

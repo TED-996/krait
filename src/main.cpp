@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     std::string stderrName;
     std::string portSpecifier;
     std::string siteRoot;
+    bool isSingleProcess = false;
 
     DBG("Krait debug messaging is active.");
 
@@ -29,13 +30,21 @@ int main(int argc, char* argv[]) {
     genericDesc.add_options()("help,h", "Print help information");
 
     bpo::options_description mainDesc("Krait options");
-    mainDesc.add_options()("port,p",
-        bpo::value<std::string>(&portSpecifier)->required(),
-        "Set ports for server to run on, as <http>/<https> (for example 80/443); one of them may be missing.")("stdout",
-        bpo::value<std::string>(&stdoutName)->default_value("stdout"),
-        "output logs (default is \"stdout\" for standard output)")("stderr",
-        bpo::value<std::string>(&stderrName)->default_value("stderr"),
-        "error logs (default is \"stderr\" for standard error output)");
+    // clang-format off
+    mainDesc.add_options()
+        ("port,p",
+            bpo::value<std::string>(&portSpecifier)->required(),
+            "Set ports for server to run on, as <http>/<https> (for example 80/443); one of them may be missing.")
+        ("stdout",
+            bpo::value<std::string>(&stdoutName)->default_value("stdout"),
+            "output logs (default is \"stdout\" for standard output)")
+        ("stderr",
+            bpo::value<std::string>(&stderrName)->default_value("stderr"),
+            "error logs (default is \"stderr\" for standard error output)")
+        ("single-process,s",
+            bpo::bool_switch(&isSingleProcess)->default_value(false),
+            "Run in a single process (no forks, for debugging purposes). Can only serve one client at a time.");
+    // clang-format on
 
     bpo::options_description hiddenDesc("Hidden options");
     hiddenDesc.add_options()(
@@ -73,7 +82,7 @@ int main(int argc, char* argv[]) {
         exit(10);
     }
 
-    if ((stdoutName != "stdout" ? 1 : 0) + (stderrName != "stderr" ? 1 : 0 == 1)) {
+    if ((stdoutName != "stdout" ? 1 : 0) + (stderrName != "stderr" ? 1 : 0) == 1) {
         std::cerr << "Invalid arguments: specifying options stdout or stderr to non-default values requires both to be "
                      "specified."
                   << std::endl
@@ -85,8 +94,9 @@ int main(int argc, char* argv[]) {
         startSetLoggers(stdoutName, stderrName);
     }
 
-
-    startCommanderProcess();
+    if (!isSingleProcess) {
+        startCommanderProcess();
+    }
 
     SignalManager::registerSignal(std::make_unique<ShtudownSignalHandler>());
     SignalManager::registerSignal(std::make_unique<StopSignalHandler>());
@@ -103,7 +113,7 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        ArgvConfig config(siteRoot, httpPort, httpsPort);
+        ArgvConfig config(siteRoot, httpPort, httpsPort, isSingleProcess);
         Server server(config);
 
         server.runServer();

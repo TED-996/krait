@@ -70,10 +70,16 @@ void Server::runServer() {
     }
     Loggers::logInfo("Server listening");
 
+    bool isSingleProcess = config.getIsSingleProcess();
+
     while (!shutdownRequested) {
         tryAcceptConnection();
-        SignalManager::waitStoppedChildren();
-        updateParentCaches();
+
+        if (!isSingleProcess) {
+            SignalManager::waitStoppedChildren();
+            updateParentCaches();
+        }
+
         tryCheckStdinClosed();
     }
     Loggers::logInfo("Server shutting down.");
@@ -105,33 +111,43 @@ void Server::tryAcceptConnection() {
         return;
     }
 
-    pid_t pid = fork();
-    if (pid == -1) {
-        BOOST_THROW_EXCEPTION(syscallError()
-            << stringInfo("fork(): creating process to serve socket. Is the system out of resources?")
-            << errcodeInfoDef());
-    }
-    if (pid == 0) {
+    if (!config.getIsSingleProcess()) {
+        pid_t pid = fork();
+        if (pid == -1) {
+            BOOST_THROW_EXCEPTION(syscallError()
+                << stringInfo("fork(): creating process to serve socket. Is the system out of resources?")
+                << errcodeInfoDef());
+        }
+        if (pid == 0) {
+            try {
+                SignalManager::clearPids();
+                clientSocket = std::move(newClient);
+                clientSocket->atFork();
+
+                // networkManager.detachContext();
+                networkManager.close(); // Close the listen sockets.
+
+                cacheRequestPipe.closeRead();
+
+                serveClientStart();
+            } catch (const std::exception& ex) {
+                Loggers::logErr(formatString("Exception serving client: %1%", ex.what()));
+            }
+            exit(0);
+        }
+        newClient->detachContext();
+        newClient.reset(); // Destruct the new client to close the socket.
+
+        SignalManager::addPid((int) pid);
+    } else {
         try {
-            SignalManager::clearPids();
             clientSocket = std::move(newClient);
-            clientSocket->atFork();
-
-            // networkManager.detachContext();
-            networkManager.close(); // Close the listen sockets.
-
-            cacheRequestPipe.closeRead();
-
             serveClientStart();
+            clientSocket.reset();
         } catch (const std::exception& ex) {
             Loggers::logErr(formatString("Exception serving client: %1%", ex.what()));
         }
-        exit(255); // The function above should call exit()!
     }
-    newClient->detachContext();
-    newClient.reset(); // Destruct the new client to close the socket.
-
-    SignalManager::addPid((int) pid);
 }
 
 
@@ -208,7 +224,6 @@ void Server::serveClientStart() {
     }
 
     clientSocket.reset();
-    exit(0);
 }
 
 void Server::serveRequest(Request& request) {
