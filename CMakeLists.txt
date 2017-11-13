@@ -19,9 +19,9 @@ endif()
 
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-fno-strict-aliasing -Wformat -Werror=format-security -fwrapv -Wall -g -O0")
-SET(CMAKE_CXX_FLAGS_RELEASE "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -O3 -flto -s -Wall")
-SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -O3 -flto -Wall")
-SET(CMAKE_CXX_FLAGS_MINSIZEREL "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -Os -flto -s -Wall")
+SET(CMAKE_CXX_FLAGS_RELEASE "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -O3 -s -Wall")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -O3 -Wall")
+SET(CMAKE_CXX_FLAGS_MINSIZEREL "-fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fwrapv -Os -s -Wall")
 
 
 if(DO_STATIC_BUILD)
