@@ -5,10 +5,6 @@
 #include "dbg.h"
 
 
-PythonApiManager::PythonApiManager(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner)
-        : pyEmitModule(), pyCompileModule(dispatcher, runner) {
-}
-
 void PythonApiManager::set(const Request& request, bool isWebsockets) const {
     PythonModule::krait().setGlobalRequest("request", request);
     PythonModule::krait().setGlobalNone("response");
@@ -38,4 +34,8 @@ void PythonApiManager::addHeaders(Response& response) const {
     for (const auto& it : PythonModule::krait().getGlobalTupleList("extra_headers")) {
         response.addHeader(it.first, it.second);
     }
+}
+
+void PythonApiManager::setCustomResponse(const boost::python::object& response) {
+    PythonModule::krait().setGlobal("response", response);
 }

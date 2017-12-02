@@ -9,8 +9,8 @@
 #include "dbgStopwatch.h"
 
 
-PageResponseRenderer::PageResponseRenderer(CompiledPythonRunner& runner, PyEmitModule& emitModule)
-        : runner(runner), emitModule(emitModule) {
+PageResponseRenderer::PageResponseRenderer(CompiledPythonRenderer& renderer, PyEmitModule& emitModule)
+        : renderer(renderer), emitModule(emitModule) {
     emitModule.hideInstance();
 }
 
@@ -30,7 +30,7 @@ std::unique_ptr<Response> PageResponseRenderer::renderFromModuleName(
     emitModule.showInstance();
 
     try {
-        boost::python::object responseResult = runner.run(moduleName);
+        boost::python::object responseResult = renderer.run(moduleName);
 
         if (!responseResult.is_none()) {
             // Set this up to be caught by PythonApiManager

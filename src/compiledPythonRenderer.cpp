@@ -1,10 +1,10 @@
-﻿#include "compiledPythonRunner.h"
+﻿#include "compiledPythonRenderer.h"
 #include "except.h"
 #include "pyCompileModule.h"
 #include "pythonModule.h"
 
 
-boost::python::object CompiledPythonRunner::run(boost::string_ref name) {
+boost::python::object CompiledPythonRenderer::run(boost::string_ref name) {
     PythonModule module;
     try {
         module.open(name);

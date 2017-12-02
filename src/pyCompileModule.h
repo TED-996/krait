@@ -1,14 +1,15 @@
 ﻿#pragma once
-#include "compiledPythonRunner.h"
 #include "compilerDispatcher.h"
-#include "moduleCompiler.h"
+#include "rendererDispatcher.h"
+
 
 class PyCompileModule {
     static PyCompileModule* instance;
     static boost::python::object exceptionType;
 
     CompilerDispatcher& dispatcher;
-    CompiledPythonRunner& runner;
+    RendererDispatcher& renderer;
+    SourceConverter& converter;
 
     static PyCompileModule& getInstanceOrThrow();
 
@@ -16,7 +17,7 @@ class PyCompileModule {
     void reload(boost::string_ref moduleName);
 
 public:
-    PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner);
+    PyCompileModule(CompilerDispatcher& dispatcher, RendererDispatcher& renderer, SourceConverter& converter);
     PyCompileModule(PyCompileModule&& other) noexcept;
     ~PyCompileModule();
 

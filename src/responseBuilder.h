@@ -48,11 +48,17 @@ private:
     CacheController& cacheController;
     PymlCache& pymlCache;
 
+    SourceConverter converter;
     CompilerDispatcher compiler;
-    CompiledPythonRunner compiledRunner;
 
+    PyEmitModule emitModule;
+
+    PymlRenderer pymlRenderer;
+    CompiledPythonRenderer compiledRenderer;
+    RendererDispatcher renderer;
+
+    PyCompileModule compileModule;
     PythonApiManager apiManager;
-    PageResponseRenderer renderer;
 
     std::unordered_map<std::string, std::string> contentTypeByExtension;
 

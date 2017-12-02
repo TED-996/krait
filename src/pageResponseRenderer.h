@@ -8,12 +8,12 @@
 #include <memory>
 
 class PageResponseRenderer {
-    CompiledPythonRunner& runner;
+    CompiledPythonRenderer& renderer;
 
     PyEmitModule& emitModule;
 
 public:
-    PageResponseRenderer(CompiledPythonRunner& runner, PyEmitModule& emitModule);
+    PageResponseRenderer(CompiledPythonRenderer& renderer, PyEmitModule& emitModule);
 
     std::unique_ptr<Response> renderFromPyml(const IPymlFile& pymlSource, const Request& request);
     std::unique_ptr<Response> renderFromModuleName(boost::string_ref moduleName, const Request& request);

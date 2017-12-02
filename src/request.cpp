@@ -117,12 +117,12 @@ int Request::getKeepAliveTimeout() const {
     }
 }
 
-bool Request::isUpgrade() {
+bool Request::isUpgrade() const {
     return getHeader("upgrade") != boost::none;
 }
 
 
-bool Request::isUpgrade(std::string protocol) {
+bool Request::isUpgrade(const std::string& protocol) const {
     boost::optional<std::string> upgradeHeaderOpt = getHeader("upgrade");
     if (upgradeHeaderOpt == boost::none) {
         return false;

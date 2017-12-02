@@ -55,7 +55,7 @@ def get_git_files(directory, git_directory):
     lines = [os.path.normpath(os.path.join(git_directory, l.strip()))
              for l in output.splitlines() if l and not l.isspace()]
     return [f for f in lines if
-            (f.endswith(".cpp") or f.endswith(".h")) and ".." not in os.path.relpath(f, directory)]
+            (f.endswith(".cpp") or f.endswith(".h")) and ".." not in os.path.relpath(f, directory) and os.path.exists(f)]
 
 
 def get_glob_files(directory):

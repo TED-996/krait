@@ -48,4 +48,7 @@ public:
     static void initializeModule();
     static void emit(boost::python::object value);
     static void emitRaw(boost::python::object value);
+
+    void emitStdString(std::string&& string);
+    void emitStringRef(boost::string_ref ref);
 };

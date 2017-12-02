@@ -7,11 +7,15 @@
 
 
 class PythonApiManager {
-    PyEmitModule pyEmitModule;
-    PyCompileModule pyCompileModule;
+    PyEmitModule& pyEmitModule;
+    PyCompileModule& pyCompileModule;
+
+    void set(const Request& request, bool isWebsockets) const;
 
 public:
-    PythonApiManager(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner);
+    PythonApiManager(PyEmitModule& pyEmitModule, PyCompileModule& pyCompileModule)
+            : pyEmitModule(pyEmitModule), pyCompileModule(pyCompileModule) {
+    }
 
     PyEmitModule& getPyEmitModule() {
         return pyEmitModule;
@@ -21,7 +25,16 @@ public:
         return pyCompileModule;
     }
 
-    void set(const Request& request, bool isWebsockets) const;
+    void setRegularRequest(const Request& request) {
+        set(request, false);
+    }
+
+    void setWebsocketsRequest(const Request& request) {
+        set(request, true);
+    }
+
+    static void setCustomResponse(const boost::python::object& response);
+
     std::unique_ptr<Response> getCustomResponse() const;
     bool isCustomResponse() const;
     void addHeaders(Response& response) const;

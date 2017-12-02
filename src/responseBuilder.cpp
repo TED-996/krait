@@ -21,10 +21,14 @@ ResponseBuilder::ResponseBuilder(
         , config(config)
         , cacheController(cacheController)
         , pymlCache(pymlCache)
-        , compiler(siteRoot, pymlCache)
-        , compiledRunner()
-        , apiManager(compiler, compiledRunner)
-        , renderer(compiledRunner, apiManager.getPyEmitModule()) {
+        , converter(siteRoot / ".compiled" / "_krait_compiled")
+        , compiler(pymlCache, converter)
+        , emitModule()
+        , pymlRenderer(emitModule)
+        , compiledRenderer()
+        , renderer(pymlCache, pymlRenderer, compiledRenderer)
+        , compileModule(compiler, renderer, converter)
+        , apiManager(emitModule, compileModule) {
     loadContentTypeList((getShareRoot() / "globals" / "mime.types").string());
 }
 
@@ -47,15 +51,12 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
         }
 
         boost::optional<const IPymlFile&> pymlFile;
-        std::unique_ptr<MvcPymlFile> mvcFileStorage = nullptr;
 
         if (source.sourceFilename) {
             pymlFile = getPymlFromCache(source.sourceFilename.get());
             isDynamic = pymlFile->isDynamic();
         } else if (source.sourceObject) {
             isDynamic = true;
-            mvcFileStorage = std::make_unique<MvcPymlFile>(source.sourceObject.get(), pymlCache);
-            pymlFile = *mvcFileStorage;
         } else {
             BOOST_THROW_EXCEPTION(
                 serverError() << stringInfo("ResponseBuilder::getSourceFromRequest returned empty PreResponseSource."));
@@ -67,7 +68,11 @@ std::unique_ptr<Response> ResponseBuilder::buildResponseInternal(const Request& 
             response = std::make_unique<Response>(304, "", false);
         } else {
             if (isDynamic) {
-                apiManager.set(request, isWebsockets);
+                if (!isWebsockets) {
+                    apiManager.setRegularRequest(request);
+                } else {
+                    apiManager.setWebsocketsRequest(request);
+                }
 
                 // Can always convert MVC routes.
                 if ((pymlFile->canConvertToCode() || source.sourceObject) && source.moduleName) {
@@ -188,7 +193,7 @@ std::string ResponseBuilder::expandFilename(const std::string& sourceFilename) c
 }
 
 std::string ResponseBuilder::getModuleNameFromFilename(boost::string_ref filename) const {
-    return compiler.getCompiledModuleName(filename);
+    return converter.sourceToModuleName(filename);
 }
 
 std::string ResponseBuilder::getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const {

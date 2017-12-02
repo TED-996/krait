@@ -75,9 +75,12 @@ public:
 
     bool isKeepAlive() const;
     int getKeepAliveTimeout() const;
-    bool isUpgrade();
+    bool isUpgrade() const;
 
-    bool isUpgrade(std::string protocol);
+    bool isUpgrade(const std::string& protocol) const;
+    bool isWebsockets() const {
+        return isUpgrade("websocket");
+    }
 
     void setVerb(HttpVerb verb) {
         this->verb = verb;

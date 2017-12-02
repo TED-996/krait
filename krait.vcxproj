@@ -131,7 +131,7 @@
     <ClCompile Include="src\argvConfig.cpp" />
     <ClCompile Include="src\codeAstItem.cpp" />
     <ClCompile Include="src\compiledModule.cpp" />
-    <ClCompile Include="src\compiledPythonRunner.cpp" />
+    <ClCompile Include="src\compiledPythonRenderer.cpp" />
     <ClCompile Include="src\compilerDispatcher.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
@@ -141,8 +141,11 @@
     <ClCompile Include="src\openSslManagedSocket.cpp" />
     <ClCompile Include="src\pyCompileModule.cpp" />
     <ClCompile Include="src\pyEmitModule.cpp" />
+    <ClCompile Include="src\pymlRenderer.cpp" />
     <ClCompile Include="src\pythonCodeEscapingFsm.cpp" />
     <ClCompile Include="src\raiiAlarm.cpp" />
+    <ClCompile Include="src\rendererDispatcher.cpp" />
+    <ClCompile Include="src\responseSource.cpp" />
     <ClCompile Include="src\serverSocket.cpp" />
     <ClCompile Include="src\openSslServerSocket.cpp" />
     <ClCompile Include="src\pageResponseRenderer.cpp" />
@@ -174,6 +177,7 @@
     <ClCompile Include="src\routes.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\signalManager.cpp" />
+    <ClCompile Include="src\sourceConverter.cpp" />
     <ClCompile Include="src\stringPiper.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\v2HttpParser.cpp" />
@@ -184,7 +188,7 @@
     <ClInclude Include="src\argvConfig.h" />
     <ClInclude Include="src\codeAstItem.h" />
     <ClInclude Include="src\compiledModule.h" />
-    <ClInclude Include="src\compiledPythonRunner.h" />
+    <ClInclude Include="src\compiledPythonRenderer.h" />
     <ClInclude Include="src\compilerDispatcher.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
@@ -198,8 +202,12 @@
     <ClInclude Include="src\openSslManagedSocket.h" />
     <ClInclude Include="src\pyCompileModule.h" />
     <ClInclude Include="src\pyEmitModule.h" />
+    <ClInclude Include="src\pymlRenderer.h" />
     <ClInclude Include="src\pythonCodeEscapingFsm.h" />
     <ClInclude Include="src\raiiAlarm.h" />
+    <ClInclude Include="src\rendererDispatcher.h" />
+    <ClInclude Include="src\responseSource.h" />
+    <ClInclude Include="src\sourceConverter.h" />
     <ClInclude Include="src\sslServerSocket.h" />
     <ClInclude Include="src\sslUtils.h" />
     <ClInclude Include="src\serverSocket.h" />

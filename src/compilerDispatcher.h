@@ -1,17 +1,19 @@
 ﻿#pragma once
 #include "moduleCompiler.h"
 #include "pymlCache.h"
+#include "sourceConverter.h"
 
 class CompilerDispatcher {
     boost::filesystem::path compiledRoot;
     ModuleCompiler compiler;
     PymlCache& pymlCache;
+    SourceConverter& converter;
 
     std::string getCompiledFilenameFromModuleName(const std::string& moduleName) const;
     std::string getCacheTag(boost::string_ref moduleName) const;
 
 public:
-    CompilerDispatcher(boost::filesystem::path siteRoot, PymlCache& pymlCache);
+    CompilerDispatcher(PymlCache& pymlCache, SourceConverter& converter);
 
     const ModuleCompiler& getCompiler() const {
         return compiler;
@@ -31,5 +33,5 @@ public:
     bool checkCacheTag(const std::string& moduleName) const;
     bool checkCacheTag(const std::string& moduleName, const std::string& computedTag) const;
 
-    std::string getCompiledModuleName(boost::string_ref filename) const;
+    // std::string getCompiledModuleName(boost::string_ref filename) const;
 };

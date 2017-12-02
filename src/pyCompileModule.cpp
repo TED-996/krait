@@ -8,8 +8,9 @@ PyCompileModule* PyCompileModule::instance = nullptr;
 boost::python::object PyCompileModule::exceptionType;
 
 
-PyCompileModule::PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonRunner& runner)
-        : dispatcher(dispatcher), runner(runner) {
+PyCompileModule::PyCompileModule(
+    CompilerDispatcher& dispatcher, RendererDispatcher& renderer, SourceConverter& converter)
+        : dispatcher(dispatcher), renderer(renderer), converter(converter) {
     if (instance != nullptr) {
         BOOST_THROW_EXCEPTION(serverError() << stringInfo("Multiple PyCompileModule instances"));
     }
@@ -17,7 +18,7 @@ PyCompileModule::PyCompileModule(CompilerDispatcher& dispatcher, CompiledPythonR
 }
 
 PyCompileModule::PyCompileModule(PyCompileModule&& other) noexcept
-        : dispatcher(other.dispatcher), runner(other.runner) {
+        : dispatcher(other.dispatcher), renderer(other.renderer), converter(other.converter) {
     if (instance == &other) {
         instance = this;
     }
@@ -60,7 +61,7 @@ PyCompileModule& PyCompileModule::getInstanceOrThrow() {
 }
 
 std::string PyCompileModule::convertFilename(boost::string_ref filename) {
-    return getInstanceOrThrow().dispatcher.getCompiler().escapeFilename(filename);
+    return getInstanceOrThrow().converter.sourceToModuleName(filename);
 }
 
 std::string PyCompileModule::getCompiledFile(boost::string_ref moduleName) {
@@ -68,7 +69,7 @@ std::string PyCompileModule::getCompiledFile(boost::string_ref moduleName) {
 }
 
 std::string PyCompileModule::getCompiledFileInternal(boost::string_ref moduleName) {
-    std::string sourcePath = dispatcher.getCompiler().unescapeFilename(moduleName);
+    std::string sourcePath = converter.moduleNameToSource(moduleName);
     return dispatcher.compile(sourcePath);
 }
 
@@ -91,5 +92,5 @@ void PyCompileModule::reload(boost::string_ref moduleName) {
 }
 
 void PyCompileModule::run(boost::string_ref moduleName) {
-    getInstanceOrThrow().runner.run(moduleName);
+    getInstanceOrThrow().renderer.renderEmit(moduleName);
 }
