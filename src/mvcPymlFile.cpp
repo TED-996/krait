@@ -10,12 +10,6 @@ MvcPymlFile::MvcPymlFile(const boost::python::object& ctrlClass, IPymlCache& cac
 void MvcPymlFile::setRootItem() {
     // A bit tedious, but worth it. Still bad for python compile performance, needs tokenizing and stuff :|
 
-    /*std::vector<std::unique_ptr<const IPymlItem>> rootSeq(std::move<std::initializer_list<std::unique_ptr<const
-    IPymlItem>>>({ std::make_unique<PymlItemSetCallable>(ctrlClass, "krait.mvc.init_ctrl"),  //Warning, this may break
-    if set_init_ctrl does something else! std::make_unique<PymlItemPyExec>("ctrl =
-    krait.mvc.push_ctrl(krait.mvc.init_ctrl)"), std::make_unique<PymlItemPyExec>("ctrl = krait.mvc.pop_ctrl()"),
-        std::make_unique<PymlItemEmbed>("krait.get_full_path(ctrl.get_view())", cache)
-    }));*/
     std::vector<std::unique_ptr<const IPymlItem>> rootSeq;
 
     // Warning, this may break if set_init_ctrl does something else!

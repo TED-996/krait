@@ -145,10 +145,8 @@
     <ClCompile Include="src\pythonCodeEscapingFsm.cpp" />
     <ClCompile Include="src\raiiAlarm.cpp" />
     <ClCompile Include="src\rendererDispatcher.cpp" />
-    <ClCompile Include="src\responseSource.cpp" />
     <ClCompile Include="src\serverSocket.cpp" />
     <ClCompile Include="src\openSslServerSocket.cpp" />
-    <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\pythonInitializer.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
@@ -212,7 +210,6 @@
     <ClInclude Include="src\sslUtils.h" />
     <ClInclude Include="src\serverSocket.h" />
     <ClInclude Include="src\openSslServerSocket.h" />
-    <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\pythonInitializer.h" />
     <ClInclude Include="src\responseBuilder.h" />

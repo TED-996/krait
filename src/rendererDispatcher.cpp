@@ -1,5 +1,6 @@
 ﻿#include "rendererDispatcher.h"
 #include "mvcPymlFile.h"
+#include "pythonApiManager.h"
 #include "pythonModule.h"
 
 
@@ -112,7 +113,7 @@ RendererDispatcher::StrategyPtr RendererDispatcher::dispatch(ResponseSource& sou
     // Next best thing: a compiled Python module
     // Either for a PymlFile on disk, or a MvcPymlFile.
     if (source.hasModuleName()
-        && (source.hasPymlFile() && source.getPymlFile().canConvertToCode() || source.hasMvcController())) {
+        && ((source.hasPymlFile() && source.getPymlFile().canConvertToCode()) || source.hasMvcController())) {
         return std::make_unique<CompiledRenderStrategy>(*this);
     }
 

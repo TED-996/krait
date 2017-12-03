@@ -14,6 +14,8 @@ class ResponseSource {
     boost::optional<std::string> moduleName;
     boost::optional<boost::python::object> mvcController;
 
+    std::unique_ptr<IPymlFile> ownedPymlFile;
+
 public:
     explicit ResponseSource(std::string baseFilename) : baseFilename(std::move(baseFilename)) {
         _isComplete = false;
@@ -92,5 +94,10 @@ public:
 
     bool hasMvcController() const {
         return (bool) mvcController;
+    }
+
+    const IPymlFile& setOwnedPymlFile(std::unique_ptr<IPymlFile> pymlFile) {
+        ownedPymlFile = std::move(pymlFile);
+        return *ownedPymlFile.get();
     }
 };

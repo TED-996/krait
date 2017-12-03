@@ -3,8 +3,8 @@
 #include "iteratorResult.h"
 #include "pymlCache.h"
 #include "pymlRenderer.h"
-#include "pythonApiManager.h"
 #include "responseSource.h"
+#include "sourceConverter.h"
 
 
 // TODO: split into RendererDispatcher and ResponseRendererDispatcher

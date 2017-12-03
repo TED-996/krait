@@ -101,6 +101,14 @@ void PyEmitModule::emitRaw(boost::python::object value) {
     instanceLocal->addPythonObj(std::move(strValue));
 }
 
+void PyEmitModule::emitStdString(std::string&& string) {
+    addStdString(std::move(string));
+}
+
+void PyEmitModule::emitStringRef(boost::string_ref ref) {
+    refs.emplace_back(ref);
+}
+
 PyEmitModule* PyEmitModule::getInstanceOrThrow() {
     PyEmitModule* instanceLocal = instance;
     if (instanceLocal == nullptr || hidden) {

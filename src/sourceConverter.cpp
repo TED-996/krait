@@ -5,7 +5,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <unordered_set>
 
-#define DBG_DISABLE
+//#define DBG_DISABLE
 #include "dbg.h"
 
 
@@ -17,7 +17,8 @@ void SourceConverter::extend(ResponseSource& source) const {
     if (source.hasFilename()) {
         source.setModuleName(sourceToModuleName(source.getSourceFilename()));
     } else {
-        if (source.hasModuleName()) {
+        // MVC controllers have a different module name.
+        if (source.hasModuleName() && !source.hasMvcController()) {
             std::string filename = moduleNameToSource(source.getModuleName());
             if (boost::filesystem::exists(filename)) {
                 source.setSourceFilename(std::move(filename));
@@ -32,7 +33,7 @@ void SourceConverter::extend(ResponseSource& source) const {
         source.setPymlFile(cache.get(source.getSourceFilename()));
     }
     if (source.hasMvcController()) {
-        source.setPymlFile(MvcPymlFile(source.getMvcController(), cache));
+        source.setPymlFile(source.setOwnedPymlFile(std::make_unique<MvcPymlFile>(source.getMvcController(), cache)));
     }
 
     source.setComplete();

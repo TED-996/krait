@@ -31,3 +31,17 @@ boost::python::object CompiledPythonRenderer::run(boost::string_ref name) {
 
     BOOST_THROW_EXCEPTION(compileError() << stringInfoFromFormat("Too many reloads for Python module %1%", name));
 }
+
+void CompiledPythonRenderer::prepareForEmitIteration() const {
+    emitModule.showInstance();
+    emitModule.reset();
+}
+
+void CompiledPythonRenderer::discardEmitIteration() const {
+    emitModule.reset();
+    emitModule.hideInstance();
+}
+
+IteratorResult CompiledPythonRenderer::getEmitIteratorResult() const {
+    return IteratorResult(std::move(*emitModule.getIterator()));
+}

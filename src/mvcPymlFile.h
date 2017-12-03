@@ -21,10 +21,10 @@ public:
     }
 
     const IPymlItem* getRootItem() const override {
-        return &*rootItem;
+        return rootItem.get();
     }
 
     bool canConvertToCode() const override {
-        return getRootItem()->canConvertToCode();
+        return rootItem->canConvertToCode();
     }
 };

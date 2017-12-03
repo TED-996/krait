@@ -9,10 +9,13 @@ class CompiledPythonRenderer {
     PyEmitModule& emitModule;
 
 public:
-    void prepareForEmitIteration();
+    explicit CompiledPythonRenderer(PyEmitModule& emitModule) : emitModule(emitModule) {
+    }
+
+    void prepareForEmitIteration() const;
 
     boost::python::object run(boost::string_ref name);
 
-    void discardEmitIteration();
-    IteratorResult getEmitIteratorResult();
+    void discardEmitIteration() const;
+    IteratorResult getEmitIteratorResult() const;
 };
