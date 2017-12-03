@@ -4,9 +4,7 @@
 #include "pymlCache.h"
 #include "pymlRenderer.h"
 #include "pythonApiManager.h"
-#include "response.h"
 #include "responseSource.h"
-#include <boost/optional.hpp>
 
 
 // TODO: split into RendererDispatcher and ResponseRendererDispatcher
@@ -23,40 +21,57 @@ private:
     IteratorResult getFromPymlFile(const IPymlFile& pymlFile) const;
     IteratorResult getFromCtrlClass(boost::python::object ctrlClass) const;
 
-    template<typename TReturn, typename TSrc>
-    typedef TReturn (RendererDispatcher::*GetterFunction)(TSrc src);
+public:
+    class RenderStrategy {
+    public:
+        explicit RenderStrategy(const RendererDispatcher& dispatcher) : dispatcher(dispatcher) {
+        }
+        virtual ~RenderStrategy() = default;
 
-    template<typename TReturn,
-        GetterFunction<TReturn, const IPymlFile&> pymlGetter,
-        GetterFunction<TReturn, boost::string_ref> moduleGetter,
-        GetterFunction<TReturn, boost::python::object> mvcCtrlGetter>
-    TReturn dispatch(ResponseSource& source) const {
-        converter.extend(source);
 
-        // If the pymlFile source exists, and is not dynamic, use it.
-        if (source.hasPymlFile() && source.getPymlFile().isDynamic()) {
-            return pymlGetter(source.getPymlFile());
+    protected:
+        const RendererDispatcher& dispatcher;
+
+        virtual IteratorResult get(ResponseSource& source) = 0;
+        virtual void emit(ResponseSource& source) = 0;
+
+        IteratorResult getFromModuleName(boost::string_ref moduleName) const {
+            return dispatcher.get(moduleName);
+        }
+        IteratorResult getFromPymlFile(const IPymlFile& pymlFile) const {
+            return dispatcher.get(pymlFile);
+        }
+        IteratorResult getFromCtrlClass(boost::python::object ctrlClass) const {
+            return dispatcher.get(ctrlClass);
+        }
+        void emitFromModuleName(boost::string_ref moduleName) const {
+            dispatcher.renderEmit(moduleName);
+        }
+        void emitFromPymlFile(const IPymlFile& pymlFile) const {
+            dispatcher.renderEmit(pymlFile);
+        }
+        void emitFromCtrlClass(boost::python::object ctrlClass) const {
+            dispatcher.renderEmit(ctrlClass);
         }
 
-        // Next best thing: a compiled Python module
-        // Either for a PymlFile on disk, or a MvcPymlFile.
-        if (source.hasModuleName()
-            && (source.hasPymlFile() && source.getPymlFile().canConvertToCode() || source.hasMvcController())) {
-            return moduleGetter(source.getModuleName());
+        bool extendWithPymlFile(ResponseSource& source) const {
+            return dispatcher.extendWithPymlFile(source);
+        }
+        bool extendWithModuleName(ResponseSource& source) const {
+            return dispatcher.extendWithPymlFile(source);
         }
 
-        // If no module name, make a MvcPymlFile and interpret it.
-        if (source.hasMvcController()) {
-            return mvcCtrlGetter(source.getMvcController());
-        }
+        friend class RendererDispatcher;
+    };
+    friend class RenderStrategy;
 
-        // Finally, interpret the file raw if you need.
-        if (source.hasPymlFile()) {
-            return pymlGetter(source.getPymlFile());
-        }
+private:
+    typedef std::unique_ptr<RenderStrategy> StrategyPtr;
 
-        BOOST_THROW_EXCEPTION(serverError() << stringInfo("RendererDispatcher::dispatch with no source."));
-    }
+    StrategyPtr dispatch(ResponseSource& source) const;
+
+    bool extendWithPymlFile(ResponseSource& source) const;
+    bool extendWithModuleName(ResponseSource& source) const;
 
 public:
     RendererDispatcher(PymlCache& cache,
@@ -70,14 +85,13 @@ public:
     void renderEmit(boost::string_ref moduleName) const;
     void renderEmit(boost::python::object ctrlClass) const;
     void renderEmit(ResponseSource& source) const {
-        // TODO this probably doesn't compile.
-        dispatch<void, &renderEmit, &renderEmit, &renderEmit>(source);
+        dispatch(source)->emit(source);
     }
 
     IteratorResult get(const IPymlFile& pymlFile) const;
     IteratorResult get(boost::string_ref moduleName) const;
     IteratorResult get(boost::python::object ctrlClass) const;
     IteratorResult get(ResponseSource& source) const {
-        return dispatch<IteratorResult, get, get, get>(source);
+        return dispatch(source)->get(source);
     }
 };

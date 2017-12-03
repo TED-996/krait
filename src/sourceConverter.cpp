@@ -1,17 +1,41 @@
 ﻿#include "sourceConverter.h"
 #include "except.h"
+#include "logger.h"
+#include "mvcPymlFile.h"
 #include <boost/filesystem/operations.hpp>
 #include <unordered_set>
-
 
 #define DBG_DISABLE
 #include "dbg.h"
 
 
-void SourceConverter::extend(ResponseSource& source) {
+void SourceConverter::extend(ResponseSource& source) const {
+    if (source.isComplete()) {
+        return;
+    }
+
+    if (source.hasFilename()) {
+        source.setModuleName(sourceToModuleName(source.getSourceFilename()));
+    } else {
+        if (source.hasModuleName()) {
+            std::string filename = moduleNameToSource(source.getModuleName());
+            if (boost::filesystem::exists(filename)) {
+                source.setSourceFilename(std::move(filename));
+            } else {
+                // Else, don't know what to do. It may fail later, or not maybe?
+                Loggers::logErr("Warning: SourceConverter module->filename conversion yielded nonexisting filename.");
+            }
+        }
+    }
+
     if (source.hasFilename()) {
         source.setPymlFile(cache.get(source.getSourceFilename()));
     }
+    if (source.hasMvcController()) {
+        source.setPymlFile(MvcPymlFile(source.getMvcController(), cache));
+    }
+
+    source.setComplete();
 }
 
 static std::vector<std::string> getEscapeFilenameReplacements();

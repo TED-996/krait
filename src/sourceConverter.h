@@ -17,5 +17,5 @@ public:
     std::string sourceToModuleName(boost::string_ref filename) const;
     std::string moduleNameToSource(boost::string_ref moduleName) const;
 
-    void extend(ResponseSource& source);
+    void extend(ResponseSource& source) const;
 };

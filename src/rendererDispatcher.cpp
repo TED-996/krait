@@ -39,6 +39,96 @@ void RendererDispatcher::renderEmit(boost::string_ref moduleName) const {
     compiledRenderer.run(moduleName);
 }
 
+bool RendererDispatcher::extendWithPymlFile(ResponseSource& source) const {
+    if (source.hasPymlFile()) {
+        return true;
+    }
+    converter.extend(source);
+    return source.hasPymlFile();
+}
+
+bool RendererDispatcher::extendWithModuleName(ResponseSource& source) const {
+    if (source.hasModuleName()) {
+        return true;
+    }
+    converter.extend(source);
+    return source.hasModuleName();
+}
+
+
+class CompiledRenderStrategy : public RendererDispatcher::RenderStrategy {
+public:
+    explicit CompiledRenderStrategy(const RendererDispatcher& dispatcher) : RenderStrategy(dispatcher) {
+    }
+
+protected:
+    IteratorResult get(ResponseSource& source) override {
+        if (!extendWithModuleName(source)) {
+            BOOST_THROW_EXCEPTION(
+                serverError() << stringInfo("CompiledRenderStrategy dispatched without a module name."));
+        }
+        return getFromModuleName(source.getModuleName());
+    }
+    void emit(ResponseSource& source) override {
+        if (!source.hasModuleName()) {
+            BOOST_THROW_EXCEPTION(
+                serverError() << stringInfo("CompiledRenderStrategy dispatched without a module name."));
+        }
+        emitFromModuleName(source.getModuleName());
+    }
+};
+
+class InterpretedRenderStrategy : public RendererDispatcher::RenderStrategy {
+public:
+    explicit InterpretedRenderStrategy(const RendererDispatcher& dispatcher) : RenderStrategy(dispatcher) {
+    }
+
+protected:
+    IteratorResult get(ResponseSource& source) override {
+        if (!extendWithPymlFile(source)) {
+            BOOST_THROW_EXCEPTION(
+                serverError() << stringInfo("InterpretedRenderStrategy dispatched without a Pyml fle."));
+        }
+        return getFromPymlFile(source.getPymlFile());
+    }
+    void emit(ResponseSource& source) override {
+        if (!extendWithPymlFile(source)) {
+            BOOST_THROW_EXCEPTION(
+                serverError() << stringInfo("InterpretedRenderStrategy dispatched without a Pyml fle."));
+        }
+        return emitFromPymlFile(source.getPymlFile());
+    }
+};
+
+
+RendererDispatcher::StrategyPtr RendererDispatcher::dispatch(ResponseSource& source) const {
+    converter.extend(source);
+
+    // If the pymlFile source exists, and is not dynamic, use it.
+    if (source.hasPymlFile() && source.getPymlFile().isDynamic()) {
+        return std::make_unique<InterpretedRenderStrategy>(*this);
+    }
+
+    // Next best thing: a compiled Python module
+    // Either for a PymlFile on disk, or a MvcPymlFile.
+    if (source.hasModuleName()
+        && (source.hasPymlFile() && source.getPymlFile().canConvertToCode() || source.hasMvcController())) {
+        return std::make_unique<CompiledRenderStrategy>(*this);
+    }
+
+    // If no module name, make a MvcPymlFile and interpret it.
+    if (source.hasMvcController()) {
+        return std::make_unique<InterpretedRenderStrategy>(*this);
+    }
+
+    // Finally, interpret the file raw if you need.
+    if (source.hasPymlFile()) {
+        return std::make_unique<InterpretedRenderStrategy>(*this);
+    }
+
+    BOOST_THROW_EXCEPTION(serverError() << stringInfo("RendererDispatcher::dispatch with no source."));
+}
+
 void RendererDispatcher::renderEmit(const IPymlFile& pymlFile) const {
     pymlRenderer.renderToEmit(pymlFile);
 }
