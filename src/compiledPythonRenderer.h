@@ -14,7 +14,7 @@ public:
 
     void prepareForEmitIteration() const;
 
-    boost::python::object run(boost::string_ref name);
+    boost::python::object run(boost::string_ref name) const;
 
     void discardEmitIteration() const;
     IteratorResult getEmitIteratorResult() const;

@@ -4,7 +4,7 @@
 #include "pythonModule.h"
 
 
-boost::python::object CompiledPythonRenderer::run(boost::string_ref name) {
+boost::python::object CompiledPythonRenderer::run(boost::string_ref name) const {
     PythonModule module;
     try {
         module.open(name);
