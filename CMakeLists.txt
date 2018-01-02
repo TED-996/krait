@@ -88,6 +88,8 @@ if (${USE_SSL_IMPL} STREQUAL "OpenSSL")
 	include_directories(${OPENSSL_INCLUDE_DIR})
 	set(SSL_LIB ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 else()
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSSL_LIB=0")
+
 	MESSAGE("Building WITHOUT SSL support.")
 endif()
 

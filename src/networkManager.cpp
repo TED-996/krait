@@ -1,5 +1,6 @@
 ﻿#include "networkManager.h"
 #include "except.h"
+#include "noSslServerSocket.h"
 #include "openSslServerSocket.h"
 #include "serverSocket.h"
 
@@ -15,7 +16,7 @@ struct pollfd getPollFd(int socket) {
 
 
 NetworkManager::NetworkManager(
-    boost::optional<u_int16_t> httpPort, boost::optional<u_int16_t> httpsPort, const Config& config)
+    boost::optional<uint16_t> httpPort, boost::optional<uint16_t> httpsPort, const Config& config)
         : httpSocket(nullptr), httpsSocket(nullptr) {
     if (httpPort != boost::none) {
         httpSocket = std::make_unique<ServerSocket>(ServerSocket::fromAnyOnPort(httpPort.get()));

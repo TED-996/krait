@@ -32,11 +32,11 @@ public:
         return argvConfig.getSiteRoot();
     }
 
-    const boost::optional<u_int16_t>& getHttpPort() const {
+    const boost::optional<uint16_t>& getHttpPort() const {
         return argvConfig.getHttpPort();
     }
 
-    const boost::optional<u_int16_t>& getHttpsPort() const {
+    const boost::optional<uint16_t>& getHttpsPort() const {
         return argvConfig.getHttpsPort();
     }
 

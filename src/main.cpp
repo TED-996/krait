@@ -14,7 +14,7 @@ namespace bpo = boost::program_options;
 
 void startSetLoggers(std::string outFilename, std::string errFilename);
 bool splitPorts(
-    const std::string& portSpecifier, boost::optional<u_int16_t>* httpPort, boost::optional<u_int16_t>* httpsPort);
+    const std::string& portSpecifier, boost::optional<uint16_t>* httpPort, boost::optional<uint16_t>* httpsPort);
 
 
 int main(int argc, char* argv[]) {
@@ -102,8 +102,8 @@ int main(int argc, char* argv[]) {
     SignalManager::registerSignal(std::make_unique<StopSignalHandler>());
     SignalManager::registerSignal(std::make_unique<KillSignalHandler>());
 
-    boost::optional<u_int16_t> httpPort;
-    boost::optional<u_int16_t> httpsPort;
+    boost::optional<uint16_t> httpPort;
+    boost::optional<uint16_t> httpsPort;
 
     if (!splitPorts(portSpecifier, &httpPort, &httpsPort)) {
         std::cerr << "Invalid port specifier. Format is <http>/<https>, (for example 80/443); one of them may be "
@@ -170,7 +170,7 @@ void startSetLoggers(std::string outFilename, std::string errFilename) {
 }
 
 bool splitPorts(
-    const std::string& portSpecifier, boost::optional<u_int16_t>* httpPort, boost::optional<u_int16_t>* httpsPort) {
+    const std::string& portSpecifier, boost::optional<uint16_t>* httpPort, boost::optional<uint16_t>* httpsPort) {
     const char separator = '/';
     size_t sepIdx = portSpecifier.find(separator);
 
@@ -188,7 +188,7 @@ bool splitPorts(
         if (idx != sepIdx) {
             return false;
         }
-        // The number should fit inside a u_int16_t
+        // The number should fit inside a uint16_t
         if (result > (1 << 16) - 1) {
             return false;
         }
@@ -205,7 +205,7 @@ bool splitPorts(
         if (idx != portSpecifier.size() - (sepIdx + 1)) {
             return false;
         }
-        // The number should fit inside a u_int16_t
+        // The number should fit inside a uint16_t
         if (result > (1 << 16) - 1) {
             return false;
         }

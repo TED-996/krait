@@ -12,7 +12,7 @@ public:
     explicit ServerSocket(int socket);
     ServerSocket(ServerSocket&) = delete;
     ServerSocket(ServerSocket&& source) noexcept;
-    static ServerSocket fromAnyOnPort(u_int16_t port);
+    static ServerSocket fromAnyOnPort(uint16_t port);
     ~ServerSocket() override;
 
     ServerSocket& operator=(const ServerSocket& other) = delete;

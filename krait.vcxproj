@@ -138,6 +138,7 @@
     <ClCompile Include="src\moduleCompiler.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
+    <ClCompile Include="src\noSslServerSocket.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
     <ClCompile Include="src\pyCompileModule.cpp" />
     <ClCompile Include="src\pyEmitModule.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="src\moduleCompiler.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
+    <ClInclude Include="src\noSslServerSocket.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />
     <ClInclude Include="src\pyCompileModule.h" />
     <ClInclude Include="src\pyEmitModule.h" />
