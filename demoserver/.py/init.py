@@ -7,7 +7,6 @@ import krait
 from krait import config
 from krait import mvc
 
-from ctrl import db
 
 # ==========================================
 # Standard configuration (routing & caching)
@@ -53,24 +52,15 @@ with open(os.path.join(krait.site_root, ".private", "ssl", "pk_passphrase")) as 
 
 
 # ==============================================
-# Non-standard configuration (globals & cleanup)
+# Non-standard configuration (cleanup)
 # ==============================================
 
-# Configure globals used in the program
-project_name = "Krait Demo"
-header_items = [
-    ("Home", "/"),
-    ("DB Access", "/db"),
-    ("Your Request", "/http"),
-    ("Websockets", "/ws")
-]
-db.sqlite_db = os.path.join(krait.site_root, ".private", "db")
-
+# Globals are defined in global_config.py (not standard)
 
 # Choose a function to be run when a process shuts down (either the server, or a worker) and register it.
 def exit_function():
-    print "atexit test: Demoserver process shutting down."
+    print "init.py, atexit test: Demoserver process shutting down."
     sys.stdout.flush()
 
 atexit.register(exit_function)
-print "atexit registered"
+print "init.py: atexit registered"

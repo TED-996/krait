@@ -1,12 +1,11 @@
 ﻿#pragma once
 #include "except.h"
 
-class SslUtils
-{
+class SslUtils {
 public:
-	static sslErrorInfo getSslErrorInfo() {
-		return sslErrorInfo(getSslErrors());
-	}
+    static sslErrorInfo getSslErrorInfo() {
+        return sslErrorInfo(getSslErrors());
+    }
 
-	static std::string getSslErrors();
+    static std::string getSslErrors();
 };

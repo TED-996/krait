@@ -1,8 +1,7 @@
 import sqlite3
 import krait
 
-
-sqlite_db = None
+import global_config
 
 
 # This decorator routes requests to "/db" to this controller.
@@ -14,7 +13,7 @@ class DbController(krait.mvc.CtrlBase):
 
         self.page_url = "/db"
         self.messages = None
-        self.load_db(sqlite_db)
+        self.load_db(global_config.sqlite_db)
         self.nr_comments = int(krait.cookie.get_cookie("comment_count", 0))
 
     def load_db(self, db_filename):

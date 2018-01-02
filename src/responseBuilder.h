@@ -1,75 +1,59 @@
 ﻿#pragma once
-#include <boost/filesystem/path.hpp>
-#include "request.h"
 #include "cacheController.h"
 #include "pymlCache.h"
-#include "response.h"
-#include "pageResponseRenderer.h"
 #include "pythonApiManager.h"
+#include "request.h"
+#include "response.h"
+#include <boost/filesystem/path.hpp>
 
-class ResponseBuilder
-{
+class ResponseBuilder {
 private:
-	struct PreResponseSource
-	{
-		const std::string symFilename;
-		const boost::optional<std::string> sourceFilename;
-		const boost::optional<const boost::python::object&> sourceObject;
+    boost::filesystem::path siteRoot;
+    Config& config;
+    CacheController& cacheController;
+    PymlCache& pymlCache;
 
-		PreResponseSource(const std::string& symFilename, const std::string& sourceFilename)
-			: symFilename(symFilename),
-			  sourceFilename(sourceFilename),
-			  sourceObject(boost::none) {
-		}
+    SourceConverter converter;
+    CompilerDispatcher compiler;
 
-		PreResponseSource(const std::string& symFilename, const boost::python::object& sourceObject)
-			: symFilename(symFilename),
-			  sourceFilename(boost::none),
-			  sourceObject(std::move(boost::optional<const boost::python::object&>(sourceObject))) {
-		}
+    PyEmitModule emitModule;
 
-		PreResponseSource(PreResponseSource&& other) noexcept
-			: symFilename(std::move(other.symFilename)),
-			sourceFilename(std::move(other.sourceFilename)),
-			sourceObject(std::move(other.sourceObject)) {
-		}
+    PymlRenderer pymlRenderer;
+    CompiledPythonRenderer compiledRenderer;
+    RendererDispatcher renderer;
 
-		PreResponseSource() 
-			: symFilename(""),
-			  sourceFilename(boost::none),
-			  sourceObject(boost::none) {
-		}
-	};
+    PyCompileModule compileModule;
+    PythonApiManager apiManager;
 
-	PythonApiManager apiManager;
-	PageResponseRenderer renderer;
+    std::unordered_map<std::string, std::string> contentTypeByExtension;
 
-	Config& config;
-	CacheController& cacheController;
-	PymlCache& pymlCache;
-	std::unordered_map<std::string, std::string> contentTypeByExtension;
+    ResponseSource getSourceFromRequest(const Request& request) const;
+    std::string getFilenameFromTarget(const std::string& target) const;
+    static bool pathBlocked(const std::string& path);
+    std::string expandFilename(const std::string& filename) const;
+    std::string getModuleNameFromFilename(boost::string_ref filename) const;
+    std::string getModuleNameFromMvcRoute(const boost::python::object& obj, size_t routeIdx) const;
 
-	boost::filesystem::path siteRoot;
+    const IPymlFile& getPymlFromCache(const std::string& filename) const;
 
-	PreResponseSource getSourceFromRequest(const Request& request) const;
-	std::string getFilenameFromTarget(const std::string& target) const;
-	static bool pathBlocked(const std::string& path);
-	std::string expandFilename(const std::string& filename) const;
+    void addDefaultHeaders(Response& response,
+        const std::string& filename,
+        const Request& request,
+        CacheController::CachePragma cachePragma,
+        bool isDynamic);
+    void addCacheHeaders(Response& response, const std::string& filename, CacheController::CachePragma pragma) const;
 
-	const IPymlFile& getPymlFromCache(const std::string& filename) const;
+    std::string getContentType(const std::string& filename, bool isDynamic);
+    void loadContentTypeList(const std::string& filename);
 
-	void addDefaultHeaders(Response& response, const std::string& filename, const Request& request,
-		CacheController::CachePragma cachePragma, bool isDynamic);
-	void addCacheHeaders(Response& response, const std::string& filename, CacheController::CachePragma pragma) const;
-	
-	std::string getContentType(const std::string& filename, bool isDynamic);
-	void loadContentTypeList(const std::string& filename);
+    std::unique_ptr<Response> buildResponseInternal(const Request& request, bool isWebsockets);
 
-	std::unique_ptr<Response> buildResponseInternal(const Request& request, bool isWebsockets);
 public:
+    ResponseBuilder(const boost::filesystem::path& siteRoot,
+        Config& config,
+        CacheController& cacheController,
+        PymlCache& pymlCache);
 
-	ResponseBuilder(const boost::filesystem::path& siteRoot, Config& config, CacheController& cacheController, PymlCache& pymlCache);
-
-	std::unique_ptr<Response> buildResponse(Request& request);
-	std::unique_ptr<Response> buildWebsocketsResponse(Request& request);
+    std::unique_ptr<Response> buildResponse(Request& request);
+    std::unique_ptr<Response> buildWebsocketsResponse(Request& request);
 };

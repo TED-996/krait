@@ -1,59 +1,48 @@
 #include "iteratorResult.h"
 
 #define DBG_DISABLE
-#include"dbg.h"
+#include "dbg.h"
 
-IteratorResult::IteratorResult(PymlIterator&& iterator) {
-	exhaustIterator(std::move(iterator));
+IteratorResult::IteratorResult(IResponseIterator&& iterator) {
+    exhaustIterator(std::move(iterator));
 }
 
-IteratorResult::IteratorResult(std::string fullString) {
-	strIterated.emplace_back(fullString);
+IteratorResult::IteratorResult(std::string&& fullString) {
+    if (fullString.size() != 0) {
+        ownedStrings.emplace_back(std::move(fullString));
+        strIterated.emplace_back(ownedStrings.back());
+    }
 
-	currentIdx = 0;
-	totalLength = fullString.length();
+    currentIdx = 0;
+    totalLength = fullString.length();
 }
 
+void IteratorResult::exhaustIterator(IResponseIterator&& iterator) {
+    totalLength = 0;
+    while ((*iterator).data() != nullptr) {
+        if (iterator.isTmpRef(*iterator)) {
+            ownedStrings.emplace_back((*iterator).data(), (*iterator).length());
+            strIterated.push_back(boost::string_ref(ownedStrings.back()));
+        } else {
+            strIterated.push_back(*iterator);
+        }
+        totalLength += (*iterator).length();
 
-IteratorResult::IteratorResult(IteratorResult&& other) noexcept
-	: strIterated(std::move(other.strIterated)), totalLength(other.totalLength), currentIdx(other.currentIdx){
-}
-
-IteratorResult& IteratorResult::operator=(IteratorResult&& other) noexcept {
-	if (this == &other)
-		return *this;
-	strIterated = std::move(other.strIterated);
-	totalLength = other.totalLength;
-	currentIdx = other.currentIdx;
-	return *this;
-}
-
-void IteratorResult::exhaustIterator(PymlIterator&& iterator) {
-	totalLength = 0;
-	while (*iterator != nullptr) {
-		if (iterator.isTmpStr(*iterator)) {
-			strIterated.push_back(ValueOrPtr<std::string>(**iterator));
-		}
-		else {
-			strIterated.push_back(ValueOrPtr<std::string>(*iterator));
-		}
-		totalLength += (*iterator)->length();
-
-		++iterator;
-	}
-	currentIdx = 0;
+        ++iterator;
+    }
+    currentIdx = 0;
 }
 
 const IteratorResult& IteratorResult::operator++() {
-	if (currentIdx < strIterated.size()) {
-		currentIdx++;
-	}
-	return *this;
+    if (currentIdx < strIterated.size()) {
+        currentIdx++;
+    }
+    return *this;
 }
 
-const std::string* IteratorResult::operator*() {
-	if (currentIdx >= strIterated.size()) {
-		return nullptr;
-	}
-	return strIterated[currentIdx].get();
+boost::string_ref IteratorResult::operator*() {
+    if (currentIdx >= strIterated.size()) {
+        return boost::string_ref();
+    }
+    return strIterated[currentIdx];
 }

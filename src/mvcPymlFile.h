@@ -1,21 +1,30 @@
 ﻿#pragma once
-#include <boost/python/object.hpp>
-#include "IPymlFile.h"
 #include "IPymlCache.h"
+#include "IPymlFile.h"
+#include <boost/python/object.hpp>
 
-class MvcPymlFile : public IPymlFile
-{
-	const boost::python::object& ctrlClass;
-	std::unique_ptr<const IPymlItem> rootItem;
-	IPymlCache& cache;
+class MvcPymlFile : public IPymlFile {
+    const boost::python::object& ctrlClass;
+    std::unique_ptr<const IPymlItem> rootItem;
+    IPymlCache& cache;
 
 private:
-	void setRootItem();
+    void setRootItem();
 
 public:
-	MvcPymlFile(const boost::python::object& ctrlClass, IPymlCache& cache);
+    MvcPymlFile(const boost::python::object& ctrlClass, IPymlCache& cache);
 
-	bool isDynamic() const override;
-	std::string runPyml() const override;
-	const IPymlItem* getRootItem() const override;
+    std::string runPyml() const override;
+
+    bool isDynamic() const override {
+        return rootItem->isDynamic();
+    }
+
+    const IPymlItem* getRootItem() const override {
+        return rootItem.get();
+    }
+
+    bool canConvertToCode() const override {
+        return rootItem->canConvertToCode();
+    }
 };

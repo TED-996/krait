@@ -41,7 +41,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
-    <RemoteRootDir>~/vs_projects</RemoteRootDir>
+    <RemoteRootDir>/home/ted/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -51,7 +51,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
-    <RemoteRootDir>~/vs_projects</RemoteRootDir>
+    <RemoteRootDir>/home/ted/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -61,7 +61,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
-    <RemoteRootDir>~/vs_projects</RemoteRootDir>
+    <RemoteRootDir>/home/ted/vs_projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -74,10 +74,10 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
-    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <RemoteBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/bin/krait</RemoteBuildOutputs>
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
@@ -92,10 +92,10 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
-    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <RemoteBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/bin/krait</RemoteBuildOutputs>
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
@@ -110,10 +110,10 @@
     <RemoteBuildOutputs>$(RemoteProjectDir)/build;$(RemoteBuildOutputs)</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <RemoteBuildCommandLine>make -j5</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean &amp; make -j5</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
-    <RemoteBuildOutputs>$(RemoteProjectDir)/build/krait;$(RemoteProjectDir)/build/krait-cmdr;$(RemoteBuildOutputs)</RemoteBuildOutputs>
+    <RemoteBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean &amp;&amp; make -C $(RemoteProjectDir) -j5</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>cmake $(RemoteProjectDir) &amp;&amp; make -C $(RemoteProjectDir) clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build/bin/krait</RemoteBuildOutputs>
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);CMakeLists.txt;src\CMakeLists.txt</SourcesToCopyRemotelyOverride>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
@@ -129,15 +129,24 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\argvConfig.cpp" />
+    <ClCompile Include="src\codeAstItem.cpp" />
+    <ClCompile Include="src\compiledModule.cpp" />
+    <ClCompile Include="src\compiledPythonRenderer.cpp" />
+    <ClCompile Include="src\compilerDispatcher.cpp" />
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\managedSocket.cpp" />
+    <ClCompile Include="src\moduleCompiler.cpp" />
     <ClCompile Include="src\mvcPymlFile.cpp" />
     <ClCompile Include="src\networkManager.cpp" />
     <ClCompile Include="src\openSslManagedSocket.cpp" />
+    <ClCompile Include="src\pyCompileModule.cpp" />
+    <ClCompile Include="src\pyEmitModule.cpp" />
+    <ClCompile Include="src\pymlRenderer.cpp" />
+    <ClCompile Include="src\pythonCodeEscapingFsm.cpp" />
     <ClCompile Include="src\raiiAlarm.cpp" />
+    <ClCompile Include="src\rendererDispatcher.cpp" />
     <ClCompile Include="src\serverSocket.cpp" />
     <ClCompile Include="src\openSslServerSocket.cpp" />
-    <ClCompile Include="src\pageResponseRenderer.cpp" />
     <ClCompile Include="src\pythonApiManager.cpp" />
     <ClCompile Include="src\pythonInitializer.cpp" />
     <ClCompile Include="src\responseBuilder.cpp" />
@@ -162,11 +171,11 @@
     <ClCompile Include="src\rawPythonPymlParser.cpp" />
     <ClCompile Include="src\regexList.cpp" />
     <ClCompile Include="src\request.cpp" />
-    <ClCompile Include="src\requestParser.cpp" />
     <ClCompile Include="src\response.cpp" />
     <ClCompile Include="src\routes.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\signalManager.cpp" />
+    <ClCompile Include="src\sourceConverter.cpp" />
     <ClCompile Include="src\stringPiper.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\v2HttpParser.cpp" />
@@ -175,20 +184,32 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\argvConfig.h" />
+    <ClInclude Include="src\codeAstItem.h" />
+    <ClInclude Include="src\compiledModule.h" />
+    <ClInclude Include="src\compiledPythonRenderer.h" />
+    <ClInclude Include="src\compilerDispatcher.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\dbgStopwatch.h" />
     <ClInclude Include="src\IManagedSocket.h" />
+    <ClInclude Include="src\IResponseIterator.h" />
     <ClInclude Include="src\IServerSocket.h" />
     <ClInclude Include="src\managedSocket.h" />
+    <ClInclude Include="src\moduleCompiler.h" />
     <ClInclude Include="src\mvcPymlFile.h" />
     <ClInclude Include="src\networkManager.h" />
     <ClInclude Include="src\openSslManagedSocket.h" />
+    <ClInclude Include="src\pyCompileModule.h" />
+    <ClInclude Include="src\pyEmitModule.h" />
+    <ClInclude Include="src\pymlRenderer.h" />
+    <ClInclude Include="src\pythonCodeEscapingFsm.h" />
     <ClInclude Include="src\raiiAlarm.h" />
+    <ClInclude Include="src\rendererDispatcher.h" />
+    <ClInclude Include="src\responseSource.h" />
+    <ClInclude Include="src\sourceConverter.h" />
     <ClInclude Include="src\sslServerSocket.h" />
     <ClInclude Include="src\sslUtils.h" />
     <ClInclude Include="src\serverSocket.h" />
     <ClInclude Include="src\openSslServerSocket.h" />
-    <ClInclude Include="src\pageResponseRenderer.h" />
     <ClInclude Include="src\pythonApiManager.h" />
     <ClInclude Include="src\pythonInitializer.h" />
     <ClInclude Include="src\responseBuilder.h" />
@@ -199,7 +220,6 @@
     <ClInclude Include="src\except.h" />
     <ClInclude Include="src\fileCache.h" />
     <ClInclude Include="src\formatHelper.h" />
-    <ClInclude Include="src\fsm.h" />
     <ClInclude Include="src\fsmV2.h" />
     <ClInclude Include="src\http.h" />
     <ClInclude Include="src\IPymlCache.h" />
@@ -218,7 +238,6 @@
     <ClInclude Include="src\rawPythonPymlParser.h" />
     <ClInclude Include="src\regexList.h" />
     <ClInclude Include="src\request.h" />
-    <ClInclude Include="src\requestParser.h" />
     <ClInclude Include="src\response.h" />
     <ClInclude Include="src\routes.h" />
     <ClInclude Include="src\server.h" />
@@ -232,6 +251,18 @@
     <ClInclude Include="src\websocketsTypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="demoserver\.private\ssl\cert.pem">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.private\ssl\key.pem">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.private\ssl\pk_passphrase">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="demoserver\.py\global_config.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="demoserver\.py\init.py">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Script</FileType>
@@ -317,9 +348,6 @@
     <None Include="demoserver\css\ws.css">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="demoserver\db.py">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="demoserver\fonts\glyphicons-halflings-regular.eot">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -330,12 +358,6 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="demoserver\fonts\glyphicons-halflings-regular.woff2">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="demoserver\http.py">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="demoserver\index.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="demoserver\js\bootstrap.js">
@@ -356,16 +378,21 @@
     <None Include="demoserver\js\websocket_ticker.js">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="demoserver\ws.py">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="demoserver\ws_socket.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="globals\mime.types">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="py\krait\config.py" />
+    <None Include="krait-cmdr">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="profile_stopwatch_logs.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\config.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="py\krait\cookie.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -378,17 +405,28 @@
     <None Include="py\krait\websockets.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="py\krait\_http_request.py" />
-    <None Include="py\krait\_http_response.py" />
-    <None Include="py\krait\_internal\python-setup.py">
+    <None Include="py\krait\_http_request.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
     </None>
-    <None Include="py\krait\_internal\site-setup.py">
+    <None Include="py\krait\_http_response.py">
       <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
     </None>
     <None Include="py\krait\__init__.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\__internal\compile_imports.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\__internal\mvc_compiler.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\__internal\python-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\__internal\site-setup.py">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="py\krait\__internal\__init__.py">
       <DeploymentContent>true</DeploymentContent>
     </None>
   </ItemGroup>
@@ -409,12 +447,14 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <RemotePreBuildEvent>
-      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+      <Command>
+      </Command>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <RemotePreBuildEvent>
-      <Message>Generate makefile</Message>
+      <Message>
+      </Message>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -429,12 +469,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemotePreBuildEvent>
-      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+      <Command>
+      </Command>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemotePreBuildEvent>
-      <Message>Generate makefile</Message>
+      <Message>
+      </Message>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -449,12 +491,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <RemotePreBuildEvent>
-      <Command>mkdir -p $(RemoteProjectDir)/build &amp;&amp; cmake $(RemoteProjectDir)</Command>
+      <Command>
+      </Command>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <RemotePreBuildEvent>
-      <Message>Generate makefile</Message>
+      <Message>
+      </Message>
     </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
