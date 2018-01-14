@@ -257,13 +257,36 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
                     }
 
                     // We can't end on a backslash (or we can, but we need complicated counting.)
-                    while (partOnLineLength < partLeftLength && partOnLineLength != 0
-                        && part[lastIdx + partOnLineLength - 1] == '\\') {
-                        partOnLineLength++;
+                    // Also, things like \xXX and \uXXXX really throw a wrench here.
+                    size_t lastBackslash = -1;
+                    // max(..., 1) not 0 because it's no worry if it's the first character.
+                    // (as long as the line length is not <= 6, which it shouldn't be)
+                    // (unless it's the last chars in which case it should already be a vaild
+
+                    size_t lastRelevantBackslash = std::max(partOnLineLength - 6, (size_t) 1);
+                    for (size_t i = partOnLineLength - 1; i >= lastRelevantBackslash; i--) {
+                        if (part[lastIdx + i] == '\\') {
+                            lastBackslash = i;
+                            break;
+                        }
+                    }
+                    if (lastBackslash != -1) {
+                        DBG_FMT("Backslash found, %1% out of %2% (part = %3%)",
+                            lastBackslash,
+                            partOnLineLength,
+                            part.substr(lastIdx, partOnLineLength));
+                        // Increment till we're at least 6 (!!) chars away from a backslash.
+                        // This can be optimized, but it's no priority.
+                        while (partOnLineLength < partLeftLength && partOnLineLength - lastBackslash < 6) {
+                            partOnLineLength++;
+                            if (part[lastIdx + partOnLineLength - 1] == '\\') {
+                                lastBackslash = partOnLineLength - 1;
+                            }
+                        }
                     }
 
-                    // Don't get caught up in terminators and don't leave very short lines, it's more wasteful.
-                    if (partOnLineLength < partLeftLength && partLeftLength - partOnLineLength <= 5) {
+                    // Don't get caught up in terminators and don't leave very short lines, it's more wasteful
+                    if (partOnLineLength < partLeftLength && partLeftLength - partOnLineLength <= 6) {
                         // Just give it all.
                         partOnLineLength = partLeftLength;
                     }

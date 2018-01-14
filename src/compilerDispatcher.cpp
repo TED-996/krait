@@ -5,8 +5,10 @@
 #include "dbg.h"
 
 
-CompilerDispatcher::CompilerDispatcher(PymlCache& pymlCache, SourceConverter& converter)
+CompilerDispatcher::CompilerDispatcher(
+    boost::filesystem::path siteRoot, PymlCache& pymlCache, SourceConverter& converter)
         : compiler(), pymlCache(pymlCache), converter(converter) {
+    compiledRoot = siteRoot / ".compiled" / "_krait_compiled";
 }
 
 std::string CompilerDispatcher::compile(const std::string& sourcePath) {

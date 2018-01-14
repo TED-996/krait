@@ -147,6 +147,9 @@ class CompiledImportHook(object):
                 raise ValueError("CompiledImportHook.Loader reused.")
 
             try:
+                print("!!!!!!: imp load module:", fullname, self.file, self.pathname, self.description)
+                sys.stdout.flush()
+
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
                 mod.__loader__ = self
 
@@ -183,7 +186,9 @@ def pre_clean():
     """
     Clean up the compiled directory. This makes sure we have a clean slate every time.
     """
-    _rm_tree(krait.get_full_path(".compiled"))
+    compiled_path = krait.get_full_path(".compiled")
+    if os.path.exists(compiled_path):
+        _rm_tree(compiled_path)
 
 
 def register():

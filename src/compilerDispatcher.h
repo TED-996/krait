@@ -13,7 +13,7 @@ class CompilerDispatcher {
     std::string getCacheTag(boost::string_ref moduleName) const;
 
 public:
-    CompilerDispatcher(PymlCache& pymlCache, SourceConverter& converter);
+    CompilerDispatcher(boost::filesystem::path siteRoot, PymlCache& pymlCache, SourceConverter& converter);
 
     const ModuleCompiler& getCompiler() const {
         return compiler;
