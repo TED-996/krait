@@ -64,7 +64,7 @@ std::unique_ptr<IManagedSocket> NetworkManager::acceptTimeout(int timeoutMs) {
         return nullptr;
     }
 
-    for (int i = 0; i < pollFds.size(); i++) {
+    for (size_t i = 0; i < pollFds.size(); i++) {
         if (pollFds[i].revents == POLLIN) {
             return sockets[i].get().accept();
         }

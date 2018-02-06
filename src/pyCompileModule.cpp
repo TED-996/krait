@@ -3,6 +3,9 @@
 #include <Python.h>
 #include <boost/python.hpp>
 
+//#define DBG_DISABLE
+#include "dbg.h"
+
 
 PyCompileModule* PyCompileModule::instance = nullptr;
 boost::python::object PyCompileModule::exceptionType;

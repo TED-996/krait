@@ -106,7 +106,7 @@ RendererDispatcher::StrategyPtr RendererDispatcher::dispatch(ResponseSource& sou
     converter.extend(source);
 
     // If the pymlFile source exists, and is not dynamic, use it.
-    if (source.hasPymlFile() && source.getPymlFile().isDynamic()) {
+    if (source.hasPymlFile() && !source.getPymlFile().isDynamic()) {
         return std::make_unique<InterpretedRenderStrategy>(*this);
     }
 

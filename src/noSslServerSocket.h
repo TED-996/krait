@@ -39,7 +39,7 @@ public:
 
     static NoSslServerSocket fromAnyOnPort(uint16_t port, const Config& config) {
         throwErrorNoSsl();
-        return NoSslServerSocket(config, -1)
+        return NoSslServerSocket(config, -1);
     }
 };
 

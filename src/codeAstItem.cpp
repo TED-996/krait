@@ -271,10 +271,6 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
                         }
                     }
                     if (lastBackslash != -1) {
-                        DBG_FMT("Backslash found, %1% out of %2% (part = %3%)",
-                            lastBackslash,
-                            partOnLineLength,
-                            part.substr(lastIdx, partOnLineLength));
                         // Increment till we're at least 6 (!!) chars away from a backslash.
                         // This can be optimized, but it's no priority.
                         while (partOnLineLength < partLeftLength && partOnLineLength - lastBackslash < 6) {

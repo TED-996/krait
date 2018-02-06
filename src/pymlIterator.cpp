@@ -68,5 +68,10 @@ PymlIterator& PymlIterator::operator++() {
 }
 
 bool PymlIterator::isTmpRef(const boost::string_ref& ref) const {
-    return ref.data() == tmpStr.data();
+    bool result = ref.data() >= tmpStr.data() && ref.data() + ref.size() <= tmpStr.data() + tmpStr.size();
+    if (result) {
+        // DBG("------------!!!! this IS a tmpStr");
+    }
+
+    return result;
 }

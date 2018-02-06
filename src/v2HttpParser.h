@@ -3,8 +3,6 @@
 #include "request.h"
 #include <string>
 
-//#define DBG_DISABLE
-#include "dbg.h"
 
 class IV2HttpParser {
 public:
