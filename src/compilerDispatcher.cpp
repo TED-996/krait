@@ -1,7 +1,7 @@
 ﻿#include "compilerDispatcher.h"
 #include "utils.h"
 
-//#define DBG_DISABLE
+#define DBG_DISABLE
 #include "dbg.h"
 
 

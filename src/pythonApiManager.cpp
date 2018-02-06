@@ -39,3 +39,13 @@ void PythonApiManager::addHeaders(Response& response) const {
 void PythonApiManager::setCustomResponse(const boost::python::object& response) {
     PythonModule::krait().setGlobal("response", response);
 }
+
+boost::optional<std::string> PythonApiManager::getCustomContentType() const {
+    boost::optional<std::string> result;
+    boost::python::object content_type = PythonModule::krait().getGlobalVariable("_content_type");
+    if (content_type.is_none()) {
+        return result;
+    }
+    result = PythonModule::toStdString(content_type);
+    return result;
+}

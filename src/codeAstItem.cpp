@@ -166,7 +166,7 @@ void CodeAstItem::getCodeToString(size_t indentLevel, std::string& destination) 
 
 void CodeAstItem::getCodeToStream(size_t indentLevel, std::ostream& destination) const {
     if (code.length() != 0) {
-        for (int i = 0; i < indentLevel; i++) {
+        for (size_t i = 0; i < indentLevel; i++) {
             destination << indent.data;
         }
         destination << code;
@@ -258,7 +258,7 @@ CodeAstItem CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref> p
 
                     // We can't end on a backslash (or we can, but we need complicated counting.)
                     // Also, things like \xXX and \uXXXX really throw a wrench here.
-                    size_t lastBackslash = -1;
+                    int lastBackslash = -1;
                     // max(..., 1) not 0 because it's no worry if it's the first character.
                     // (as long as the line length is not <= 6, which it shouldn't be)
                     // (unless it's the last chars in which case it should already be a vaild

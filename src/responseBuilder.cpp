@@ -1,5 +1,4 @@
-﻿#include <fstream>
-#include "responseBuilder.h"
+﻿#include "responseBuilder.h"
 #include "logger.h"
 #include "mvcPymlFile.h"
 #include "path.h"
@@ -7,6 +6,7 @@
 #include "utils.h"
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
+#include <fstream>
 
 
 //#define DBG_DISABLE
@@ -223,20 +223,21 @@ void ResponseBuilder::addCacheHeaders(
 std::string ResponseBuilder::getContentType(const std::string& filename, bool isDynamic) {
     std::string extension;
 
-    // TODO: Move these checks to PythonApiManager
-    if (!isDynamic || PythonModule::krait().checkIsNone("_content_type")) {
+    boost::optional<std::string> customContentType = boost::none;
+    if (isDynamic) {
+        customContentType = apiManager.getCustomContentType();
+    }
+    if (!customContentType) {
         bf::path filePath(filename);
         extension = filePath.extension().string();
         if (extension == ".pyml") {
             extension = filePath.stem().extension().string();
         }
     } else {
-        std::string varContentType = PythonModule::krait().getGlobalStr("_content_type");
-
-        if (!ba::starts_with(varContentType, "ext/")) {
-            return varContentType;
+        if (!ba::starts_with(customContentType.get(), "ext/")) {
+            return std::move(customContentType.get());
         } else {
-            extension = varContentType.substr(3); // strlen("ext")
+            extension = customContentType->substr(3); // strlen("ext")
             extension[0] = '.'; // /"extension" to ".extension"
         }
     }

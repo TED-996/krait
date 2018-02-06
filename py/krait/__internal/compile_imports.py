@@ -147,9 +147,6 @@ class CompiledImportHook(object):
                 raise ValueError("CompiledImportHook.Loader reused.")
 
             try:
-                print("!!!!!!: imp load module:", fullname, self.file, self.pathname, self.description)
-                sys.stdout.flush()
-
                 mod = imp.load_module(fullname, self.file, self.pathname, self.description)
                 mod.__loader__ = self
 

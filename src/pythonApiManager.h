@@ -38,4 +38,6 @@ public:
     std::unique_ptr<Response> getCustomResponse() const;
     bool isCustomResponse() const;
     void addHeaders(Response& response) const;
+
+    boost::optional<std::string> getCustomContentType() const;
 };

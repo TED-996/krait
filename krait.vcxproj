@@ -82,7 +82,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1;__GNUG__=1;__cplusplus=201402L</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -100,7 +100,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1;__GNUG__=1;__cplusplus=201402L</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -118,7 +118,7 @@
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <NMakeIncludeSearchPath>$(SolutionDir)sdk\include;$(SolutionDir)sdk\include\python2.7;$(SolutionDir)sdk\include\x86_64-linux-gnu;$(ProjectDir)py;$(ProjectDir)demoserver\.ctrl</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>SSL_LIB=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>SSL_LIB=1;__GNUG__=1;__cplusplus=201402L</NMakePreprocessorDefinitions>
     <AdditionalOptions>/U__clang__ /D__cplusplus=201402L</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
