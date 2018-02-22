@@ -202,6 +202,7 @@ void V2HttpParser::addHeader(std::string&& key, std::string&& value) {
 
     // This will NOT invoke a move constructor because 'key' is still an lvalue, even if it's of an rvalue reference
     // type.
+    // This will be a copy.
     lastHeaderKey = key;
 
     auto existingHeader = this->headers.find(key);
@@ -243,6 +244,16 @@ void V2HttpParser::extendHeader(std::string&& value) {
 
 void V2HttpParser::onBodyStart() {
     this->state = ParserState::InBody;
+
+    auto it = headers.find("expect");
+    if (it != headers.end()) {
+        if (it->second == "100-continue") {
+            state = ParserState::Continue;
+        } else {
+            onError(417, "Expectation Failed: unknown Expect header name");
+        }
+    }
+    // Technically other expectations are not met
 }
 
 void V2HttpParser::setBody(std::string&& body) {
@@ -254,6 +265,14 @@ void V2HttpParser::onError(int statusCode, std::string&& reason) {
 
     this->errorStatusCode = statusCode;
     this->errorMessage = std::move(reason);
+}
+
+
+void V2HttpParser::onContinue() {
+    if (this->state != ParserState::Continue) {
+        BOOST_THROW_EXCEPTION(serverError() << stringInfo("V2HttpParser::onContinue called in non-Continue state"));
+    }
+    this->state = ParserState::InBody;
 }
 
 void V2HttpParser::consume(char* start, size_t length) {

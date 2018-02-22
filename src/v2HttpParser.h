@@ -15,6 +15,7 @@ public:
     virtual void onBodyStart() = 0;
     virtual void setBody(std::string&& body) = 0;
     virtual void onError(int statusCode, std::string&& reason) = 0;
+    virtual void onContinue() = 0;
 };
 
 class V2HttpFsm : public FsmV2 {
@@ -189,7 +190,7 @@ class V2HttpParser : public IV2HttpParser {
     int errorStatusCode;
     std::string errorMessage;
 
-    enum class ParserState { InMethod, InUrl, InVersion, InHeaders, InBody, Error };
+    enum class ParserState { InMethod, InUrl, InVersion, InHeaders, InBody, Error, Continue };
     ParserState state;
 
     int maxBodyLegth;
@@ -214,6 +215,7 @@ public:
     void onBodyStart() override;
     void setBody(std::string&& body) override;
     void onError(int statusCode, std::string&& reason) override;
+    void onContinue() override;
 
     void consume(char* start, size_t length);
     std::unique_ptr<Request> getParsed();
@@ -223,6 +225,12 @@ public:
     }
     bool isFinished() const {
         return state == ParserState::InBody && bodyBytesLeft == 0;
+    }
+    bool isContinue() const {
+        return state == ParserState::Continue;
+    }
+    bool isStop() const {
+        return isError() || isContinue();
     }
     int getErrorStatusCode() const {
         return errorStatusCode;

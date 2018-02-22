@@ -152,6 +152,12 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
                     networkError() << stringInfoFromFormat("Error parsing HTTP request. No additional info."));
             }
         }
+
+        if (parser.isContinue()) {
+            Loggers::logInfo("Expected 100-continue, responding with 100");
+            respondWithObject(Response(100, std::string(), false));
+            parser.onContinue();
+        }
     }
 
     if (parser.isError()) {
@@ -231,6 +237,12 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
                 BOOST_THROW_EXCEPTION(
                     networkError() << stringInfoFromFormat("Error parsing HTTP request. No additional info."));
             }
+        }
+
+        if (parser.isContinue()) {
+            Loggers::logInfo("Expected 100-continue, responding with 100");
+            respondWithObject(Response(100, std::string(), false));
+            parser.onContinue();
         }
     }
 
