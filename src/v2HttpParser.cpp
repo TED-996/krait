@@ -96,10 +96,12 @@ void V2HttpFsm::init() {
     add(afterHeaderKey, new Simple('\t', afterHeaderKey));
     add(afterHeaderKey, new Discard(new Always(inHeaderValue)));
 
-    add(inHeaderValue, new HttpAddHeaderTransition(&parser, new Push(new Simple('\r', afterHeaderValue))));
+    add(inHeaderValue, new HttpAddHeaderTransition(&parser, new Push(new Skip(new Simple('\r', afterHeaderValue)))));
     add(inHeaderValue, new Always(inHeaderValue));
 
     add(afterHeaderValue, new Simple('\n', newLine));
+    add(afterHeaderValue,
+        new HttpErrorTransition(400, "Incomplete CR-LF after header.", &parser, new Always(errorState)));
 
     add(beforeHeaderExtension, new Simple(' ', beforeHeaderExtension));
     add(beforeHeaderExtension, new Simple('\t', beforeHeaderExtension));

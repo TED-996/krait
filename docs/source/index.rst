@@ -34,6 +34,7 @@ Krait has most of the features that web apps need:
 * Full control of responses & cookies from Python
 * MVC framework with fully-featured templating language (also simple, and elegant!)
 * Near-complete compatibility with HTTP/1.1
+* HTTPS support
 * Websockets support
 * Open-source, under MIT
 
@@ -43,10 +44,8 @@ What is still on the way?
 The server is still in development, so a few features are still on the way. Before v1.0, the following
 features are planned to be complete:
 
-* HTTPS support
 * Easy to understand and pinpoint error messages
 * Comprehensive documentation, tutorials, and examples
-* A performance and throughput upgrade
 * UTF-8 compatibility
 * More flexible routing
 * Hopefully, a Windows port

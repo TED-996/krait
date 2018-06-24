@@ -372,3 +372,5 @@ callgrind-out/*
 docs/build/*
 *.nocommit*
 CMakeSettings.json
+.vscode/tags
+.vscode/settings.json

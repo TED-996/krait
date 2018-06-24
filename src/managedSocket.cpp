@@ -212,6 +212,7 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 
         bool shouldRetry;
         // TODO FIXME: this timeout is always too large (up to a **doubling** of the allowed timeout)
+        // WAIT: is this necessary? we just polled true, can we block?
         int bytesRead = read(buffer, sizeof(buffer), timeoutMs, &shouldRetry);
 
         if (shouldRetry) {

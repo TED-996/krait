@@ -252,7 +252,7 @@ void V2PymlParser::pushPymlWorkingForIn(std::string&& entry, std::string&& colle
 }
 
 
-V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 60) {
+V2PymlParserFsm::V2PymlParserFsm() : FsmV2(30, 64) {
     parser = nullptr;
     init();
 }
@@ -343,6 +343,8 @@ void V2PymlParserFsm::init() {
     // Quotes inside if condition
     addStringLiteralParser(ifRoot, ifRoot, '\"', '\\');
     addStringLiteralParser(ifRoot, ifRoot, '\'', '\\');
+    // dictionaries inside if condition (these contain colons)
+    addBlockParser(forCollection, forCollection, '{', '}');
     // Finish if
     add(ifRoot, new PymlAddIfTransition(&parser, new Skip(new Simple(':', start))));
     // Continue if condition
@@ -384,6 +386,8 @@ void V2PymlParserFsm::init() {
     add(forEntry, new Always(forEntry));
     // actual "in"
     addBulkParser(forPreIn, forPostIn, forEntry, "in");
+    // another whitespace, stay here (keep savepoint)
+    add(forPreIn, new Whitespace(forPreIn));
     // Otherwise, entry not finished.
     add(forPreIn, new Always(forEntry, false));
     // If whitespace after "in"
@@ -393,6 +397,8 @@ void V2PymlParserFsm::init() {
     // String literals in for collection
     addStringLiteralParser(forCollection, forCollection, '\"', '\\');
     addStringLiteralParser(forCollection, forCollection, '\'', '\\');
+    // Dictionaries inside for collection (these contain colons)
+    addBlockParser(forCollection, forCollection, '{', '}');
     // End of collection
     add(forCollection, new PymlAddForInTransition(&parser, new Push(new Skip(new Simple(':', start)))));
     // Continue for collection
@@ -465,8 +471,9 @@ void V2PymlParserFsm::init() {
     // Escape strings
     addStringLiteralParser(evalRawRoot, evalRawRoot, '\"', '\\');
     addStringLiteralParser(evalRawRoot, evalRawRoot, '\'', '\\');
-    // Paranthesize code to escape spaces
+    // Paranthesize or { ... } code to escape spaces
     addBlockParser(evalRawRoot, evalRawRoot, '(', ')');
+    addBlockParser(evalRawRoot, evalRawRoot, '{', '}');
     // Continue PyEvalRaw
     add(evalRawRoot, new Always(evalRawRoot));
 
@@ -479,9 +486,10 @@ void V2PymlParserFsm::init() {
     // Escape strings
     addStringLiteralParser(evalRoot, evalRoot, '\"', '\\');
     addStringLiteralParser(evalRoot, evalRoot, '\'', '\\');
-    // Paranthesize code to escape spaces
+    // Paranthesize or { ... } code to escape spaces
     addBlockParser(evalRoot, evalRoot, '(', ')');
-    // Continue PyEvalRaw
+    addBlockParser(evalRoot, evalRoot, '{', '}');
+    // Continue PyEval
     add(evalRoot, new Always(evalRoot));
 
     addFinalActionToMany([=](FsmV2& fsm) { finalAddPymlStr(); }, {start, atRoot, atRoot2});
