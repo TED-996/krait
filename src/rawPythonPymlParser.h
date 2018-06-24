@@ -2,19 +2,13 @@
 #include "IPymlParser.h"
 #include "pymlItems.h"
 
-class RawPythonPymlParser : public IPymlParser
-{
-	IPymlCache& cache;
-	PymlItemPyExec mainExec;
-	PymlItemSeq rootSeq;
-	PymlItemIf ctrlCondition;
-	PymlItemSeq embedRootSeq;
-	PymlItemPyExec embedSetupExec;
-	PymlItemEmbed viewEmbed;
-	PymlItemPyExec embedCleanupExec;
-public:
-	RawPythonPymlParser(IPymlCache& cache);
-	void consume(std::string::iterator start, std::string::iterator end) override;
+class RawPythonPymlParser : public IPymlParser {
+    IPymlCache& cache;
+    std::unique_ptr<const PymlItemSeq> rootSeq;
 
-	const IPymlItem* getParsed() override;
+public:
+    RawPythonPymlParser(IPymlCache& cache);
+    void consume(std::string::iterator start, std::string::iterator end) override;
+
+    std::unique_ptr<const IPymlItem> getParsed() override;
 };

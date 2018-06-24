@@ -1,13 +1,17 @@
+import krait
+from krait import mvc
 import time
-import random
 
 
-class IndexController(object):
+# This decorator routes requests to "/" to this controller.
+# This module MUST be imported, otherwise routing to this page won't work.
+@mvc.route_ctrl_decorator(url="/")
+class IndexController(mvc.CtrlBase):
     def __init__(self):
         super(IndexController, self).__init__()
 
         self.page_url = "/"
-        self.alerts_exist = random.randrange(2)
+        self.alerts_exist = True
         self.suffixes = {
             1: "st",
             2: "nd",

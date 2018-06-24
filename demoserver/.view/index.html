@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -27,13 +27,22 @@
         <p>It's @ctrl.time_str already! </p>
       </div>
 
-      @if ctrl.alerts_exist == 0:
-        @for idx in range(1, 4):
-          <div class="alert alert-info">
-            <h3> LOOK AT IT (for the @(str(idx) + ctrl.suffixes.get(idx, "th")) time) </h3>
-            <p> this appears 3 times but it's in the original html only once! YEAAAH demos! </p>
+      @if ctrl.alerts_exist:
+        @for idx in range(1, 3):
+          <div class="alert alert-info demo-alert-div">
+            <p>This is the @(str(idx) + ctrl.suffixes.get(idx, "th")) alert.</p>
           </div>
         @/for
+      @else:
+        <p>There are no alerts.</p>
+      @/if
+
+      @if False:
+        <p>False is True! Run for your life!</p>
+      @else:
+        <div class="alert alert-info demo-alert-div">
+            <p>This is the 3rd alert. This one is special.</p>
+        </div>
       @/if
 
       <h2> Why choose Krait? </h2>

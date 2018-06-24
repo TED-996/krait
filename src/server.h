@@ -1,80 +1,69 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <boost/filesystem/path.hpp>
-#include "except.h"
-#include "network.h"
-#include "response.h"
-#include "pymlFile.h"
-#include "stringPiper.h"
-#include "pymlCache.h"
+#include "IManagedSocket.h"
 #include "cacheController.h"
 #include "config.h"
+#include "except.h"
+#include "networkManager.h"
+#include "pymlCache.h"
+#include "pymlFile.h"
+#include "pythonInitializer.h"
+#include "responseBuilder.h"
+#include "stringPiper.h"
+#include <boost/filesystem/path.hpp>
+#include <string>
 
 
-class Server
-{
-	static Server* instance;
+class Server {
+    static Server* instance;
 
-	boost::filesystem::path serverRoot;
-	int serverSocket;
+    boost::filesystem::path serverRoot;
 
-	const int maxKeepAliveSec = 60;
-	int keepAliveTimeoutSec;
-	bool keepAlive;
+    const int maxKeepAliveSec = 60;
+    int keepAliveTimeoutSec;
+    bool keepAlive;
 
-	Config config;
-	CacheController cacheController;
-	std::unordered_map<std::string, std::string> contentTypeByExtension;
+    PythonInitializer pythonInitializer;
+    Config config;
+    CacheController cacheController;
 
-	int socketToClose;
-	bool stdinDisconnected;
+    NetworkManager networkManager;
+    std::unique_ptr<IManagedSocket> clientSocket;
 
-	StringPiper cacheRequestPipe;
-	bool interpretCacheRequest;
-	PymlCache serverCache;
+    bool stdinDisconnected;
 
-	bool shutdownRequested;
+    StringPiper cacheRequestPipe;
+    bool interpretCacheRequest;
+    PymlCache serverCache;
 
-	void tryAcceptConnection();
-	void tryCheckStdinClosed() const;
+    ResponseBuilder responseBuilder;
 
-	void serveClientStart(int clientSocket);
-	void serveRequest(int clientSocket, Request& request);
-	void addDefaultHeaders(Response& response, std::string filename, Request& request);
-	Response getResponseFromSource(std::string filename, Request& request);
+    bool shutdownRequested;
 
-	std::string getFilenameFromTarget(std::string target);
-	std::string expandFilename(std::string filename);
-	static bool pathBlocked(std::string filename);
+    void tryAcceptConnection();
+    void tryCheckStdinClosed() const;
 
-	std::string getContentType(std::string filename);
-	void loadContentTypeList();
+    void serveClientStart();
+    void serveRequest(Request& request);
 
-	void addStandardCacheHeaders(Response& response, std::string filename, CacheController::CachePragma pragma);
+    bool canContainPython(const std::string& filename);
+    void serveRequestWebsockets(Request& request);
 
-	bool canContainPython(std::string filename);
-	void startWebsocketsServer(int clientSocket, Request& request);
+    std::unique_ptr<PymlFile> constructPymlFromFilename(const std::string& filename, PymlCache::CacheTag& tagDest);
+    void onServerCacheMiss(const std::string& filename);
 
-	PymlFile* constructPymlFromFilename(std::string filename, boost::object_pool<PymlFile>& pool, char* tagDest);
-	void onServerCacheMiss(std::string filename);
-
-	bool getPymlIsDynamic(std::string filename);
-	IteratorResult getPymlResultRequestCache(std::string filename);
-
-	void updateParentCaches();
+    void updateParentCaches();
 
 public:
-	Server(std::string serverRoot, int port);
-	~Server();
+    explicit Server(ArgvConfig argvConfig);
+    ~Server();
 
-	void runServer();
+    void runServer();
 
-	void requestShutdown();
-	void cleanup();
+    void requestShutdown();
+    void cleanup();
 
-	static Server* getInstance() {
-		return instance;
-	}
+    static Server* getInstance() {
+        return instance;
+    }
 };

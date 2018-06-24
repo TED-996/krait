@@ -1,281 +1,384 @@
 #include "pymlItems.h"
 
-#include"except.h"
-#include"utils.h"
-#include"pythonModule.h"
+#include "except.h"
+#include "pythonModule.h"
+#include "utils.h"
 
 #define DBG_DISABLE
 #include "dbg.h"
 
 
+// Implemented in utils.cpp
+std::string reprPythonString(const std::string& str);
+
+
+CodeAstItem PymlItemStr::getCodeAst() const {
+    std::string strRepr = reprPythonString(str);
+    return CodeAstItem::fromMultilineStatement(std::vector<boost::string_ref>{"__emit_raw__(", strRepr, ")"});
+}
+
 std::string PymlItemSeq::runPyml() const {
-	std::string result;
-	for (const PymlItem* it : items) {
-		result += it->runPyml();
-	}
-	return result;
+    std::string result;
+    for (const auto& it : items) {
+        result += it->runPyml();
+    }
+    return result;
 }
 
 bool PymlItemSeq::isDynamic() const {
-	for (auto it: items) {
-		if (it->isDynamic()) {
-			return true;
-		}
-	}
-	return false;
+    for (const auto& it : items) {
+        if (it->isDynamic()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const IPymlItem* PymlItemSeq::getNext(const IPymlItem* last) const {
-	if (last == NULL && items.size() != 0) {
-		return items[0];
-	}
+    if (last == nullptr && items.size() != 0) {
+        return items[0].get();
+    }
 
-	for (int i = 0; i < (int)items.size(); i++) {
-		if (items[i] == last && i + 1 < (int)items.size()) {
-			return items[i + 1];
-		}
-	}
+    for (int i = 0; i < (int) items.size(); i++) {
+        if (items[i].get() == last && i + 1 < (int) items.size()) {
+            return items[i + 1].get();
+        }
+    }
 
-	return NULL;
+    return nullptr;
 }
 
-const PymlItem* PymlItemSeq::tryCollapse() const {
-	if (items.size() == 0) {
-		return NULL;
-	}
-	if (items.size() == 1) {
-		return items[0];
-	}
-	return (PymlItem*)this;
+CodeAstItem PymlItemSeq::getCodeAst() const {
+    CodeAstItem result("");
+    for (const auto& it : items) {
+        result.addChild(it->getCodeAst());
+    }
+    return result;
 }
 
-std::string htmlEscape(std::string htmlCode);
+bool PymlItemSeq::canConvertToCode() const {
+    for (const auto& it : items) {
+        if (!it->canConvertToCode()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::unique_ptr<CodeAstItem> PymlItemSeq::getHeaderAst() const {
+    std::unique_ptr<CodeAstItem> headers = std::make_unique<CodeAstItem>();
+    for (const auto& it : items) {
+        std::unique_ptr<CodeAstItem> childHeader = it->getHeaderAst();
+        if (childHeader != nullptr) {
+            headers->addChild(std::move(*childHeader));
+        }
+    }
+    if (headers->isEmpty()) {
+        headers = nullptr;
+    }
+
+    // Doing this to allow for copy elision.
+    return headers;
+}
 
 std::string PymlItemPyEval::runPyml() const {
-	return htmlEscape(PythonModule::main.eval(code));
+    std::string result = PythonModule::main().eval(code);
+    boost::optional<std::string> escaped = htmlEscapeRef(result);
+
+    // Doing this instead of something more straight-forward to allow for copy elision.
+    if (escaped != boost::none) {
+        result = std::move(escaped.get());
+    }
+
+    return result;
+}
+
+
+CodeAstItem PymlItemPyEval::getCodeAst() const {
+    return CodeAstItem(std::string("__emit__(") + code + ")");
 }
 
 std::string PymlItemPyEvalRaw::runPyml() const {
-	return PythonModule::main.eval(code);
+    return PythonModule::main().eval(code);
 }
 
+CodeAstItem PymlItemPyEvalRaw::getCodeAst() const {
+    return CodeAstItem(std::string("__emit_raw__(") + code + ")");
+}
 
 std::string PymlItemPyExec::runPyml() const {
-	//DBG_FMT("running pyExec: %1%", code);
-	PythonModule::main.run(code);
-	return "";
+    PythonModule::main().run(code);
+    return "";
 }
 
+CodeAstItem PymlItemPyExec::getCodeAst() const {
+    return CodeAstItem::fromPythonCode(code);
+}
 
 std::string PymlItemIf::runPyml() const {
-	if (PythonModule::main.test(conditionCode)) {
-		if (itemIfTrue == NULL) {
-			return "";
-		}
-		return itemIfTrue->runPyml();
-	}
-	else {
-		if (itemIfFalse == NULL) {
-			return "";
-		}
-		return itemIfFalse->runPyml();
-	}
+    if (PythonModule::main().test(conditionCode)) {
+        if (itemIfTrue == nullptr) {
+            return "";
+        }
+        return itemIfTrue->runPyml();
+    } else {
+        if (itemIfFalse == nullptr) {
+            return "";
+        }
+        return itemIfFalse->runPyml();
+    }
 }
 
 
 const IPymlItem* PymlItemIf::getNext(const IPymlItem* last) const {
-	if (last != NULL) {
-		return NULL;
-	}
+    if (last != nullptr) {
+        return nullptr;
+    }
 
-	if (PythonModule::main.test(conditionCode)) {
-		return itemIfTrue;
-	}
-	else {
-		return itemIfFalse;
-	}
+    if (PythonModule::main().test(conditionCode)) {
+        return itemIfTrue.get();
+    } else {
+        return itemIfFalse.get();
+    }
 }
 
 
+CodeAstItem PymlItemIf::getCodeAst() const {
+    CodeAstItem rootItem;
+    CodeAstItem ifItem("if " + conditionCode + ":", true);
+    if (itemIfTrue != nullptr) {
+        ifItem.addChild(itemIfTrue->getCodeAst());
+    } else {
+        ifItem.addChild(CodeAstItem("pass"));
+    }
+    if (itemIfFalse == nullptr) {
+        rootItem = std::move(ifItem);
+    } else {
+        rootItem.addChild(std::move(ifItem));
+
+        CodeAstItem elseItem("else:", true);
+        elseItem.addChild(itemIfFalse->getCodeAst());
+
+        rootItem.addChild(std::move(elseItem));
+    }
+
+    return rootItem;
+}
+
+bool PymlItemIf::canConvertToCode() const {
+    if (itemIfTrue != nullptr && !itemIfTrue->canConvertToCode()) {
+        return false;
+    }
+    if (itemIfFalse != nullptr && !itemIfFalse->canConvertToCode()) {
+        return false;
+    }
+    return true;
+}
+
+std::unique_ptr<CodeAstItem> PymlItemIf::getHeaderAst() const {
+    std::unique_ptr<CodeAstItem> headers = std::make_unique<CodeAstItem>();
+
+    if (itemIfTrue != nullptr) {
+        std::unique_ptr<CodeAstItem> childHeader = itemIfTrue->getHeaderAst();
+        if (childHeader != nullptr) {
+            headers->addChild(std::move(*childHeader));
+        }
+    }
+    if (itemIfFalse != nullptr) {
+        std::unique_ptr<CodeAstItem> childHeader = itemIfFalse->getHeaderAst();
+        if (childHeader != nullptr) {
+            headers->addChild(std::move(*childHeader));
+        }
+    }
+
+    if (headers->isEmpty()) {
+        headers = nullptr;
+    }
+
+    // Doing this to allow for copy elision.
+    return headers;
+}
+
 std::string PymlItemFor::runPyml() const {
-	PythonModule::main.run(initCode);
-	std::string result;
-	while (PythonModule::main.test(conditionCode)) {
-		result += loopItem->runPyml();
-		PythonModule::main.run(updateCode);
-	}
-	return result;
+    PythonModule::main().run(initCode);
+
+    std::string result;
+
+    while (PythonModule::main().test(condCode)) {
+        result += loopItem->runPyml();
+        PythonModule::main().run(updateCode);
+    }
+    PythonModule::main().run(cleanupCode);
+
+    return result;
 }
 
 
 const IPymlItem* PymlItemFor::getNext(const IPymlItem* last) const {
-	if (last == NULL) {
-		PythonModule::main.run(initCode);
-	}
-	else {
-		PythonModule::main.run(updateCode);
-	}
+    if (last == nullptr) {
+        PythonModule::main().run(initCode);
+    } else {
+        PythonModule::main().run(updateCode);
+    }
 
-	if (PythonModule::main.test(conditionCode)) {
-		return loopItem;
-	}
-	else {
-		return NULL;
-	}
+    if (PythonModule::main().test(condCode)) {
+        return loopItem.get();
+    } else {
+        PythonModule::main().run(cleanupCode);
+        return nullptr;
+    }
+}
+
+
+CodeAstItem PymlItemFor::getCodeAst() const {
+    CodeAstItem result = CodeAstItem(formatString("for %1% in %2%:", entryName, collection), true);
+    result.addChild(loopItem->getCodeAst());
+    return result;
+}
+
+bool PymlItemFor::canConvertToCode() const {
+    return loopItem == nullptr || loopItem->canConvertToCode();
+}
+
+std::unique_ptr<CodeAstItem> PymlItemFor::getHeaderAst() const {
+    if (loopItem == nullptr) {
+        return nullptr;
+    } else {
+        return loopItem->getHeaderAst();
+    }
 }
 
 const IPymlItem* PymlItemEmbed::getNext(const IPymlItem* last) const {
-	if (last == NULL) {
-		return cache->get(PythonModule::main.eval(filename))->getRootItem();
-	}
-	else {
-		return NULL;
-	}
+    if (last == nullptr) {
+        return cache.get(PythonModule::main().eval(filename)).getRootItem();
+    } else {
+        return nullptr;
+    }
 }
 
 std::string PymlItemEmbed::runPyml() const {
-	return cache->get(PythonModule::main.eval(filename))->runPyml();
+    return cache.get(PythonModule::main().eval(filename)).runPyml();
 }
 
 bool PymlItemEmbed::isDynamic() const {
-	return cache->get(PythonModule::main.eval(filename))->isDynamic();
+    return cache.get(PythonModule::main().eval(filename)).isDynamic();
 }
 
-PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type)
-	: data(NoneData()) {
-	//DBG_FMT("In PymlWorkingItem constructor; type = %1%", (int)type);
-	this->type = type;
-	if (type == Type::None) {
-	}
-	else if (type == Type::Str) {
-		data = StrData();
-	}
-	else if (type == Type::Seq) {
-		data = SeqData();
-	}
-	else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec) {
-		PyCodeData dataTmp;
-		dataTmp.type = type;
-		data = dataTmp;
-	}
-	else if (type == Type::If) {
-		data = IfData();
-	}
-	else if (type == Type::For) {
-		data = ForData();
-	}
-	else if (type == Type::Embed) {
-		data = EmbedData();
-	}
-	else {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
-	}
+CodeAstItem PymlItemEmbed::getCodeAst() const {
+    return CodeAstItem("__run__(__to_module__(" + filename + "))");
+}
+
+std::unique_ptr<CodeAstItem> PymlItemEmbed::getHeaderAst() const {
+    return nullptr;
+}
+
+bool PymlItemEmbed::canConvertToCode() const {
+    return true;
+}
+
+std::string PymlItemSetCallable::runPyml() const {
+    std::string tempName = "__kr_int_" + randomAlpha(32);
+
+    PythonModule::main().setGlobal(tempName, PythonModule::main().callObject(callable));
+    PythonModule::main().run(formatString("%1% = %2%", destination, tempName));
+    PythonModule::main().run(formatString("del %1%", tempName));
+
+    return "";
+}
+
+PymlWorkingItem::PymlWorkingItem(PymlWorkingItem::Type type) : data(NoneData()) {
+    this->type = type;
+    if (type == Type::None) {
+    } else if (type == Type::Str) {
+        data = StrData();
+    } else if (type == Type::Seq) {
+        data = SeqData();
+    } else if (type == Type::PyEval || type == Type::PyEvalRaw || type == Type::PyExec) {
+        PyCodeData dataTmp;
+        dataTmp.type = type;
+        data = dataTmp;
+    } else if (type == Type::If) {
+        data = IfData();
+    } else if (type == Type::For) {
+        data = ForData();
+    } else if (type == Type::Embed) {
+        data = EmbedData();
+    } else {
+        BOOST_THROW_EXCEPTION(
+            serverError() << stringInfo("Server Error parsing pyml file: PymlWorkingItem type not recognized."));
+    }
 }
 
 
-class GetItemVisitor : public boost::static_visitor<const PymlItem*>
-{
-	PymlItemPool& pool;
+class GetItemVisitor : public boost::static_visitor<std::unique_ptr<const IPymlItem>> {
 public:
-	GetItemVisitor(PymlItemPool& pool)
-		: pool(pool) {
-	}
+    GetItemVisitor() = default;
 
-	const PymlItem* operator()(PymlWorkingItem::NoneData data) {
-		(void)data; //Silence the warning.
-		return pool.itemPool.construct();
-	}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::NoneData data) {
+        (void) data; // Silence the warning.
+        return std::make_unique<const PymlItem>();
+    }
 
-	const PymlItem* operator()(PymlWorkingItem::StrData strData) {
-		return pool.strPool.construct(strData.str);
-	}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::StrData strData) {
+        return std::make_unique<const PymlItemStr>(strData.str);
+    }
 
-	const PymlItem* operator()(PymlWorkingItem::SeqData seqData) {
-		std::vector<const PymlItem*> items;
-		for (PymlWorkingItem* it : seqData.items) {
-			const PymlItem* item = it->getItem(pool);
-			if (item != NULL) {
-				items.push_back(item);
-			}
-		}
-		const PymlItemSeq* result = pool.seqPool.construct(items);
-		return result->tryCollapse();
-	}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::SeqData seqData) {
+        std::vector<std::unique_ptr<const IPymlItem>> items;
+        for (PymlWorkingItem* it : seqData.items) {
+            std::unique_ptr<const IPymlItem> item = it->getItem();
+            if (item != nullptr) {
+                items.push_back(std::move(item));
+            }
+        }
 
-	const PymlItem* operator()(PymlWorkingItem::PyCodeData pyCodeData) {
-		if (pyCodeData.type == PymlWorkingItem::Type::PyExec) {
-			return pool.pyExecPool.construct(PythonModule::prepareStr(pyCodeData.code));
-		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEval) {
-			return pool.pyEvalPool.construct(PythonModule::prepareStr(pyCodeData.code));
-		}
-		if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw) {
-			return pool.pyEvalRawPool.construct(PythonModule::prepareStr(pyCodeData.code));
-		}
-		BOOST_THROW_EXCEPTION(
-			serverError()
-			<< stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
-	}
+        if (items.size() == 0) {
+            return nullptr;
+        }
+        if (items.size() == 1) {
+            return std::unique_ptr<const IPymlItem>(std::move(items[0]));
+        }
+        return std::make_unique<const PymlItemSeq>(std::move(items));
+    }
 
-	const PymlItem* operator()(PymlWorkingItem::IfData ifData) {
-		const PymlItem* itemIfTrue = ifData.itemIfTrue->getItem(pool);
-		const PymlItem* itemIfFalse = NULL;
-		if (ifData.itemIfFalse != NULL) {
-			itemIfFalse = ifData.itemIfFalse->getItem(pool);
-		}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::PyCodeData pyCodeData) {
+        if (pyCodeData.type == PymlWorkingItem::Type::PyExec) {
+            return std::make_unique<const PymlItemPyExec>(PythonModule::prepareStr(std::move(pyCodeData.code)));
+        }
+        if (pyCodeData.type == PymlWorkingItem::Type::PyEval) {
+            return std::make_unique<const PymlItemPyEval>(PythonModule::prepareStr(std::move(pyCodeData.code)));
+        }
+        if (pyCodeData.type == PymlWorkingItem::Type::PyEvalRaw) {
+            return std::make_unique<const PymlItemPyEvalRaw>(PythonModule::prepareStr(std::move(pyCodeData.code)));
+        }
+        BOOST_THROW_EXCEPTION(
+            serverError() << stringInfo("Error parsing pyml file: Unrecognized type in PymlWorkingItem::PyCodeData."));
+    }
 
-		return pool.ifExecPool.construct(PythonModule::prepareStr(ifData.condition), itemIfTrue, itemIfFalse);
-	}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::IfData ifData) {
+        std::unique_ptr<const IPymlItem> itemIfTrue = ifData.itemIfTrue->getItem();
+        std::unique_ptr<const IPymlItem> itemIfFalse = nullptr;
+        if (ifData.itemIfFalse != nullptr) {
+            itemIfFalse = ifData.itemIfFalse->getItem();
+        }
 
-	const PymlItem* operator()(PymlWorkingItem::ForData forData) {
-		const PymlItem* loopItem = forData.loopItem->getItem(pool);
-		PymlItemFor* newItem = pool.forExecPool.malloc();
-		PymlItemFor* item = new(newItem) PymlItemFor(PythonModule::prepareStr(forData.initCode), forData.conditionCode,
-		                                             forData.updateCode, loopItem);
-		return item;
-	}
+        return std::make_unique<PymlItemIf>(
+            PythonModule::prepareStr(std::move(ifData.condition)), std::move(itemIfTrue), std::move(itemIfFalse));
+    }
 
-	const PymlItem* operator()(PymlWorkingItem::EmbedData embedData) {
-		return pool.embedPool.construct(PythonModule::prepareStr(embedData.filename), *embedData.cache);
-	}
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::ForData forData) {
+        std::unique_ptr<const IPymlItem> loopItem = forData.loopItem->getItem();
+
+        return std::make_unique<const PymlItemFor>(forData.entryName, forData.collection, std::move(loopItem));
+    }
+
+    std::unique_ptr<const IPymlItem> operator()(PymlWorkingItem::EmbedData embedData) {
+        return std::make_unique<PymlItemEmbed>(
+            PythonModule::prepareStr(std::move(embedData.filename)), *embedData.cache);
+    }
 };
 
-const PymlItem* PymlWorkingItem::getItem(PymlItemPool& pool) const {
-	GetItemVisitor visitor(pool);
-	return boost::apply_visitor(visitor, data);
-}
-
-std::string htmlEscape(std::string htmlCode) {
-	std::string result;
-	bool resultEmpty = true;
-
-	const char* replacements[256];
-	memzero(replacements);
-	replacements[(int)'&'] = "&amp;";
-	replacements[(int)'<'] = "&lt;";
-	replacements[(int)'>'] = "&gt;";
-	replacements[(int)'"'] = "&quot;";
-	replacements[(int)'\''] = "&#39;";
-
-	unsigned int oldIdx = 0;
-	for (unsigned int idx = 0; idx < htmlCode.length(); idx++) {
-		if (replacements[(int)htmlCode[idx]] != NULL) {
-			if (resultEmpty) {
-				result.reserve(htmlCode.length() + htmlCode.length() / 10); //Approximately...
-				resultEmpty = false;
-			}
-
-			result.append(htmlCode, oldIdx, idx - oldIdx);
-			result.append(replacements[(int)htmlCode[idx]]);
-			oldIdx = idx + 1;
-		}
-	}
-
-	if (resultEmpty) {
-		return htmlCode;
-	}
-	else {
-		result.append(htmlCode.substr(oldIdx, htmlCode.length() - oldIdx));
-		return result;
-	}
+std::unique_ptr<const IPymlItem> PymlWorkingItem::getItem() const {
+    GetItemVisitor visitor;
+    return boost::apply_visitor(visitor, data);
 }

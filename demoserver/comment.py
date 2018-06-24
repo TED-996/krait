@@ -2,6 +2,7 @@ import krait
 import sqlite3
 import datetime
 
+import global_config
 
 post_form = krait.request.get_post_form()
 name = post_form["name"]
@@ -9,7 +10,7 @@ message = post_form["text"]
 
 krait.response = krait.ResponseRedirect("/db")
 
-conn = sqlite3.connect(sqlite_db)
+conn = sqlite3.connect(global_config.sqlite_db)
 c = conn.cursor()
 
 c.execute("insert into messages values(?, ?)", (name, message))

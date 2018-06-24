@@ -2,13 +2,12 @@
 #include "IPymlParser.h"
 #include "pymlItems.h"
 
-class RawPymlParser : public IPymlParser
-{
-	PymlItemStr pymlItem;
+class RawPymlParser : public IPymlParser {
+    std::unique_ptr<const PymlItemStr> pymlItem;
 
 public:
-	RawPymlParser();
+    RawPymlParser();
 
-	void consume(std::string::iterator start, std::string::iterator end);
-	const IPymlItem* getParsed();
+    void consume(std::string::iterator start, std::string::iterator end) override;
+    std::unique_ptr<const IPymlItem> getParsed() override;
 };

@@ -1,31 +1,30 @@
 #pragma once
-#include <string>
-#include <iterator>
-#include <memory>
-#include "IPymlCache.h"
-#include "IPymlParser.h"
 #include "IPymlFile.h"
+#include "IPymlParser.h"
 #include "pymlItems.h"
+#include <memory>
+#include <string>
 
 
-class PymlFile : public IPymlFile
-{
+class PymlFile : public IPymlFile {
 private:
-	const IPymlItem* rootItem;
-	std::unique_ptr<IPymlParser> parser;
+    std::unique_ptr<const IPymlItem> rootItem;
+    std::unique_ptr<IPymlParser> parser;
 
 public:
-	PymlFile(std::string::iterator sourceStart,
-	         std::string::iterator sourceEnd,
-	         std::unique_ptr<IPymlParser>& parser);
+    PymlFile(std::string::iterator sourceStart, std::string::iterator sourceEnd, std::unique_ptr<IPymlParser>& parser);
 
-	PymlFile(PymlFile&) = delete;
-	PymlFile(PymlFile const&) = delete;
+    PymlFile(PymlFile&) = delete;
+    PymlFile(PymlFile const&) = delete;
 
-	bool isDynamic() const;
-	std::string runPyml() const;
+    bool isDynamic() const override;
+    std::string runPyml() const override;
 
-	const IPymlItem* getRootItem() const {
-		return (IPymlItem*)rootItem;
-	}
+    const IPymlItem* getRootItem() const override {
+        return rootItem.get();
+    }
+
+    bool canConvertToCode() const override {
+        return getRootItem()->canConvertToCode();
+    }
 };

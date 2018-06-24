@@ -4,5 +4,5 @@
 #include <string>
 
 boost::filesystem::path getExecRoot();
-boost::filesystem::path getCreateDataRoot();
+boost::filesystem::path getShareRoot();
 bool pathCheckExists(std::string filename);

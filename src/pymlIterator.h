@@ -1,24 +1,23 @@
 #pragma once
-#include<stack>
+#include "IResponseIterator.h"
 #include "pymlFile.h"
+#include <boost/utility/string_ref.hpp>
+#include <stack>
 
-class PymlIterator
-{
+class PymlIterator : public IResponseIterator {
 private:
-	std::stack<const IPymlItem*> items;
-	std::string tmpStr;
-	const std::string* lastValuePtr;
+    std::stack<const IPymlItem*> items;
+    std::string tmpStr;
+    const std::string* lastValuePtr;
+
 public:
-	PymlIterator(const IPymlItem* rootItem);
-	PymlIterator(const PymlIterator& other);
+    PymlIterator(const IPymlItem* rootItem);
+    PymlIterator(const PymlIterator& other);
+    PymlIterator(PymlIterator&& other) noexcept;
 
-	const std::string* operator*();
+    boost::string_ref operator*() const override;
 
-	PymlIterator& operator++();
+    PymlIterator& operator++() override;
 
-	bool compareWith(std::string other);
-
-	bool isTmpStr(const std::string* strPtr) {
-		return strPtr == &tmpStr;
-	}
+    bool isTmpRef(const boost::string_ref& ref) const override;
 };

@@ -1,82 +1,77 @@
 #pragma once
-#include<fstream>
-#include<unistd.h>
-#include<boost/format.hpp>
+#include <boost/format.hpp>
+#include <fstream>
+#include <unistd.h>
 
-//TOOD: include Logger in this file
+// TOOD: include Logger in this file
 
-class LoggerOut
-{
-	int pipeIn;
-	std::ofstream outfile;
+class LoggerOut {
+    int pipeIn;
+    std::ofstream outfile;
 
 public:
-	LoggerOut();
-	LoggerOut(int pipeIn);
-	LoggerOut(int pipeIn, std::string filename);
+    LoggerOut();
+    LoggerOut(int pipeIn);
+    LoggerOut(int pipeIn, const std::string& filename);
 
-	~LoggerOut() {
-		close();
-	}
+    ~LoggerOut() {
+        close();
+    }
 
-	bool tick(int timeoutMs);
+    bool tick(int timeoutMs);
 
-	void close();
+    void close();
 };
 
 
-class LoggerIn
-{
-	int pipeOut;
+class LoggerIn {
+    int pipeOut;
 
 public:
-	LoggerIn()
-		: pipeOut(dup(0)) {
-	}
+    LoggerIn() : pipeOut(dup(1)) {
+    }
 
-	explicit LoggerIn(int pipeOut);
+    explicit LoggerIn(int pipeOut);
 
-	LoggerIn(LoggerIn& other)
-		: pipeOut(dup(other.pipeOut)) {
-	}
+    LoggerIn(LoggerIn& other) : pipeOut(dup(other.pipeOut)) {
+    }
 
-	~LoggerIn() {
-		close();
-	}
+    ~LoggerIn() {
+        close();
+    }
 
-	void log(const char* buffer, size_t size);
-	void log(const char* str);
-	void log(const std::string str);
-	void log(const boost::format fmt);
+    void log(const char* buffer, size_t size);
+    void log(const char* str);
+    void log(const std::string& str);
+    void log(const boost::format& fmt);
 
-	void close();
+    void close();
 };
 
 
-class Loggers
-{
+class Loggers {
 public:
-	static LoggerIn infoLogger;
-	static LoggerIn errLogger;
+    static LoggerIn infoLogger;
+    static LoggerIn errLogger;
 
-	static void setLoggers(int infoPipe, int errPipe);
-	static void setInfoLogger(int infoPipe);
-	static void setErrLogger(int errPipe);
+    static void setLoggers(int infoPipe, int errPipe);
+    static void setInfoLogger(int infoPipe);
+    static void setErrLogger(int errPipe);
 
-	static void logInfo(std::string message);
-	static void logErr(std::string message);
+    static void logInfo(const std::string& message);
+    static void logErr(const std::string& message);
 
-	static LoggerIn& getInfoLogger() {
-		return infoLogger;
-	}
+    static LoggerIn& getInfoLogger() {
+        return infoLogger;
+    }
 
-	static LoggerIn& getErrLogger() {
-		return errLogger;
-	}
+    static LoggerIn& getErrLogger() {
+        return errLogger;
+    }
 
 private:
-	Loggers() {
-	}
+    Loggers() {
+    }
 };
 
 

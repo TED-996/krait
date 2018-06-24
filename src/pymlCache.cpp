@@ -1,95 +1,138 @@
-#include <boost/filesystem.hpp>
 #include "pymlCache.h"
-#include"except.h"
-#include"utils.h"
+#include "except.h"
+#include <boost/filesystem.hpp>
+#include <numeric>
 
 #define DBG_DISABLE
 #include "dbg.h"
 
 
 PymlCache::PymlCache(PymlCache::constructorFunction constructor, PymlCache::cacheEventFunction onCacheMiss)
-	: constructor(constructor), onCacheMiss(onCacheMiss) {
-	frozen = false;
+        : constructor(constructor), onCacheMiss(onCacheMiss) {
+    frozen = false;
 };
 
-const IPymlFile* PymlCache::get(std::string filename) {
-	//DBG_FMT("PymlCache::get() on filename %1% (len %2%)", filename, filename.length());
-	const auto it = cacheMap.find(filename);
-	if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
-		return replaceWithNewer(filename);
-	}
-	else {
-		return it->second.item;
-	}
+const IPymlFile& PymlCache::get(const std::string& filename) {
+    const auto it = cacheMap.find(filename);
+    if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
+        return replaceWithNewer(filename);
+    } else {
+        return *it->second.item.get();
+    }
 }
 
-IPymlFile* PymlCache::constructAddNew(std::string filename, std::time_t time) {
-	CacheEntry resultEntry;
-	memzero(resultEntry);
+IPymlFile& PymlCache::constructAddNew(const std::string& filename, std::time_t time) {
+    CacheTag tag;
 
-	PymlFile* result = constructor(filename, pool, resultEntry.tag);
-	if (onCacheMiss != NULL) {
-		onCacheMiss(filename);
-	}
-	resultEntry.time = time;
-	resultEntry.item = result;
-	cacheMap[filename] = resultEntry;
-	return result;
+    std::unique_ptr<PymlFile> result = constructor(filename, tag);
+    if (onCacheMiss != nullptr) {
+        onCacheMiss(filename);
+    }
+
+    cacheMap.emplace(
+        std::piecewise_construct, std::forward_as_tuple(filename), std::forward_as_tuple(time, std::move(result), tag));
+    return *cacheMap[filename].item;
 }
 
-const IPymlFile* PymlCache::replaceWithNewer(std::string filename) {
-	const auto it = cacheMap.find(filename);
+const IPymlFile& PymlCache::replaceWithNewer(const std::string& filename) {
+    const auto it = cacheMap.find(filename);
 
-	//DBG_FMT("testing exists with filename %1%", filename);
-	if (!boost::filesystem::exists(filename)) {
-		//DBG("except in replaceWithNewer");
-		//DBG_FMT("reading anyway: %1%", readFromFile(filename));
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
-	}
+    if (!boost::filesystem::exists(filename)) {
+        BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
+    }
 
-	if (it != cacheMap.end() && pool.is_from(it->second.item)) {
-		pool.destroy(it->second.item);
-		cacheMap.erase(it);
-	}
-	return constructAddNew(filename, boost::filesystem::last_write_time(filename));
+    if (it != cacheMap.end()) {
+        cacheMap.erase(it);
+    }
+    return constructAddNew(filename, boost::filesystem::last_write_time(filename));
 }
 
-bool PymlCache::existsNewer(std::string filename, std::time_t time) {
-	if (frozen) {
-		return true;
-	}
+bool PymlCache::existsNewer(const std::string& filename, std::time_t time) {
+    if (frozen) {
+        return true;
+    }
 
-	if (!boost::filesystem::exists(filename)) {
-		//DBG("except in existsNewer");
-		BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
-	}
+    if (!boost::filesystem::exists(filename)) {
+        BOOST_THROW_EXCEPTION(notFoundError() << stringInfoFromFormat("Not found: %1%", filename));
+    }
 
-	return (boost::filesystem::last_write_time(filename) > time);
+    return (boost::filesystem::last_write_time(filename) > time);
 }
 
-std::time_t PymlCache::getCacheTime(std::string filename) {
-	const auto it = cacheMap.find(filename);
-	if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
-		replaceWithNewer(filename);
-	}
+std::time_t PymlCache::getCacheTime(const std::string& filename) {
+    const auto it = cacheMap.find(filename);
+    if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
+        replaceWithNewer(filename);
+    }
 
-	return cacheMap[filename].time;
+    return cacheMap[filename].time;
 }
 
-bool PymlCache::checkCacheTag(std::string filename, std::string tag) {
-	const auto it = cacheMap.find(filename);
-	if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
-		replaceWithNewer(filename);
-	}
+bool PymlCache::checkCacheTag(const std::string& filename, const std::string& tag) {
+    const auto it = cacheMap.find(filename);
+    if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
+        replaceWithNewer(filename);
+    }
 
-	return (strcmp(tag.c_str(), cacheMap[filename].tag) == 0);
+    return cacheMap[filename].tag == CacheTag(tag);
 }
 
-std::string PymlCache::getCacheTag(std::string filename) {
-	const auto it = cacheMap.find(filename);
-	if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
-		replaceWithNewer(filename);
-	}
+std::string PymlCache::getCacheTag(const std::string& filename) {
+    const auto it = cacheMap.find(filename);
+    if (it == cacheMap.end() || existsNewer(filename, it->second.time)) {
+        replaceWithNewer(filename);
+    }
 
-	return cacheMap[filename].tag;
+    return (std::string) cacheMap[filename].tag;
+}
+
+
+PymlCache::CacheTag::CacheTag() {
+    std::memset(this->data, 0, sizeof(this->data));
+}
+
+PymlCache::CacheTag::CacheTag(const std::string& data) {
+    this->setTag(data);
+}
+
+void PymlCache::CacheTag::setTag(const std::string& data) {
+    static_assert(sizeof(std::string::value_type) == 1, "std::string unexpected value type size");
+
+    if (data.size() > sizeof(this->data)) {
+        BOOST_THROW_EXCEPTION(serverError() << stringInfo("Tag too large."));
+    }
+
+    std::memset(this->data + data.size(), 0, sizeof(this->data) - data.size());
+    std::memcpy(this->data, data.c_str(), data.size());
+}
+
+PymlCache::CacheTag::CacheTag(const CacheTag& source) {
+    std::memcpy(this->data, source.data, sizeof(this->data));
+}
+
+PymlCache::CacheTag::CacheTag(CacheTag&& source) noexcept {
+    std::memcpy(this->data, source.data, sizeof(this->data));
+}
+
+bool PymlCache::CacheTag::operator==(const CacheTag& other) const {
+    return std::memcmp(this->data, other.data, sizeof(this->data)) == 0;
+}
+
+bool PymlCache::CacheTag::operator!=(const CacheTag& other) const {
+    return !(this->operator==(other));
+}
+
+bool PymlCache::CacheTag::operator==(const std::string& other) const {
+    static_assert(sizeof(std::string::value_type) == 1, "std::string unexpected value type size");
+    return other.size() <= sizeof(data) && memcmp(data, other.data(), sizeof(data)) == 0 &&
+        // All other bytes 0
+        std::accumulate(other.begin() + sizeof(data), other.end(), 0) == 0;
+}
+
+bool PymlCache::CacheTag::operator!=(const std::string& other) const {
+    return !(this->operator==(other));
+}
+
+PymlCache::CacheTag::operator std::string() const {
+    return std::string(this->data, sizeof(this->data));
 }

@@ -1,13 +1,18 @@
+@{import global_config as g}
 <div class="container">
     <div class="header clearfix">
         <nav>
             <ul class="nav nav-pills pull-right">
-                @for name, url in header_items:
-                    @{ cl = 'class="active"' if url == ctrl.page_url else "" }
-                    <li role="presentation" @!cl@><a href="@url@">@name@</a></li>
+                @for name, url in g.header_items:
+                    @{
+                        cl = 'class="active"' if url == ctrl.page_url else ""
+                        a_id = "header-a-{}".format(name.lower())
+                        li_id = "header-li-{}".format(name.lower())
+                    }
+                    <li role="presentation" @!cl@ id="@li_id@"><a href="@url@" id="@a_id@">@name@</a></li>
                 @/for
             </ul>
         </nav>
-        <h3 class="text-muted">@project_name@</h3>
+        <h3 class="text-muted" id="project-name">@g.project_name@</h3>
     </div>
 </div>

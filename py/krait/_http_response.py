@@ -80,7 +80,7 @@ class ResponseRedirect(Response):
 
     def __init__(self, destination, headers=None):
         headers = headers or []
-        headers.append(("Location", urllib.quote_plus(destination)))
+        headers.append(("Location", destination))
         super(ResponseRedirect, self).__init__("HTTP/1.1", 302, headers, "")
 
 

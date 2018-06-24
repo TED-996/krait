@@ -20,6 +20,7 @@ import krait.config
 from krait._http_request import Request
 from krait._http_response import Response, ResponseNotFound, ResponseBadRequest, ResponseRedirect
 
+
 import os
 
 __all__ = ["cookie", "mvc", "websockets", "config",
@@ -65,7 +66,7 @@ str: Specifies the *Content-Type* of the response. Only set it with :obj:`krait.
 If None, the server deduces it from the original route target's extension.
 """
 
-extra_headers = None
+extra_headers = []
 """
 list of (str, str): Extra response headers to set without overriding the entire response.
 """

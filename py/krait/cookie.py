@@ -49,9 +49,27 @@ class Cookie:
         Convert the Cookie to the Set-Cookie syntax
 
         Returns
-            str: The cookie in standard HTTP ``Set-Cookie` syntax.
+            str: The cookie in standard HTTP ``Set-Cookie`` syntax.
         """
-        return "; ".join(["{}={}".format(self.name, self.value)] + [str(a) for a in self.attributes])
+        if not self.name:
+            main_name = self.value
+        else:
+            main_name = self.name + "=" + str(self.value)
+
+        return "; ".join([main_name] + [str(a) for a in self.attributes])
+
+    def __repr__(self):
+        """
+        Convert the Cookie to its representation.
+
+        Returns
+            str: The cookie in its representation form.
+        """
+        return "krait.cookie.Cookie("\
+            + repr(self.name) + ", "\
+            + repr(self.value)\
+            + ("" if not self.attributes else ", attributes=[...]")\
+            + ")"
 
     def add_attribute(self, attribute):
         """
@@ -266,7 +284,7 @@ class CookieHttpOnlyAttribute(CookieAttribute):
     """
 
     def __init__(self):
-        super(CookieHttpOnlyAttribute, self).__init__("httponly", None)  # TODO: must be uppercase?
+        super(CookieHttpOnlyAttribute, self).__init__("HttpOnly", None)
 
 
 class CookieSecureAttribute(CookieAttribute):
@@ -276,7 +294,7 @@ class CookieSecureAttribute(CookieAttribute):
     """
 
     def __init__(self):
-        super(CookieSecureAttribute, self).__init__("secure", None)
+        super(CookieSecureAttribute, self).__init__("Secure", None)
 
 
 _cookies_cpt = None
@@ -340,7 +358,10 @@ def _split_equals(item):
     Returns:
         (str, str): the ``(name, value)`` tuple.
     """
-    sep_idx = item.index("=")
+    sep_idx = item.find("=")
+    if sep_idx == -1:
+        return "", item
+
     return item[:sep_idx], item[sep_idx + 1:]
 
 

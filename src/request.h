@@ -1,72 +1,88 @@
 #pragma once
-#include<string>
-#include<map>
+#include "http.h"
 #include <boost/optional.hpp>
-#include"http.h"
+#include <map>
+#include <string>
 
 
-class Request
-{
+class Request {
 private:
-	HttpVerb verb;
-	RouteVerb routeVerb;
-	std::string url;
-	int httpMajor;
-	int httpMinor;
-	std::map<std::string, std::string> headers;
-	std::string body;
-	std::string queryString;
+    HttpVerb verb;
+    RouteVerb routeVerb;
+    std::string url;
+    int httpMajor;
+    int httpMinor;
+    std::map<std::string, std::string> headers;
+    std::string body;
+    std::string queryString;
 
 public:
-	Request(HttpVerb verb, const std::string& url, const std::string& queryString, int httpMajor, int httpMinor,
-	        const std::map<std::string, std::string>& headers, const std::string& body);
+    Request(HttpVerb verb,
+        const std::string& url,
+        const std::string& queryString,
+        int httpMajor,
+        int httpMinor,
+        const std::map<std::string, std::string>& headers,
+        const std::string& body);
+    Request(HttpVerb verb,
+        std::string&& url,
+        std::string&& queryString,
+        int httpMajor,
+        int httpMinor,
+        std::map<std::string, std::string>&& headers,
+        std::string&& body);
 
-	bool headerExists(std::string name);
-	const boost::optional<std::string> getHeader(const std::string& name) const;
+    Request(Request&& other) noexcept;
 
-	const HttpVerb getVerb() const {
-		return verb;
-	};
+    bool headerExists(std::string name) const;
+    boost::optional<std::string> getHeader(const std::string& name) const;
 
-	const std::string& getUrl() const {
-		return url;
-	}
+    HttpVerb getVerb() const {
+        return verb;
+    };
 
-	const int getHttpMajor() const {
-		return httpMajor;
-	}
+    const std::string& getUrl() const {
+        return url;
+    }
 
-	const int getHttpMinor() const {
-		return httpMinor;
-	}
+    int getHttpMajor() const {
+        return httpMajor;
+    }
 
-	const std::map<std::string, std::string>& getHeaders() const {
-		return headers;
-	}
+    int getHttpMinor() const {
+        return httpMinor;
+    }
 
-	const std::string& getBody() const {
-		return body;
-	}
+    const std::map<std::string, std::string>& getHeaders() const {
+        return headers;
+    }
 
-	const std::string getQueryString() const {
-		return queryString;
-	}
+    const std::string& getBody() const {
+        return body;
+    }
 
-	RouteVerb getRouteVerb() const {
-		return routeVerb;
-	}
+    std::string getQueryString() const {
+        return queryString;
+    }
 
-	void setRouteVerb(RouteVerb routeVerb) {
-		this->routeVerb = routeVerb;
-	}
+    RouteVerb getRouteVerb() const {
+        return routeVerb;
+    }
 
-	bool isKeepAlive() const;
-	int getKeepAliveTimeout() const;
-	bool isUpgrade();
+    void setRouteVerb(RouteVerb routeVerb) {
+        this->routeVerb = routeVerb;
+    }
 
-	bool isUpgrade(std::string protocol);
+    bool isKeepAlive() const;
+    int getKeepAliveTimeout() const;
+    bool isUpgrade() const;
 
-	void setVerb(HttpVerb verb) {
-		this->verb = verb;
-	}
+    bool isUpgrade(const std::string& protocol) const;
+    bool isWebsockets() const {
+        return isUpgrade("websocket");
+    }
+
+    void setVerb(HttpVerb verb) {
+        this->verb = verb;
+    }
 };

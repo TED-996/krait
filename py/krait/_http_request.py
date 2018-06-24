@@ -170,9 +170,9 @@ class Request(object):
 
         return "{} {}{} {}\r\n{}\r\n{}".format(
             self.http_method,
-            self.url,
+            urllib.quote(self.url),
             ("?" + "&".join(
-                ["{}={}".format(k, v) for k, v in self.query.iteritems()])) if self.query is not dict() else "",
+                ["{}={}".format(k, v) for k, v in self.query.iteritems()])) if len(self.query) != 0 else "",
             self.http_version,
             "".join(["{}: {}\r\n".format(k, v) for k, v in self.headers.iteritems()]),
             self.body

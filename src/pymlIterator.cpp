@@ -1,90 +1,77 @@
-#include"pymlIterator.h"
-#include"except.h"
+#include "pymlIterator.h"
+#include "except.h"
 
-#define DBG_DISABLE
-#include"dbg.h"
+//#define DBG_DISABLE
+#include "dbg.h"
 
 PymlIterator::PymlIterator(const IPymlItem* rootItem) {
-	items.push(rootItem);
+    items.push(rootItem);
 
-	lastValuePtr = rootItem->getEmbeddedString(&tmpStr);
-	if (lastValuePtr == NULL) {
-		++(*this);
-	}
+    lastValuePtr = rootItem->getEmbeddedString(&tmpStr);
+    if (lastValuePtr == nullptr) {
+        ++(*this);
+    }
 }
 
 PymlIterator::PymlIterator(const PymlIterator& other)
-	: items(other.items), tmpStr(other.tmpStr), lastValuePtr(other.lastValuePtr) {
-	if (other.lastValuePtr == &other.tmpStr) {
-		this->lastValuePtr = &this->tmpStr;
-	}
+        : items(other.items), tmpStr(other.tmpStr), lastValuePtr(other.lastValuePtr) {
+    if (other.isTmpRef(boost::string_ref(lastValuePtr->data(), lastValuePtr->size()))) {
+        this->lastValuePtr = &this->tmpStr;
+    }
 }
 
-const std::string* PymlIterator::operator*() {
-	if (items.empty()) {
-		return NULL;
-	}
+PymlIterator::PymlIterator(PymlIterator&& other) noexcept
+        : items(std::move(other.items)), tmpStr(std::move(other.tmpStr)), lastValuePtr(other.lastValuePtr) {
+    if (other.isTmpRef(boost::string_ref(lastValuePtr->data(), lastValuePtr->size()))) {
+        this->lastValuePtr = &this->tmpStr;
+    }
+}
 
-	return lastValuePtr;
+boost::string_ref PymlIterator::operator*() const {
+    if (items.empty()) {
+        return boost::string_ref();
+    }
+
+    return boost::string_ref(*lastValuePtr);
 }
 
 PymlIterator& PymlIterator::operator++() {
-	if (items.empty()) {
-		return *this;
-	}
+    if (items.empty()) {
+        return *this;
+    }
 
-	const std::string* retStr = NULL;
-	while (retStr == NULL && !items.empty()) {
-		//Starting a new item.
-		const IPymlItem* lastItem = NULL;
-		const IPymlItem* nextItem = items.top()->getNext(NULL);
-		while (nextItem == NULL && !items.empty()) {
-			lastItem = items.top();
-			items.pop();
-			//DBG("pop");
-			if (!items.empty()) {
-				nextItem = items.top()->getNext(lastItem);
-			}
-		}
+    const std::string* retStr = nullptr;
+    while (retStr == nullptr && !items.empty()) {
+        const IPymlItem* nextItem = items.top()->getNext(nullptr);
+        while (nextItem == nullptr && !items.empty()) {
+            const IPymlItem* lastItem = items.top();
+            items.pop();
+            if (!items.empty()) {
+                nextItem = items.top()->getNext(lastItem);
+            }
+        }
 
-		if (nextItem != NULL) {
-			items.push(nextItem);
-			//DBG("push");
-		}
-		else {
-			//DBG("null next...");
-		}
+        if (nextItem != nullptr) {
+            items.push(nextItem);
+        }
 
-		if (!items.empty()) {
-			retStr = items.top()->getEmbeddedString(&tmpStr);
-		}
-		else {
-			retStr = NULL;
-		}
-	}
+        if (!items.empty()) {
+            retStr = items.top()->getEmbeddedString(&tmpStr);
+        } else {
+            retStr = nullptr;
+        }
+    }
 
-	lastValuePtr = retStr;
+    lastValuePtr = retStr;
 
-	return *this;
+    return *this;
 }
 
-bool PymlIterator::compareWith(std::string other) {
-	const char* otherPtr = other.c_str();
-	//DBG_FMT("**this: %p", **this);
-	while (**this != NULL) {
-		if (memcmp((**this)->c_str(), otherPtr, (**this)->length()) != 0) {
-			BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Iterator comparison failed! Expected %1%, got %2%", otherPtr, ***this));
-		}
-		otherPtr += (**this)->length();
-		//DBG_FMT("len %d", (**this)->length());
-		++(*this);
-		//DBG("after ++");
-	}
-	//DBG("???");
+bool PymlIterator::isTmpRef(const boost::string_ref& ref) const {
+    bool result = ref.data() >= tmpStr.data() && ref.data() + ref.size() <= tmpStr.data() + tmpStr.size();
+    if (result) {
+        // DBG("------------!!!! this IS a tmpStr");
+    }
 
-	if (otherPtr != other.c_str() + other.length()) {
-		BOOST_THROW_EXCEPTION(serverError() << stringInfoFromFormat("Iterator premature end! String %1% missing.", otherPtr));
-	}
-	//DBG("Compare finished.");
-	return true;
+    return result;
 }

@@ -370,3 +370,7 @@ info.log
 callgrind-out/*
 **/*.pyc
 docs/build/*
+*.nocommit*
+CMakeSettings.json
+.vscode/tags
+.vscode/settings.json
