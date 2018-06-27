@@ -47,17 +47,21 @@ void ManagedSocket::detachContext() {
 int ManagedSocket::write(const void* data, size_t nBytes, int timeoutSeconds, bool* shouldRetry) {
     int bytesWritten;
     *shouldRetry = false;
+    int errno_save;
 
     if (timeoutSeconds == -1) {
         bytesWritten = ::write(this->socket, data, nBytes);
+        errno_save = errno;
     } else {
         RaiiAlarm alarm(timeoutSeconds, true);
         bytesWritten = ::write(this->socket, data, nBytes);
+        errno_save = errno;
 
         if (alarm.isFinished()) {
             return -1;
         }
     }
+    errno = errno_save;
     *shouldRetry = (bytesWritten < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
     return bytesWritten;
 }
@@ -66,16 +70,21 @@ int ManagedSocket::read(void* destination, size_t nBytes, int timeoutSeconds, bo
     int bytesRead;
     *shouldRetry = false;
 
+    int errno_save;
+
     if (timeoutSeconds == -1) {
         bytesRead = ::read(this->socket, destination, nBytes);
+        errno_save = errno;
     } else {
         RaiiAlarm alarm(timeoutSeconds, true);
         bytesRead = ::read(this->socket, destination, nBytes);
+        errno_save = errno;
 
         if (alarm.isFinished()) {
             return -1;
         }
     }
+    errno = errno_save;
     *shouldRetry = (bytesRead < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
     return bytesRead;
 }
@@ -133,6 +142,9 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
             continue;
         }
 
+        if (bytesRead == 0) {
+            break;
+        }
         if (bytesRead <= 0) {
             BOOST_THROW_EXCEPTION(
                 networkError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
@@ -167,6 +179,10 @@ std::unique_ptr<Request> ManagedSocket::getRequest() {
         BOOST_THROW_EXCEPTION(networkError() << stringInfo("Error parsing HTTP request"));
     }
 
+    if (!parser.isFinished()) {
+        return nullptr;
+    }
+
     return parser.getParsed();
 }
 
@@ -185,6 +201,9 @@ void ManagedSocket::respondWithBuffer(const void* response, size_t size) {
         }
 
         if (bytesWritten <= 0) {
+            if (errno == EPIPE) {
+                BOOST_THROW_EXCEPTION(networkError() << stringInfo("write(): client disconnected"));
+            }
             BOOST_THROW_EXCEPTION(networkError() << stringInfo("write(): sending response"));
         }
         ptr = (void*) ((const char*) ptr + bytesWritten);
@@ -205,7 +224,9 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
 
     DbgAggregatedStopwatch("ManagedSocket::getRequestTimeout");
 
+    DBG("pre-poll");
     while (!parser.isFinished() && (pollResult = poll(&pfd, 1, timeoutMs)) != 0) {
+        DBG("post-poll");
         if (pollResult < 0) {
             BOOST_THROW_EXCEPTION(networkError() << stringInfo("poll(): waiting for request from socket."));
         }
@@ -216,10 +237,14 @@ std::unique_ptr<Request> ManagedSocket::getRequestTimeout(int timeoutMs) {
         int bytesRead = read(buffer, sizeof(buffer), timeoutMs, &shouldRetry);
 
         if (shouldRetry) {
+            DBG("should retry");
             continue;
         }
 
-        if (bytesRead <= 0) {
+        if (bytesRead == 0) {
+            break;
+        }
+        if (bytesRead < 0) {
             BOOST_THROW_EXCEPTION(
                 networkError() << stringInfo("read(): getting request from socket") << errcodeInfoDef());
         }

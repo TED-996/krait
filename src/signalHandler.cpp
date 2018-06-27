@@ -88,3 +88,7 @@ void KillSignalHandler::handler(int signal, siginfo_t* info, void* ucontext) {
 
     exit(0);
 }
+
+void SigPipeLogHandler::handler(int signal, siginfo_t* info, void* ucontext) {
+    Loggers::logInfo("Client disconnected during write.");
+}

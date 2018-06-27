@@ -1,5 +1,6 @@
 ﻿#include "except.h"
 #include "signalManager.h"
+#include "logger.h"
 #include <sys/wait.h>
 
 #include "dbg.h"
@@ -87,6 +88,10 @@ int SignalManager::waitStoppedChildren() {
         }
         if (WIFEXITED(status) || WIFSIGNALED(status)) {
             DBG_FMT("[Parent] Child %1% exited with status %2%", pid, WEXITSTATUS(status));
+            int statusCode = WEXITSTATUS(status);
+            if (statusCode != 0) {
+                Loggers::logErr(formatString("Child process exited with status %1%", statusCode));
+            }
 
             removePid(pid);
             childrenExited++;

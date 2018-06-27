@@ -71,16 +71,20 @@ void Server::runServer() {
     Loggers::logInfo("Server listening");
 
     bool isSingleProcess = config.getIsSingleProcess();
+    time_t lastWait = time(nullptr);
 
     while (!shutdownRequested) {
         tryAcceptConnection();
 
-        if (!isSingleProcess) {
-            SignalManager::waitStoppedChildren();
-            updateParentCaches();
-        }
+        if (time(nullptr) != lastWait) {
+            if (!isSingleProcess) {
+                SignalManager::waitStoppedChildren();
+                updateParentCaches();
+            }
 
-        tryCheckStdinClosed();
+            tryCheckStdinClosed();
+            lastWait = time(nullptr);
+        }
     }
     Loggers::logInfo("Server shutting down.");
 }
@@ -206,7 +210,7 @@ void Server::serveClientStart() {
             }
         }
     } catch (networkError& ex) {
-        Loggers::logErr("Client disconnected.");
+        Loggers::logInfo("Client disconnected.");
         DBG_FMT("Network erorr:\n%1%", ex.what());
     } catch (sslError& ex) {
         Loggers::logErr("Client SSL error.");

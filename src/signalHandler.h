@@ -58,3 +58,11 @@ public:
 
     void handler(int signal, siginfo_t* info, void* ucontext) override;
 };
+
+class SigPipeLogHandler : public SignalHandler {
+public:
+    SigPipeLogHandler() : SignalHandler(std::vector<int>{SIGPIPE}) {
+    }
+
+    void handler(int signal, siginfo_t* info, void* ucontext) override;
+};

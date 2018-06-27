@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
     SignalManager::registerSignal(std::make_unique<ShtudownSignalHandler>());
     SignalManager::registerSignal(std::make_unique<StopSignalHandler>());
     SignalManager::registerSignal(std::make_unique<KillSignalHandler>());
+    SignalManager::registerSignal(std::make_unique<SigPipeLogHandler>());
 
     boost::optional<uint16_t> httpPort;
     boost::optional<uint16_t> httpsPort;

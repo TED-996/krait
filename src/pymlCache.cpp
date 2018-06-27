@@ -134,5 +134,11 @@ bool PymlCache::CacheTag::operator!=(const std::string& other) const {
 }
 
 PymlCache::CacheTag::operator std::string() const {
-    return std::string(this->data, sizeof(this->data));
+    size_t len;
+    for (len = 0; len < sizeof(this->data); len++) {
+        if (data[len] == '\0') {
+            break;
+        }
+    }
+    return std::string(this->data, len);
 }
